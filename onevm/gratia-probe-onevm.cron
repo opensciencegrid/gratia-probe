@@ -1,0 +1,1 @@
+0 * * * *  root /usr/share/gratia/common/cron_check  /etc/gratia/onevm/ProbeConfig && /usr/share/gratia/onevm/onevm_probe.cron.sh 

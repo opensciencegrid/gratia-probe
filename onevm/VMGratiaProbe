@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+import gratia.common.Gratia as Gratia
+import gratia.common.GratiaCore as GratiaCore
+from gratia.common.Gratia import DebugPrint
+from gratia.onevm.OneReader import OneReader
+from gratia.onevm.VMRecord import VMRecord
+from gratia.onevm.VMGratiaProbeConfig import VMGratiaProbeConfig 
+from gratia.onevm.Checkpoint import Checkpoint 
+
+import sys
+import os
+import time
+import traceback
+
+class VMGratiaProbe:
+    def __init__(self,config,version,verbose):
+	if verbose:
+		GratiaCore.Config.set_DebugLevel(5)
+        self._dataFolder=config.get_DataFolder()
+        #self._maxAge = should get from Config
+        self._maxAge =365
+        vmChkptFN = 'chkpt_vm_DoNotDelete'
+        if  self._dataFolder != None:
+            vmChkptFN = os.path.join(self._dataFolder, vmChkptFN)
+        self._lastChkpt = Checkpoint(vmChkptFN, self._maxAge)
+	self.version=version
+        self.resourceType="OneVM"
+        self.project="FermiCloud"
+    def getVersion(self,version):
+	return self.version
+    #check when was the last time we have run - if timestamp exist
+    #if it exists 
+    #send all jobs that are currently running (started and endtime=Now) 
+    #send all finished jobs that since then
+    def process(self,records):
+        current_time=time.time()
+        for key,vmr in records.items():
+            if not vmr.isValid():
+		   DebugPrint(5,"The machine %s didn't really started for some reason" % (key))
+                   continue
+            recs=vmr.getRecords()    
+            for i in range(len(recs)):   
+                if (recs[i].getEndTime() != None) and (0 < float(recs[i].getEndTime()) < self._lastChkpt.getLastCheckPoint()):
+		    DebugPrint(5,"Skipping record %s, %s - we have already reported that VM" % (key, i))
+                    continue # we have already reported that VM
+                r = Gratia.UsageRecord()
+                r.LocalUserId(vmr.getLocalUserId())
+                keyInfo=vmr.getUserKeyInfo()
+                if vmr.getMachineName():
+                    r.MachineName(vmr.getMachineName())
+                if  keyInfo:
+                    r.UserKeyInfo(vmr.getUserKeyInfo())
+                r.LocalJobId(vmr.getLocalJobId())
+                r.GlobalJobId(vmr.getLocalJobId()+"#"+repr(time.time()))
+                r.JobName(vmr.getJobName())
+		status,description=recs[i].getStatus()
+                r.Status(status,description)
+                r.Njobs(1,"")
+                r.Memory(vmr.getMemory(),"KB")
+                r.NodeCount(1) # default to total
+                r.Processors(vmr.getNumberOfCPU(),0,"total")
+                stime=self._lastChkpt.getLastCheckPoint()
+                if recs[i].isRunning():
+		    DebugPrint(5," VM %s, %s is running" % (key, i))
+                    #this is actively running VM
+                    if float(recs[i].getStartTime()) >stime:
+                        stime=float(recs[i].getStartTime()) #VM started after we ran
+                else:
+		    DebugPrint(5," VM %s, %s is done" % (key, i))
+                    if float(recs[i].getStartTime()) >stime:
+                        stime=float(recs[i].getStartTime()) #VM started after we ran
+                
+                r.StartTime(GratiaCore.TimeToString(time.gmtime(stime)))
+                etime=current_time
+                if float(recs[i].getEndTime())>0:
+                    etime=float(recs[i].getEndTime())
+                r.EndTime(GratiaCore.TimeToString(time.gmtime(etime)))
+                r.WallDuration(etime-stime)
+                r.CpuDuration(etime-stime,'user')
+                r.CpuDuration(0,'system')
+                r.SubmitHost(recs[i].getSubmitHost())
+                r.ProjectName(self.project)
+                r.ResourceType(self.resourceType)
+		r.AdditionalInfo("Version",self.version)
+                Gratia.Send(r)
+        self._lastChkpt.createCheckPoint(current_time)
+def parse_opts():
+    import optparse
+    parser = optparse.OptionParser(usage="%prog [options]")
+    parser.add_option("-v", "--verbose", help="Enable verbose logging to stdout.",
+        default=False, action="store_true", dest="verbose")
+    parser.add_option("-f", "--one_query_file", help="Location of the OneVM query output file; "
+        "defaults to /var/lib/gratia/data/query_one.log.", dest="one_query_file",
+        default="/var/lib/gratia/data/query_one.log")
+    parser.add_option("-c", "--gratia_config", help="Location of the Gratia config; "
+        "defaults to /etc/gratia/onevm/ProbeConfig.", dest="gratia_config",
+        default="/etc/gratia/onevm/ProbeConfig")
+    parser.add_option("-V", "--onevm_version",type="choice", help="OpenNebula version; "
+        "defaults to 3.0",choices=["2.0","3.0","3.2"], dest="version",
+        default="3.0")
+    opts, args = parser.parse_args()
+    if not opts.one_query_file or not os.path.isfile(opts.one_query_file):
+        raise Exception("One_query file, %s , does not exist." % opts.one_query_file)
+    if not opts.gratia_config or not os.path.isfile(opts.gratia_config):
+	raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
+    return opts, args
+
+if __name__ == '__main__':
+   try:
+	opts, dirs = parse_opts()
+      	reader=OneReader(opts.one_query_file,opts.verbose)
+        reader.readFile()
+        records=reader.getRecords()
+	#config=VMGratiaProbeConfig.VMGratiaProbeConfig(opts.gratia_config)
+    	Gratia.Initialize(opts.gratia_config)
+    	vmProbe=VMGratiaProbe(Gratia.Config,opts.version,opts.verbose)
+    	vmProbe.process(records)
+   except Exception, e:
+      	print >> sys.stderr, str(e)
+        sys.exit(1)
+   sys.exit(0)
+    
+    
+    
