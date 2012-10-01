@@ -7,7 +7,6 @@ _gratia_data_dir=/var/lib/gratia/data
 _currentfile=${_gratia_data_dir}/query_one.log
 #test -e "${_currentfile}" && cp "${_currentfile}" "${_currentfile}".`date +%s`
 
-echo "Start onevm dump " `date`
 #version
 _version=`/sbin/runuser - oneadmin -c "onevm --version|grep ^OpenNebula|cut -d' ' -f2"`
 #_version=2.0.0
@@ -37,6 +36,5 @@ else
 	/sbin/runuser - oneadmin -c "${_gratia_dir}/onevm/query_one_2.0.0 ${_vmid}" >  "${_currentfile}"
 fi
 	
-echo "End onevm dump " `date`
 ${_gratia_dir}/onevm/VMGratiaProbe  -f ${_currentfile} -V ${_version} 
 exit $?

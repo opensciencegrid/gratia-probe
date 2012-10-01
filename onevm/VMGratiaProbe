@@ -2,6 +2,7 @@
 import gratia.common.Gratia as Gratia
 import gratia.common.GratiaCore as GratiaCore
 from gratia.common.Gratia import DebugPrint
+from gratia.onevm.VMGratiaProbeConfig import VMGratiaProbeConfig
 from gratia.onevm.OneReader import OneReader
 from gratia.onevm.VMRecord import VMRecord
 from gratia.onevm.VMGratiaProbeConfig import VMGratiaProbeConfig 
@@ -113,6 +114,7 @@ if __name__ == '__main__':
         records=reader.getRecords()
 	#config=VMGratiaProbeConfig.VMGratiaProbeConfig(opts.gratia_config)
     	Gratia.Initialize(opts.gratia_config)
+	GratiaWrapper.CheckPreconditions()
     	vmProbe=VMGratiaProbe(Gratia.Config,opts.version,opts.verbose)
     	vmProbe.process(records)
    except Exception, e:
