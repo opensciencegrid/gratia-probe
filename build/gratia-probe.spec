@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.12
-Release:            9pre%{?dist}
+Release:            9%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -744,6 +744,9 @@ Gratia OSG accounting system probe for providing VM accounting.
 %endif # noarch
 
 %changelog
+* Mon Oct  1 2012 Tanya Levshina <tlevshin@fnal.gov> - 1.12.9
+- minor fixes for onevm probe
+
 * Thu Sep 27 2012 Tanya Levshina <tlevshin@fnal.gov> - 1.12.9pre
 - included onevm cloud accounting probe into trunk
 
