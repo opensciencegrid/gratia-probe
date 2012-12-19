@@ -5,12 +5,10 @@ export PATH=$PATH:/usr/bin:/usr/local/bin/
 _gratia_dir=/usr/share/gratia
 _gratia_data_dir=/var/lib/gratia/data
 _currentfile=${_gratia_data_dir}/query_one.log
-#test -e "${_currentfile}" && cp "${_currentfile}" "${_currentfile}".`date +%s`
 
 #version
 _version=`/sbin/runuser - oneadmin -c "onevm --version|grep ^OpenNebula|cut -d' ' -f2"`
 #_version=2.0.0
-echo "OpenNebula version $_version"
 if [ x${_version} = "x" ]
 then
 	_version=3.2
@@ -19,6 +17,8 @@ _version=`echo ${_version%.*}`
 options=""
 if [ ${_version} = "3.2" ]
 then
+	export ONE_LOCATION=/cloud/app/one/3.2/
+	export PATH=$ONE_LOCATION/bin:$PATH
 	#check if chkpt_vm_DoNotDelete exists
 	if [ ! -f ${_gratia_data_dir}/chkpt_vm_DoNotDelete ]
 	then
@@ -29,12 +29,13 @@ then
 		let delta=${ct}-`cut -d'.' -f 1 /var/lib/gratia/data/chkpt_vm_DoNotDelete`
 		options="-t ${ct} -d ${delta}"
 	fi
-	/sbin/runuser - oneadmin -c "oneuser login oneadmin --x509 --cert `/usr/share/gratia/common/GetProbeConfigAttribute -c /etc/gratia/onevm/ProbeConfig  GratiaCertificateFile` --key `/usr/share/gratia/common/GetProbeConfigAttribute -c /etc/gratia/onevm/ProbeConfig  GratiaKeyFile`; export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
+	/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
 else
 	#get the latest vmid
 	_vmid=`/sbin/runuser - oneadmin -c "onevm list -l id|sort -n|tail -1"`
 	/sbin/runuser - oneadmin -c "${_gratia_dir}/onevm/query_one_2.0.0 ${_vmid}" >  "${_currentfile}"
 fi
 	
+#echo "End onevm dump " `date`
 ${_gratia_dir}/onevm/VMGratiaProbe  -f ${_currentfile} -V ${_version} 
 exit $?

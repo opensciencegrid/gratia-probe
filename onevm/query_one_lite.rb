@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-VERSION_STRING="0.1"
+VERSION_STRING="0.2"
 
 ##############################################################################
 # Environment Configuration
@@ -178,10 +178,29 @@ class OpenNebulaSensorCacheManager
     end
 
 
+    # Store the cache to cache file
     def store(cache)
         cache.store(@cache_prefix + cache.etime.to_s())
         @caches[cache.etime] = cache
     end
+
+
+    # Cleanup cache and only retain cache files upto limit
+    def cleanup(limit)
+        if (limit > 0)
+            files = (Dir.glob(@cache_prefix + "*")).sort()
+
+            to_rm = files.size() - limit
+            if (to_rm > 0)
+                files_to_rm = files.first(to_rm)
+                PP.pp(files_to_rm)
+                files_to_rm.each() do |f|
+                    File.delete(f)
+                end
+            end
+        end
+    end
+
 
 end #OpenNebulaSensorCacheManager
 
@@ -246,6 +265,7 @@ class OpenNebulaVirtualMachine
         "GID"             => { "field" => ["GID"], "type" => "string" },
         "GNAME"           => { "field" => ["GNAME"], "type" => "string" },
     }
+    #    "VO"              => { "field" => ["TEMPLATE", "VO"], "type" => "string" },
 
     # Class constructor
     def initialize(info={})
@@ -611,6 +631,16 @@ optparse = OptionParser.new() do |opts|
         options[:cachedir] = cachedir
     end
     
+    options[:cachelimit] = 1
+    opts.on('-l', '--cache-limit CACHELIMIT', 'Number of cached records to keep. Anything older is cleaned up. Defaults to 1') do |cachelimit|
+        options[:cachedir] = cachedir
+    end
+    
+    options[:cachelimitcheck] = true
+    opts.on('-x', '--skip-cache-limit-check', 'Do not clean cached records even if they are more than limit') do |cachelimitcheck|
+        options[:cachelimitcheck] = cachelimitcheck
+    end
+    
     options[:output] = nil
     opts.on('-o', '--output OUTPUT', 'File to store VM information. Defaults to CACHEDIR/onestats') do |o|
         options[:output] = o
@@ -739,6 +769,9 @@ result_cache = OpenNebulaSensorCache.new(rtime=Time.now().to_i(),
                                          queued_vm_ids=get_queued_vm_ids(vms, etime))
 cache_manager.store(result_cache)
 
+if (options[:cachelimitcheck] and (options[:cachelimit] > 0))
+    cache_manager.cleanup(options[:cachelimit])
+end
 
 # HACK
 #exit 0
