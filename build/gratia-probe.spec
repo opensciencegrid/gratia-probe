@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.12
-Release:            9%{?dist}
+Release:            10%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -217,7 +217,9 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
   install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
+  install -m 644 condor/99_gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-gwms.conf
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
@@ -436,6 +438,21 @@ The Condor probe for the Gratia OSG accounting system.
 
 %post condor
 %customize_probeconfig -d condor
+
+%package glideinwms
+Summary: Configuration for Gratia GlideinWMS integration.
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-condor >= %{version}-%{release}
+
+%description glideinwms
+The Condor probe for the Gratia OSG accounting system.
+
+%files glideinwms
+%defattr(-,root,root,-)
+%config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
+
+
 
 %package sge
 Summary: An SGE probe
@@ -744,6 +761,9 @@ Gratia OSG accounting system probe for providing VM accounting.
 %endif # noarch
 
 %changelog
+* Thu Dec 20 2012 Derek Weitzel <dweitzel@cse.unl.edu> - 1.12-10
+Adding glideinwms configuration package. GRATIA-76
+
 * Mon Oct  1 2012 Tanya Levshina <tlevshin@fnal.gov> - 1.12.9
 - minor fixes for onevm probe
 
@@ -778,14 +798,17 @@ and simplified the exception handling.
 
 * Fri Mar 23  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.9
 - release
+
 * Wed Mar 21  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.9.pre
 - Fixed debug message in condor_meter https://jira.opensciencegrid.org/browse/GRATIA-58
+
 * Mon Mar 18  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.8.pre
 - VOOverride feature for campus grid usage https://jira.opensciencegrid.org/browse/GRATIA-57 - Derek Weitzel
 - cron_check header fix
 
 * Mon Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7
 - version for OSG production release
+
 * Thu Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7.pre
 - Fixed pbs probe that now supreesed generation of UserVOName attribute (https://jira.opensciencegrid.org/browse/GRATIA-53)
 - Derek's fixes for pbs (https://jira.opensciencegrid.org/browse/GRATIA-44) 
