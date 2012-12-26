@@ -1,0 +1,66 @@
+<html>
+<h1 id="gratia-probe-slurm">gratia-probe-slurm</h1>
+<p>Gratia probe for SLURM resource manager</p>
+<p>The probe connects to the SLURM accounting database, retrieves records for completed jobs, and submits the JobUsageRecords to Gratia.</p>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>SLURM (tested with 2.4)</li>
+<li>MySQL</li>
+<li>Python (tested with 2.6)</li>
+<li>Python MySQLdb (in the standard MySQL-python package)</li>
+<li>slurmdbd accounting storage configured and logging to MySQL</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<ol style="list-style-type: decimal">
+<li>Configure the ProbeConfig</li>
+<li>Add the script to cron</li>
+</ol>
+Sample crontab entry:
+<pre>
+*/15 * * * * root /usr/bin/slurm_meter -s 900 -c
+</pre>
+
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The probe gets the installed SLURM version by running the srun command. If your SLURM install is not on the path, specify it with the <em>SlurmLocation</em> option.</li>
+</ul>
+<h2 id="probeconfig-options">ProbeConfig options</h2>
+<table>
+        <tr>
+                <th>Option</th>
+                <th>Description</th>
+        </tr>
+        <tr>
+                <td>SlurmDbHost="db.cluster.example.edu"</td>
+                <td>Database host</td>
+        </tr><tr>
+                <td>SlurmDbPort="3306"</td>
+                <td>Database port</td>
+        </tr><tr>
+                <td>SlurmDbUser="slurm"</td>
+                <td>Database username with read/only access</td>
+        </tr><tr>
+                <td>SlurmDbPasswordFile="/etc/gratia/slurm/pwfile"</td>
+                <td>File containing database password. Must only be readable to the probe. (chmod 600)</td>
+        </tr><tr>
+                <td>SlurmDbName="slurm_acct_db"</td>
+                <td>Name of SLURM accounting database</td>
+        </tr><tr>
+                <td>SlurmCluster="mycluster"</td>
+                <td>Name of SLURM cluster, available from "sacctmgr list cluster"</td>
+        </tr>
+</table>
+
+<h2 id="running-jobs-probeconfig">Running jobs ProbeConfig</h2>
+<p>In addition to the settings above, there are additional options for the running jobs probe.</p>
+<table>
+        <tr>
+                <th>Option</th>
+                <th>Description</th>
+        </tr>
+        <tr>
+                <td>SlurmCEName="cluster.example.edu"</td>
+                <td>The FQDN of the cluster</td>
+        </tr>
+</table>
+</html>

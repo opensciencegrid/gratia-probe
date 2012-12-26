@@ -1,0 +1,139 @@
+#!/usr/bin/python
+# /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+
+###########################################################################
+# slurm_meter
+#
+# Python-based Gratia probe for SLURM accounting database
+# 
+# John Thiltges, 2012-Jun-19
+# Based on condor_meter by Brian Bockelman
+# 
+# Copyright 2012 University of Nebraska-Lincoln. Released under GPL v2.
+###########################################################################
+
+from SlurmProbe import SlurmProbe
+
+import optparse
+import gratia.common.Gratia as Gratia
+
+def job_to_jur(job, server_id):
+    """Convert a SLURM job record into a Gratia UsageRecord"""
+    r = Gratia.UsageRecord("Batch")
+
+    # Usage Record
+    # https://forge.gridforum.org/projects/ur-wg/
+    # https://forge.gridforum.org/sf/docman/do/downloadDocument/projects.ur-wg/docman.root.final_document.ur_v1/doc15329
+
+    # 3 Base Properties
+
+    # 3.2 GlobalJobId
+    # "slurm:<hostname>/<cluster>.<job>"
+    r.GlobalJobId('slurm:%s/%s.%s' % (server_id, job['cluster'], job['id_job']))
+
+    # 3.3 LocalJobId
+    r.LocalJobId(str(job['id_job']))
+
+    # 3.4 ProcessId
+
+    # 3.5 LocalUserId
+    if job['user']:
+        r.LocalUserId(job['user'])
+
+    # 3.7 JobName
+    if job['job_name']:
+        r.JobName(job['job_name'])
+    
+    # 3.9 Status
+    r.Status(job['exit_code'])
+
+    # 3.10 WallDuration
+    r.WallDuration(job['time_end'] - job['time_start'] - job['time_suspended'])
+
+    # 3.11 CpuDuration
+    if job['cpu_user']:
+        r.CpuDuration(float(job['cpu_user']), "user", "Was entered in seconds")
+    if job['cpu_sys']:
+        r.CpuDuration(float(job['cpu_sys']), "system", "Was entered in seconds")
+
+    # 3.12 EndTime
+    r.EndTime(job['time_end'],"Was entered in seconds")
+
+    # 3.13 StartTime
+    r.StartTime(job['time_start'],"Was entered in seconds")
+
+    # 3.14 MachineName
+    # 3.15 Host
+    # 3.16 SubmitHost
+
+    # 3.17 Queue
+    r.Queue(job['partition'])
+
+    # 3.18 ProjectName
+    if job['acct']:
+        r.ProjectName(job['acct'])
+
+    # 4 Differentiated Properties
+    
+    # 4.1 Network
+    # 4.2 Disk
+
+    # 4.3 Memory
+    if job['max_rss']:
+        r.Memory(job['max_rss'], 'kB', description = "RSS")
+
+    # 4.4 Swap
+    # 4.5 NodeCount
+
+    # 4.6 Processors
+    r.Processors(job['cpus_alloc'])
+
+    # 4.7 TimeDuration
+    # 4.8 TimeInstant
+    # 4.9 Service Level
+    # 4.10 Extension
+
+    return r
+
+class SlurmMeter(SlurmProbe):
+    def parse_opts(self):
+
+        parser = optparse.OptionParser(usage="%prog [options]")
+        parser.add_option("-f", "--gratia_config", help="Location of the Gratia"
+            " config [default: %default].",
+            dest="gratia_config", default="/etc/gratia/slurm/ProbeConfig")
+        parser.add_option("-s", "--sleep", help="Do a random amount of sleep, "
+            "up to the specified number of seconds before running.",
+            dest="sleep", default=0, type="int")
+        parser.add_option("-v", "--verbose", help="Enable verbose logging to "
+            "stdout.",
+            default=False, action="store_true", dest="verbose")
+        parser.add_option("-c", "--checkpoint", help="Only reports records past"
+            " checkpoint; default is to report all records.",
+            default=False, action="store_true", dest="checkpoint")
+
+        # Options are stored into opts/args class variables
+        return parser.parse_args()
+
+    def main(self):
+        # Loop over completed jobs
+        time_end = None
+        server_id = self.get_db_server_id()
+        for job in self.sacct.completed_jobs(self.checkpoint.val):
+            r = job_to_jur(job, server_id)
+            Gratia.Send(r)
+
+            # The query sorted the results by time_end, so our last value will
+            # be the greatest
+            time_end = job['time_end']
+            self.checkpoint.val = time_end
+
+        # If we found at least one record, but the time_end has not increased since
+        # the previous run, increase the checkpoint by one so we avoid continually
+        # reprocessing the last records.
+        # (This assumes the probe won't be run more than once per second.)
+        if self.checkpoint.val == time_end:
+            self.checkpoint.val = time_end + 1
+
+if __name__ == "__main__":
+    SlurmMeter().main()
