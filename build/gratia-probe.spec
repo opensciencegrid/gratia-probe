@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.12
-Release:            11%{?dist}
+Version:            1.13.0
+Release:            1%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -53,7 +53,7 @@ Source14: %{name}-xrootd-transfer-%{version}.tar.bz2
 Source15: %{name}-xrootd-storage-%{version}.tar.bz2
 Source16: %{name}-bdii-status-%{version}.tar.bz2
 Source17: %{name}-onevm-%{version}.tar.bz2
-Source18: %{name}-slurm-%{version}.tar.bz2
+#Source18: %{name}-slurm-%{version}.tar.bz2
 
 ########################################################################
 
@@ -84,7 +84,7 @@ Prefix: /etc
 %setup -q -D -T -a 15
 %setup -q -D -T -a 16
 %setup -q -D -T -a 17
-%setup -q -D -T -a 18
+#%setup -q -D -T -a 18 - slurm
 
 %build
 %ifnarch noarch
@@ -103,7 +103,8 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %ifarch noarch
   # Obtain files
 
-%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm
+%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm 
+# without for now slurm
 
   cp -pR %{noarch_packs}  $RPM_BUILD_ROOT%{_datadir}/gratia
 
@@ -177,13 +178,13 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#TitleDCacheStorage="dCache-storage-specific attributes" \
     InfoProviderUrl="http://DCACHE_HOST:2288/info" \
     ReportPoolUsage="0"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "slurm" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#SlurmDbHost="db.cluster.example.edu" \
-    SlurmDbPort="3306" \
-    SlurmDbUser="slurm" \
-    SlurmDbPasswordFile="/etc/gratia/slurm/pwfile" \
-    SlurmDbName="slurm_acct_db" \
-    SlurmCluster="mycluster"#' $PROBE_DIR/ProbeConfig
+    #elif [ $probe == "slurm" ]; then
+    #  sed -i -e 's#@PROBE_SPECIFIC_DATA@#SlurmDbHost="db.cluster.example.edu" \
+    #SlurmDbPort="3306" \
+    #SlurmDbUser="slurm" \
+    #SlurmDbPasswordFile="/etc/gratia/slurm/pwfile" \
+    #SlurmDbName="slurm_acct_db" \
+    #SlurmCluster="mycluster"#' $PROBE_DIR/ProbeConfig
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
     fi
@@ -767,36 +768,39 @@ Gratia OSG accounting system probe for providing VM accounting.
 %post onevm
 %customize_probeconfig -d onevm
 
-%package slurm
-Summary: A SLURM probe
-Group: Application/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: slurm
-Requires: MySQL-python
-BuildRequires: python-devel
-License: See LICENSE.
+#%package slurm
+#Summary: A SLURM probe
+#Group: Application/System
+#Requires: %{name}-common >= %{version}-%{release}
+#Requires: slurm
+#Requires: MySQL-python
+#BuildRequires: python-devel
+#License: See LICENSE.
 
-%description slurm
-The SLURM probe for the Gratia OSG accounting system.
+#%description slurm
+#The SLURM probe for the Gratia OSG accounting system.
 
-%files slurm
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/slurm/README.html
-%dir %{default_prefix}/gratia/slurm
-%{default_prefix}/gratia/slurm/SlurmProbe.py*
-%{default_prefix}/gratia/slurm/slurm_meter
-%{default_prefix}/gratia/slurm/slurm_meter_running
-%{default_prefix}/gratia/slurm/ProbeConfig
+#%files slurm
+#%defattr(-,root,root,-)
+#%doc %{default_prefix}/gratia/slurm/README.html
+#%dir %{default_prefix}/gratia/slurm
+#%{default_prefix}/gratia/slurm/SlurmProbe.py*
+#%{default_prefix}/gratia/slurm/slurm_meter
+#%{default_prefix}/gratia/slurm/slurm_meter_running
+#%{default_prefix}/gratia/slurm/ProbeConfig
 
-%config(noreplace) %{_sysconfdir}/gratia/slurm/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-slurm.cron
+#%config(noreplace) %{_sysconfdir}/gratia/slurm/ProbeConfig
+#%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-slurm.cron
 
-%post slurm
-%customize_probeconfig -d slurm
+#%post slurm
+#%customize_probeconfig -d slurm
 
 %endif # noarch
 
 %changelog
+* Thu Jan 17 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.0-1
+Fixed xml_util and temporary commented slurm out to build production release
+
 * Wed Dec 26 2012 John Thiltges <jthiltges2@unl.edu> - 1.12-11
 - Added SLURM probe for SOFTWARE-746
 
