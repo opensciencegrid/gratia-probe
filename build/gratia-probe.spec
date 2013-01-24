@@ -797,6 +797,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Jan 24 2013 John Thiltges <jthiltges2@unl.edu> - 1.13.0-3
+- For SLURM probe, handle race in logging of job start time
+
 * Thu Jan 17 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.0-2
 restore slurm packaging for testing
 

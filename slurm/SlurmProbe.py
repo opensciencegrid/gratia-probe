@@ -202,7 +202,7 @@ class SlurmAcct(object):
 
     def completed_jobs(self, ts):
         """Completed jobs, ordered by completion time"""
-        where = 'j.time_end >= %s' % long(ts)
+        where = 'j.time_start > 0 AND j.time_end >= %s' % long(ts)
         return self._jobs(where)
 
     def running_jobs(self):
