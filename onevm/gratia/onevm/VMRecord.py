@@ -112,7 +112,7 @@ class VMRecord:
         self.setRecords()
         
     def isValid(self):
-        if len(self.records)==0 or self.info['HISTORY_STIME']==None:
+        if len(self.records)==0 or self.info['STIME']==None or int(self.info['STIME'])==0:
             return False
         else:
             return True
@@ -149,7 +149,22 @@ class VMRecord:
         ct=time.time()
         if type(self.info['HISTORY_STIME'])==list:
             for i in range(len(self.info['HISTORY_STIME'])):
-                self.createRecord(ct,self.info["HISTORY_STIME"][i],self.info["HISTORY_ETIME"][i],
+		stime=self.info["HISTORY_STIME"][i]
+		if (i==0):
+			if ( stime == None) or (int(stime)==0):
+				stime=self.info["STIME"]
+		else:
+			if ( stime == None ) or (int(stime) == 0):
+				#something is wrong with HISTORY_STIME - skiping the rest
+				return
+
+		if self.info["HISTORY_ETIME"][i]==None:
+			self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
+			#another weird case HISTORY_ETIME=0 but ETIME is not 0
+		else:
+			if int(self.info["HISTORY_ETIME"][i]) == 0 and  int(self.info["ETIME"]) != 0:
+				self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
+                self.createRecord(ct,stime,self.info["HISTORY_ETIME"][i],
                            self.info["HOSTNAME"][i],self.state,self.info['HISTORY_REASON'][i])
         else:
 	    if not self.info.has_key('HISTORY_REASON'):

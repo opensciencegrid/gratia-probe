@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import gratia.common.Gratia as Gratia
 import gratia.common.GratiaCore as GratiaCore
+import gratia.common.GratiaWrapper as GratiaWrapper
 from gratia.common.Gratia import DebugPrint
 from gratia.onevm.VMGratiaProbeConfig import VMGratiaProbeConfig
 from gratia.onevm.OneReader import OneReader
@@ -79,7 +80,8 @@ class VMGratiaProbe:
                 r.WallDuration(etime-stime)
                 r.CpuDuration(etime-stime,'user')
                 r.CpuDuration(0,'system')
-                r.SubmitHost(recs[i].getSubmitHost())
+		if recs[i].getSubmitHost() != None:
+                	r.SubmitHost(recs[i].getSubmitHost())
                 r.ProjectName(self.project)
                 r.ResourceType(self.resourceType)
 		r.AdditionalInfo("Version",self.version)

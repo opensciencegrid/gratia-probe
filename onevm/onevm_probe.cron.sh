@@ -27,7 +27,7 @@ then
 	else
 		ct=`date +%s`
 		let delta=${ct}-`cut -d'.' -f 1 /var/lib/gratia/data/chkpt_vm_DoNotDelete`
-		options="-t ${ct} -d ${delta}"
+		options="-t ${ct} -d -${delta}"
 	fi
 	/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
 else
