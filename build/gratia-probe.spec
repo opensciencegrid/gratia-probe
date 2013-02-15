@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.0
+Version:            1.13.1
 Release:            3%{?dist}
 
 License:            GPL
@@ -797,6 +797,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Feb 15 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.1-0
+- onevm probe fixes
+
 * Thu Jan 24 2013 John Thiltges <jthiltges2@unl.edu> - 1.13.0-3
 - For SLURM probe, handle race in logging of job start time
 
