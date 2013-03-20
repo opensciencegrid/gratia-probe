@@ -48,6 +48,7 @@ POSIX::sigaction(&POSIX::SIGQUIT, $cleanup_action);
 POSIX::sigaction(&POSIX::SIGTERM, $cleanup_action);
 
 my $lrms = uc $configValues{lrmsType};
+my $lsfBinDir = $configValues{lsfBinDir};
 
 my $lrms_version;
 if ($lrms eq "PBS") {
@@ -56,7 +57,8 @@ if ($lrms eq "PBS") {
     $lrms_version =~ s&^.*=\s*(.*)\n$&$1&;
   }
 } elsif ($lrms eq "LSF") {
-  $lrms_version = `bsub -V 2>&1 1>/dev/null`;
+  my $bsub = $lsfBinDir."/bsub";
+  $lrms_version = `$bsub -V 2>&1 1>/dev/null`;
   if ($lrms_version) {
     $lrms_version =~ m&^Platform\s*([^\n]*)(?:.*binary type\s*:\s*(.*))?&s and
       $lrms_version = $2?"$1 / $2":"$1";

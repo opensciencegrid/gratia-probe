@@ -46,6 +46,7 @@ $configFilePath = "/usr/share/gratia/pbs-lsf/urCollector.conf";
  mainPollInterval  => "5",
  timeInterval      =>"5",
  jobPerTimeInterval =>"10",
+ lsfBinDir            => "/usr/bin/",
 );
 
 ####################################
@@ -79,6 +80,7 @@ sub parseConf {
 	if(/^mainPollInterval\s*=\s*\"(.*)\"$/){$configValues{mainPollInterval}=$1;}
 	if(/^timeInterval\s*=\s*\"(.*)\"$/){$configValues{timeInterval}=$1;}
 	if(/^jobPerTimeInterval\s*=\s*\"(.*)\"$/){$configValues{jobPerTimeInterval}=$1;}
+    if(/^lsfBinDir\s*=\s*\"(.*)\"$/){$configValues{lsfBinDir}=$1;}
     }
     close(FILE);
 }

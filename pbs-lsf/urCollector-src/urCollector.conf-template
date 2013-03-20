@@ -81,3 +81,6 @@ writeGGFUR = "yes"
 
 #ldifDefaultFiles = "<file1>,<file2>"
 #glueLdifFile = "<file>"
+
+# This parameter gives the directory that contains the LSF binaries (e.g. /usr/bin)
+lsfBinDir = "/usr/bin"

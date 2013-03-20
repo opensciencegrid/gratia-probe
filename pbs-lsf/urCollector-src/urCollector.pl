@@ -74,6 +74,7 @@ my $collectorBufferFileName = $configValues{collectorBufferFileName};
 my $mainPollInterval = $configValues{mainPollInterval};
 my $timeInterval = $configValues{timeInterval};
 my $jobPerTimeInterval = $configValues{jobPerTimeInterval};
+my $lsfBinDir = $configValues{lsfBinDir};
 
 
 
@@ -1449,7 +1450,8 @@ sub parseUR_lsf {
          #c485         X86_64   PC1133  23.1     8 16046M 16378M    Yes (mpich2)
          
          # print "Will execute lshost $urAcctlogInfo{execHost}\n";
-         open FH, "lshosts $urAcctlogInfo{execHost} |" or die "Failed to open pipeline to/from lshost";
+         my $lshosts = $lsfBinDir."/lshosts";
+         open FH, "$lshosts $urAcctlogInfo{execHost} |" or die "Failed to open pipeline to/from lshost";
          my @lines = <FH>;
          close(FH);
          print "Need: @lines\n";
