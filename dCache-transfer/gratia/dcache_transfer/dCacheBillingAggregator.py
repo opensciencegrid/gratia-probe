@@ -22,6 +22,7 @@ from logging.handlers import RotatingFileHandler
 
 # The gratia probe code
 import gratia.common.Gratia as Gratia
+from gratia.common.probe_config import ProbeConfiguration
 # Local modules
 import TestContainer
 from Alarm import Alarm
@@ -30,7 +31,7 @@ from DCacheAggregator import DCacheAggregator, sleep_check
 ProgramName = "dCacheBillingAggregator"
 
 
-class dCacheProbeConfig(Gratia.ProbeConfiguration):
+class dCacheProbeConfig(ProbeConfiguration):
     """
     This class extends the gratia ProbeConfiguration class so that we can
     add our own configuration parameters to the ProbeConfig file.
@@ -40,10 +41,10 @@ class dCacheProbeConfig(Gratia.ProbeConfiguration):
     def __init__( self ):
         # Just call the parent class to read in the file.
         # We just add some extra name/value readouts.
-        Gratia.ProbeConfiguration.__init__(self)
+        ProbeConfiguration.__init__(self)
 
     def getConfigAttribute(self, name):
-        return Gratia.ProbeConfiguration.__getConfigAttribute(self, name)
+        return ProbeConfiguration.getConfigAttribute(self, name)
 
     def get_UpdateFrequency(self):
         return self.getConfigAttribute('UpdateFrequency')
@@ -270,6 +271,7 @@ def main():
                                              sys.exc_value,
                                              sys.exc_traceback )
         msg = ProgramName + " caught an exception:\n" + "".join(tblist)
+	print msg
         logger.error(msg)
 
     TestContainer.dumpStatistics(logger)
