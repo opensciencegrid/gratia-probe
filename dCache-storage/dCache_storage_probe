@@ -28,7 +28,7 @@ class Config(Gratia.ProbeConfiguration):
 def configure():
     cp = Config()
 
-    os.environ['CLASSPATH'] = '/usr/share/java/xalan.jar:/usr/share/java/serializer.jar'
+    os.environ['CLASSPATH'] = '/usr/share/java/xalan-j2.jar:/usr/share/java/xalan-j2-serializer.jar'
 
     return cp
 
