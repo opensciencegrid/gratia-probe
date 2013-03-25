@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.13.2
-Release:            0%{?dist}
+Release:            1%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -580,7 +580,7 @@ Contributed by Andrei Baranovksi of the OSG Storage team.
 %{default_prefix}/gratia/dCache-storage/dCache-storage_meter.cron.sh
 %{default_prefix}/gratia/dCache-storage/dCache_storage_probe
 %config(noreplace) %{_sysconfdir}/gratia/dCache-storage/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storage.cron
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dCache-storage.cron
 
 %post dcache-storage
 %customize_probeconfig -d dCache-storage
@@ -797,7 +797,7 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Mon Mar 25 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.2-0
+* Mon Mar 25 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.2-1
 - dcache storage (GRATIA-94,95,96) and transfer (GRATIA-87) fixes, lsf probe (SOFTWARE-977) fixes
 
 * Fri Feb 15 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.1-0
