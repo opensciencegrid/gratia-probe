@@ -11,6 +11,7 @@ import time
 import random
 import os.path
 import optparse
+import subprocess
 
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaCore as GratiaCore
@@ -192,6 +193,11 @@ def main():
     # Sanity checks for the probe's runtime environment.
     GratiaWrapper.CheckPreconditions()
 
+    # Check to make sure HTCondor config is set correctly
+    if not htcondor_configured():
+      DebugPrint(1, "HTCondor is not configured correctly, exiting\n")
+      sys.exit(1)
+      
     if opts.sleep:
         rnd = random.randint(1, int(opts.sleep))
         DebugPrint(2, "Sleeping for %d seconds before proceeding." % rnd)
@@ -627,6 +633,41 @@ def add_unique_id(classad):
         DebugPrint(6, "Unique ID: %s" % classad['UniqGlobalJobId'])
     return classad
 
+def htcondor_configured():
+  """
+  Make sure HTCondor is configured correctly for Gratia.   
+  """ 
+  try:
+    path = GratiaCore.Config.getConfigAttribute("CondorLocation")
+    condor_config_path = os.path.join(path, "bin", "condor_config_val")
+    if (os.path.exists(condor_config_path) and 
+        os.path.isfile(condor_config_path)):
+      cmd = subprocess.Popen([condor_config_path,  
+                              "-schedd", 
+                              "PER_JOB_HISTORY_DIR"],
+                             stdout=subprocess.PIPE)
+    else:
+      cmd = subprocess.Popen('condor_config_val v-schedd PER_JOB_HISTORY_DIR',
+                             stdout = subprocess.PIPE,
+                             shell = True)
+    (cmd_stdout, cmd_stderr) = cmd.communicate()
+    if cmd.returncode != 0:
+      DebugPrint(1, "condor_config_val returned a non-zero return code")
+      return False
+    elif 'Not defined' in cmd_stdout:
+      DebugPrint(1, "PER_JOB_HISTORY_DIR not set in condor config, please set it")
+      return False
+    elif (not os.path.exists(cmd_stdout.strip()) or 
+          not os.path.isdir(cmd_stdout.strip())):
+      DebugPrint(1, "PER_JOB_HISTORY_DIR points to a non-existent or invalid directory")
+      return False
+    return True
+  except subprocess.CalledProcessError:
+    DebugPrint(0, "Can't get information on PER_JOB_HISTORY_DIR, "+
+                  "condor_config_val returned non-zero exit code")  
+  return False
+  
+  
 if __name__ == "__main__":
     main()
 
