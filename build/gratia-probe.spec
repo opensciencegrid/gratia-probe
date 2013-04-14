@@ -153,7 +153,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     elif [ $probe == "sge" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#SGEAccountingFile=""#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "glexec" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#gLExecMonitorLog="/var/log/glexec/glexec_monitor.log"#' $PROBE_DIR/ProbeConfig
+      sed -i -e 's#@PROBE_SPECIFIC_DATA@#gLExecMonitorLog="/var/log/messages"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "metric" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#metricMonitorLog="/var/log/metric/metric_monitor.log"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "dCache-transfer" ]; then

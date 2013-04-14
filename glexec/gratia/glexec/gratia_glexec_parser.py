@@ -208,6 +208,9 @@ def parse_line_v3(line):
     #<LOCAL_DATE> hostname glexec.mon[<monitor_id>#<glexec_id>]: message\n
     indx=line.find("glexec.mon[")
     tmp=line[:indx].strip()
+    info = tmp.split(" ", 4)
+    if len(tmp) >= 4:
+        tmp = " ".join(info[:4])
     datestr=tmp[:tmp.rfind(" ")]
     #syslog doesn't have year, so we have to guess year ourselves 
     now=datetime.datetime.now()
@@ -219,7 +222,7 @@ def parse_line_v3(line):
     tmp=line[indx:].strip()
     message=tmp[tmp.find(":")+1:].strip()
     tmp=line[indx+1:line.find("]:")]
-    mon_str,gl_str=line[indx+len("glexec.mon["):line.find("]:")].split("#")
+    mon_str,gl_str=line[indx+len("glexec.mon["):(line[indx:].find("]:")+indx)].split("#")
     return (long(date),(int(mon_str),int(gl_str)),message)
 
 

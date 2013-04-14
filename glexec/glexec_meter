@@ -135,12 +135,12 @@ def send_one(el,
     if el.has_key("DN"):
         r.DN(el["DN"])
 
-    if el.has_key("FQAN"):
+    if el.has_key("FQAN") and el["FQAN"]:
         # If we have an FQAN, then set both
         r.VOName(el["FQAN"])
         if el.has_key("VO"):
             r.ReportableVOName(el["VO"])
-    elif el.has_key("VO"):
+    elif el.has_key("VO") and el["VO"]:
         # Otherwise, just set one.
         r.VOName(el["VO"])
 
