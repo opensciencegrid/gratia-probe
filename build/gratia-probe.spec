@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.3
+Version:            1.13.4
 Release:            1%{?dist}
 
 License:            GPL
@@ -797,6 +797,10 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Apr 19 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.3-1
+- condor-meter changes: GRATIA-75,GRATIA-91 
+- glexec probe changes: GRATIA-99
+
 * Mon Mar 25 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.3-1
 - build probe without checking out lsg changes
 
