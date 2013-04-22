@@ -706,7 +706,7 @@ def htcondor_configured():
                                    "PER_JOB_HISTORY_DIR"],
                                    stdout=subprocess.PIPE)
         else:
-            cmd = subprocess.Popen('condor_config_val v-schedd ' +
+            cmd = subprocess.Popen('condor_config_val --schedd ' +
                                    'PER_JOB_HISTORY_DIR',
                                    stdout = subprocess.PIPE,
                                    shell = True)
