@@ -120,6 +120,16 @@ def parse_opts():
     parser.add_option("-r", "--history", help="Process output from condor_history, "
         "ignoring the per-job history directory.", dest="condor_history",
         default=False, action="store_true")
+    parser.add_option("--start-time", help="First time to include when processing "
+        "records using --history option. Time should be formated as "
+        "YYYY-MM-DD HH:MM:SS where HH:MM:SS is assumed to be 00:00:00 if "
+        "omitted.", dest="history_start_time",
+        default=None)
+    parser.add_option("--end-time", help="Last day to include when processing "
+        "records using --history option. Time should be formated as "
+        "YYYY-MM-DD HH:MM:SS where HH:MM:SS is assumed to be 00:00:00 if "
+        "omitted", dest="history_end_time", 
+        default=None)    
     parser.add_option("-s", "--sleep", help="Do a random amount of sleep, up to the"
         " specified number of seconds before running.", dest="sleep",
         default=0, type="int")
@@ -210,10 +220,53 @@ def main():
     GratiaCore.Initialize(opts.gratia_config)
 
     if opts.condor_history:
-        process_condor_history()
+        # check to see if there are start and stop times
+        start_time = None
+        end_time = None
+
+        if opts.history_start_time is not None:
+            start_time = parse_date(opts.history_start_time)
+            if start_time is None:
+                DebugPrint(1, "Can't parse start time: %s" % opts.history_start_time)
+                sys.exit(1)
+        if opts.history_end_time is not None:
+            end_time = parse_date(opts.history_end_time)
+            if end_time is None:
+                DebugPrint(1, "Can't parse end time: %s" % opts.history_end_time)
+                sys.exit(1)
+        if ((start_time is not None and end_time is None) or
+            (end_time is not None and start_time is None)):
+            DebugPrint(1, "Both start_time and end_time must be given")
+            sys.exit(1)
+        process_condor_history(start_time, end_time)
     else:
         process_history_dirs(dirs)
 
+def parse_date(date_string):
+    """
+    Parse a date/time string in %m-%d-%Y or %m-%d-%Y %H:%M:%S format
+    
+    Returns None if string can't be parsed, otherwise returns time formatted
+    as the number of seconds since the Epoch
+    """    
+    result = None
+    try:
+        result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")        
+        return int(round(time.mktime(result)))
+    except ValueError:
+        pass
+    except Exception,e:
+        return None
+    
+    try:
+        result = time.strptime(date_string, "%Y-%m-%d")
+        return int(round(time.mktime(result)))
+    except ValueError:
+        pass
+    except Exception,e:
+        return None
+    
+    return result
 def register_gratia():
 
     GratiaCore.RegisterReporter("condor_meter", "%s (tag %s)" % \
@@ -315,8 +368,14 @@ def process_history_file(logfile):
 
     return count_submit, count_found
 
-def process_condor_history():
-    fd = os.popen("condor_history -l")
+def process_condor_history(start_time = None, end_time = None):
+    if start_time is not None and end_time is not None:
+      hist_command = "condor_history -l -constraint " \
+                     "'((JobCurrentStartDate > %s) && (JobCurrentStartDate < %s))'" \
+                     % (start_time, end_time) 
+    else:
+      hist_command = "condor_history -l"
+    fd = os.popen(hist_command)
     submit_count, found_count = process_history_fd(fd)
     if fd.close():
         DebugPrint(1, "Call to condor_history failed.")
@@ -634,38 +693,41 @@ def add_unique_id(classad):
     return classad
 
 def htcondor_configured():
-  """
-  Make sure HTCondor is configured correctly for Gratia.   
-  """ 
-  try:
-    path = GratiaCore.Config.getConfigAttribute("CondorLocation")
-    condor_config_path = os.path.join(path, "bin", "condor_config_val")
-    if (os.path.exists(condor_config_path) and 
-        os.path.isfile(condor_config_path)):
-      cmd = subprocess.Popen([condor_config_path,  
-                              "-schedd", 
-                              "PER_JOB_HISTORY_DIR"],
-                             stdout=subprocess.PIPE)
-    else:
-      cmd = subprocess.Popen('condor_config_val v-schedd PER_JOB_HISTORY_DIR',
-                             stdout = subprocess.PIPE,
-                             shell = True)
-    (cmd_stdout, cmd_stderr) = cmd.communicate()
-    if cmd.returncode != 0:
-      DebugPrint(1, "condor_config_val returned a non-zero return code")
-      return False
-    elif 'Not defined' in cmd_stdout:
-      DebugPrint(1, "PER_JOB_HISTORY_DIR not set in condor config, please set it")
-      return False
-    elif (not os.path.exists(cmd_stdout.strip()) or 
-          not os.path.isdir(cmd_stdout.strip())):
-      DebugPrint(1, "PER_JOB_HISTORY_DIR points to a non-existent or invalid directory")
-      return False
-    return True
-  except subprocess.CalledProcessError:
-    DebugPrint(0, "Can't get information on PER_JOB_HISTORY_DIR, "+
-                  "condor_config_val returned non-zero exit code")  
-  return False
+    """
+    Make sure HTCondor is configured correctly for Gratia.   
+    """ 
+    try:
+        path = GratiaCore.Config.getConfigAttribute("CondorLocation")
+        condor_config_path = os.path.join(path, "bin", "condor_config_val")
+        if (os.path.exists(condor_config_path) and 
+            os.path.isfile(condor_config_path)):
+            cmd = subprocess.Popen([condor_config_path,  
+                                   "-schedd", 
+                                   "PER_JOB_HISTORY_DIR"],
+                                   stdout=subprocess.PIPE)
+        else:
+            cmd = subprocess.Popen('condor_config_val v-schedd ' +
+                                   'PER_JOB_HISTORY_DIR',
+                                   stdout = subprocess.PIPE,
+                                   shell = True)
+        (cmd_stdout, cmd_stderr) = cmd.communicate()
+        if cmd.returncode != 0:
+            DebugPrint(1, "condor_config_val returned a non-zero return code")
+            return False
+        elif 'Not defined' in cmd_stdout:
+            DebugPrint(1, "PER_JOB_HISTORY_DIR not set in condor config, " +
+                       "please set it")
+            return False
+        elif (not os.path.exists(cmd_stdout.strip()) or 
+              not os.path.isdir(cmd_stdout.strip())):
+            DebugPrint(1, "PER_JOB_HISTORY_DIR points to a non-existent " +
+                       "or invalid directory")
+            return False
+        return True
+    except subprocess.CalledProcessError:
+        DebugPrint(0, "Can't get information on PER_JOB_HISTORY_DIR, "+
+                    "condor_config_val returned non-zero exit code")  
+    return False
   
   
 if __name__ == "__main__":
