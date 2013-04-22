@@ -203,10 +203,6 @@ def main():
     # Sanity checks for the probe's runtime environment.
     GratiaWrapper.CheckPreconditions()
 
-    # Check to make sure HTCondor config is set correctly
-    if not htcondor_configured():
-      DebugPrint(1, "HTCondor is not configured correctly, exiting\n")
-      sys.exit(1)
       
     if opts.sleep:
         rnd = random.randint(1, int(opts.sleep))
@@ -218,6 +214,11 @@ def main():
 
     register_gratia()
     GratiaCore.Initialize(opts.gratia_config)
+
+    # Check to make sure HTCondor config is set correctly
+    if not htcondor_configured():
+      DebugPrint(1, "HTCondor is not configured correctly, exiting\n")
+      sys.exit(1)
 
     if opts.condor_history:
         # check to see if there are start and stop times
@@ -706,7 +707,7 @@ def htcondor_configured():
                                    "PER_JOB_HISTORY_DIR"],
                                    stdout=subprocess.PIPE)
         else:
-            cmd = subprocess.Popen('condor_config_val --schedd ' +
+            cmd = subprocess.Popen('condor_config_val -schedd ' +
                                    'PER_JOB_HISTORY_DIR',
                                    stdout = subprocess.PIPE,
                                    shell = True)
@@ -715,17 +716,21 @@ def htcondor_configured():
             DebugPrint(1, "condor_config_val returned a non-zero return code")
             return False
         elif 'Not defined' in cmd_stdout:
-            DebugPrint(1, "PER_JOB_HISTORY_DIR not set in condor config, " +
-                       "please set it")
+            err_msg = "PER_JOB_HISTORY_DIR not set in condor config, " \
+                      "please set it"
+            DebugPrint(1, err_msg)
+            sys.stderr.write(err_msg + "\n")
             return False
         elif (not os.path.exists(cmd_stdout.strip()) or 
               not os.path.isdir(cmd_stdout.strip())):
-            DebugPrint(1, "PER_JOB_HISTORY_DIR points to a non-existent " +
-                       "or invalid directory")
+            err_msg = "PER_JOB_HISTORY_DIR points to a non-existent " \
+                      "or invalid directory"
+            DebugPrint(1, err_msg)
+            sys.stderr.write(err_msg + "\n")
             return False
         return True
     except subprocess.CalledProcessError:
-        DebugPrint(0, "Can't get information on PER_JOB_HISTORY_DIR, "+
+        DebugPrint(-1, "Can't get information on PER_JOB_HISTORY_DIR, "+
                     "condor_config_val returned non-zero exit code")  
     return False
   
