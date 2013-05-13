@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.6
+Version:            1.13.7
 Release:            1%{?dist}
 
 License:            GPL
@@ -342,6 +342,7 @@ This product includes software developed by The EU EGEE Project
 %{perl_vendorlib}/urCollector/Configuration.pm
 %config(noreplace) %{_sysconfdir}/gratia/pbs-lsf/urCollector.conf
 %config(noreplace) %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-pbs-lsf.cron
 
 %else
@@ -417,6 +418,7 @@ The psacct probe for the Gratia OSG accounting system.
 %{default_prefix}/gratia/psacct/PSACCTProbe
 %{python_sitelib}/gratia/psacct
 %config(noreplace) %{_sysconfdir}/gratia/psacct/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/psacct/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-psacct.cron
 %config %{_initrddir}/gratia-psacct
 
@@ -443,6 +445,7 @@ The Condor probe for the Gratia OSG accounting system.
 %{default_prefix}/gratia/condor/condor_meter
 %config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia.conf
 %config(noreplace) %{_sysconfdir}/gratia/condor/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/condor/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor.cron
 
 %post condor
@@ -481,6 +484,7 @@ The SGE probe for the Gratia OSG accounting system.
 %{default_prefix}/gratia/sge/sge_meter
 %dir %{default_prefix}/gratia/sge
 %config(noreplace) %{_sysconfdir}/gratia/sge/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/sge/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-sge.cron
 
 %post sge
@@ -503,6 +507,7 @@ The gLExec probe for the Gratia OSG accounting system.
 %{python_sitelib}/gratia/glexec
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-glexec.cron
 %config(noreplace) %{_sysconfdir}/gratia/glexec/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/glexec/ProbeConfig
 
 %post glexec
 %customize_probeconfig -d glexec
@@ -522,6 +527,7 @@ The metric probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/metric
 %{default_prefix}/gratia/metric/ProbeConfig
 %config(noreplace) %{_sysconfdir}/gratia/metric/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/metric/ProbeConfig
 
 %post metric
 %customize_probeconfig -d metric
@@ -550,6 +556,7 @@ Contributed by Greg Sharp and the dCache project.
 %{python_sitelib}/gratia/dcache_transfer
 %dir %{default_prefix}/gratia/dCache-transfer
 %config(noreplace) %{_sysconfdir}/gratia/dCache-transfer/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-transfer/ProbeConfig
 
 %post dcache-transfer
 /sbin/chkconfig --add gratia-dcache-transfer
@@ -580,6 +587,7 @@ Contributed by Andrei Baranovksi of the OSG Storage team.
 %{default_prefix}/gratia/dCache-storage/dCache-storage_meter.cron.sh
 %{default_prefix}/gratia/dCache-storage/dCache_storage_probe
 %config(noreplace) %{_sysconfdir}/gratia/dCache-storage/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storage/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dCache-storage.cron
 
 %post dcache-storage
@@ -602,6 +610,7 @@ Contributed by Andrei Baranovski of the OSG storage team.
 %dir %{default_prefix}/gratia/gridftp-transfer
 %{default_prefix}/gratia/gridftp-transfer/GridftpTransferProbeDriver
 %config(noreplace) %{_sysconfdir}/gratia/gridftp-transfer/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/gridftp-transfer/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-gridftp-transfer.cron
 
 %post gridftp-transfer
@@ -624,6 +633,7 @@ Contributed by University of Nebraska Lincoln.
 %{default_prefix}/gratia/services/storageReport
 %dir %{default_prefix}/gratia/services
 %config(noreplace) %{_sysconfdir}/gratia/services/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
 
 %post services
 %customize_probeconfig -d services
@@ -644,6 +654,7 @@ Contributed by University of Nebraska Lincoln.
 %{default_prefix}/gratia/hadoop-storage/hadoop_storage_probe
 %{default_prefix}/gratia/hadoop-storage/ProbeConfig
 %config(noreplace) %{_sysconfdir}/gratia/hadoop-storage/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/hadoop-storage/ProbeConfig
 %config(noreplace) %{_sysconfdir}/gratia/hadoop-storage/storage.cfg
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-hadoop-storage.cron
 
@@ -665,6 +676,7 @@ Contributed by University of Nebraska Lincoln.
 %{_datadir}/gratia/condor-events/watchCondorEvents
 %{_datadir}/gratia/condor-events/ProbeConfig
 %config(noreplace) %{_sysconfdir}/gratia/condor-events/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-events/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-events.cron
 
 %post condor-events
@@ -687,6 +699,7 @@ Contributed by University of Nebraska Lincoln.
 %{default_prefix}/gratia/xrootd-transfer/ProbeConfig
 %dir %{default_prefix}/gratia/xrootd-transfer
 %config(noreplace) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
 
 %post xrootd-transfer
 %customize_probeconfig -d xrootd-transfer
@@ -710,6 +723,7 @@ Contributed as effort from OSG-Storage.
 %{default_prefix}/gratia/xrootd-storage/ProbeConfig
 %dir %{default_prefix}/gratia/xrootd-storage
 %config(noreplace) %{_sysconfdir}/gratia/xrootd-storage/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-storage/ProbeConfig
 
 %post xrootd-storage
 %customize_probeconfig -d xrootd-storage
@@ -735,6 +749,7 @@ Contributed by University of Nebraska Lincoln.
 %dir %{default_prefix}/gratia/bdii-status
 %{python_sitelib}/gratia/bdii_status
 %config(noreplace) %{_sysconfdir}/gratia/bdii-status/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/bdii-status/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-bdii-status.cron
 
 %post bdii-status
@@ -762,6 +777,7 @@ Gratia OSG accounting system probe for providing VM accounting.
 %{default_prefix}/gratia/onevm/query_one_lite.rb
 
 %config(noreplace) %{_sysconfdir}/gratia/onevm/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/onevm/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-onevm.cron
 
 %post onevm
@@ -789,6 +805,7 @@ The SLURM probe for the Gratia OSG accounting system.
 %{default_prefix}/gratia/slurm/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/gratia/slurm/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/slurm/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-slurm.cron
 
 %post slurm
@@ -797,6 +814,10 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Mon May 13 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.7-1
+Added fixes for onvm probe: additional verification of onevm availability 
+Modified gratia spec to supress verification of ProbeConfig (md5, size, modification time)
+
 * Thu Apr 25 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.6-1
 - even more condor-meter fixes: GRATIA-75,GRATIA-91 
 
