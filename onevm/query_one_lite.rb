@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-VERSION_STRING="0.2"
+VERSION_STRING="0.3"
 
 ##############################################################################
 # Environment Configuration
@@ -763,6 +763,14 @@ while 1
     end
 
     id += 1
+end
+
+if vms.size() < 1
+    # There is no good way for now to figure out if the opnnebula or db is down
+    # Ignore this run, do not delete or create new cache and exit with 
+    # non-zero exit code
+    puts "E099: Querying OpenNebula returned no records for any VM. Ignoring changes to cache and cache cleanup"
+    exit 99
 end
 
 output_results(format_results(vms), outputfile)

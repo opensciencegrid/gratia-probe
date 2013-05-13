@@ -30,10 +30,22 @@ then
 		options="-t ${ct} -d -${delta}"
 	fi
 	/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
+        if  [ $? -ne 0 ]
+        then
+                echo "Failure to get information from ONE, exiting"
+                exit 1
+        fi
+
 else
 	#get the latest vmid
+	exit
 	_vmid=`/sbin/runuser - oneadmin -c "onevm list -l id|sort -n|tail -1"`
 	/sbin/runuser - oneadmin -c "${_gratia_dir}/onevm/query_one_2.0.0 ${_vmid}" >  "${_currentfile}"
+        if  [ $? -ne 0 ] 
+        then
+                echo "Failure to get information from ONE, exiting"
+                exit 1
+        fi
 fi
 	
 #echo "End onevm dump " `date`
