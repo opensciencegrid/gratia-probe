@@ -815,7 +815,8 @@ The SLURM probe for the Gratia OSG accounting system.
 
 %changelog
 * Mon May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
-Addded quarantine of Unknown VO records (Gratia-107)
+Added quarantine of Unknown VO records (Gratia-107)
+PBS probe fixes SOFTWARE-1032
 
 * Mon May 13 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.7-1
 Added fixes for onvm probe: additional verification of onevm availability 
