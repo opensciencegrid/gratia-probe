@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.7
+Version:            1.13.8
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Mon May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
+Addded quarantine of Unknown VO records (Gratia-107)
+
 * Mon May 13 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.7-1
 Added fixes for onvm probe: additional verification of onevm availability 
 Modified gratia spec to supress verification of ProbeConfig (md5, size, modification time)

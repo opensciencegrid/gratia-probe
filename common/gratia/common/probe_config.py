@@ -443,6 +443,17 @@ class ProbeConfiguration:
                 return False
         else:
             return None
+    def get_QuarantineUnknownVORecords(self):
+        result = self.__getConfigAttribute('QuarantineUnknownVORecords')
+        if result:
+            match = re.search(r'^(True|1|t)$', result, re.IGNORECASE)
+            if match:
+                return True
+            else:
+                return False
+        else:
+            return True 
+
 
     def get_SuppressgridLocalRecords(self):
         result = self.__getConfigAttribute('SuppressGridLocalRecords')

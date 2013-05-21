@@ -1,4 +1,4 @@
-
+import os
 import re
 import grp
 import pwd
@@ -12,6 +12,7 @@ import gratia.common.utils as utils
 import gratia.common.config as config
 import gratia.common.certinfo as certinfo
 import gratia.common.condor_ce as condor_ce
+import gratia.common.sandbox_mgmt as sandbox_mgmt
 
 from gratia.common.debug import DebugPrint, DebugPrintTraceback
 
@@ -274,6 +275,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
         # about if osg-user-vo-map.txt is not well-cared-for).
 
         reason = None
+	isQuarantined=False
         grid = GetElement(xmlDoc, usageRecord, namespace, prefix, 'Grid')
         if Config.get_SuppressgridLocalRecords() and grid and string.lower(grid) == 'local':
 
@@ -290,11 +292,19 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
             # 3
 
             reason = 'unknown or null VOName'
+	elif Config.get_QuarantineUnknownVORecords() and (not VOName or VOName == 'Unknown'):
+	    reason ='unknown or null VOName, will be quarantined in %s' % (os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
+	    isQuarantined=True
 
         if reason:
             [jobIdType, jobId] = FindBestJobId(usageRecord, namespace)
             DebugPrint(0, 'Info: suppressing record with ' + jobIdType + ' ' + jobId + ' due to ' + reason)
             usageRecord.parentNode.removeChild(usageRecord)
+	    if isQuarantined:
+		fn=sandbox_mgmt.GenerateFilename("r.",os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
+		writer=open(fn,'w')
+		usageRecord.writexml(writer)
+		writer.close()
             usageRecord.unlink()
             continue
 
