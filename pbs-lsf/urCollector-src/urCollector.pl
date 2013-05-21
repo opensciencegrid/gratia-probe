@@ -938,6 +938,16 @@ sub writeGGFURFile {
       print "Determined user VO: $userVo\n";
    }
    
+   # Filter out records with impossible efficiencies
+   # if walltime / (cputime * cores) > 1000 then the record
+   # is probably invalid
+   # Since pbs doesn't record core information, we'll assume it's 24 
+   if (exists($urAcctlogInfo{walltime}) &&
+       exists($urAcctlogInfo{cput}) && 
+       (($urAcctlogInfo{walltime} / ($urAcctlogInfo{cput} * 24)) > 1000)) {
+       print "CPU Efficiency appears to be invalid, skipping record\n";
+       return 0;
+    } 
    
    ### compose urCreator command line
    my $cmd = "$urCreatorExecutable -t \"".&timestamp2String("".time(),"Z")."\""
