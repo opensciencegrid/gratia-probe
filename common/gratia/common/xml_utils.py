@@ -301,7 +301,10 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
             DebugPrint(0, 'Info: suppressing record with ' + jobIdType + ' ' + jobId + ' due to ' + reason)
             usageRecord.parentNode.removeChild(usageRecord)
 	    if isQuarantined:
-		fn=sandbox_mgmt.GenerateFilename("r.",os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
+		subdir=os.path.join(Config.get_DataFolder(),"quarantine",'subdir.' + Config.getFilenameFragment())
+                if not os.path.exists(subdir):
+                        os.mkdir(subdir)
+                fn=sandbox_mgmt.GenerateFilename("r.",subdir)
 		writer=open(fn,'w')
 		usageRecord.writexml(writer)
 		writer.close()
