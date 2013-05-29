@@ -18,6 +18,7 @@
     SuppressUnknownVORecords="0"
     SuppressNoDNRecords="0"
     SuppressGridLocalRecords="0"
+    QuarantineUnknownVORecords="1"
     EnableProbe="0"
 
     Title3="Tuning parameter"
