@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.13.10
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -251,7 +251,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
   # Set up var area
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
-  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,logs}
+  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
 
 %else
@@ -814,6 +814,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue June  4 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-2
+- create /var/lib/data/quarantine directory
+
 * Wed May 29 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-1
 Have to modify ProbeConfigTemplate.osg
 * Tue May 28 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.9-1
