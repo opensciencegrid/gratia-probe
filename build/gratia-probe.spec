@@ -814,7 +814,7 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Tue June  4 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-2
+* Tue June 4 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-2
 - create /var/lib/data/quarantine directory
 
 * Wed May 29 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-1
