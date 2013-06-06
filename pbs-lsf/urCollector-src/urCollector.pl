@@ -943,11 +943,13 @@ sub writeGGFURFile {
    # is probably invalid
    # Since pbs doesn't record core information, we'll assume it's 24 
    if (exists($urAcctlogInfo{walltime}) &&
-       exists($urAcctlogInfo{cput}) && 
-       (($urAcctlogInfo{walltime} / ($urAcctlogInfo{cput} * 24)) > 1000)) {
-       print "CPU Efficiency appears to be invalid, skipping record\n";
-       return 0;
-    } 
+       exists($urAcctlogInfo{cput})) {
+       if (($urAcctlogInfo{cput} > 0) &&
+            (($urAcctlogInfo{walltime} / ($urAcctlogInfo{cput} * 24)) > 1000)) {
+           print "CPU Efficiency appears to be invalid, skipping record\n";
+           return 0;
+       }
+    }
    
    ### compose urCreator command line
    my $cmd = "$urCreatorExecutable -t \"".&timestamp2String("".time(),"Z")."\""
