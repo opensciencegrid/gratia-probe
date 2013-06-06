@@ -814,10 +814,10 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Thu June 6 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.11-1
+* Thu Jun 6 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.11-1
 - Suchandra's fix for pbs probe efficiency GRATIA-107
 
-* Tue June 4 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-2
+* Tue Jun 4 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-2
 - create /var/lib/data/quarantine directory
 
 * Wed May 29 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.10-1
