@@ -207,7 +207,7 @@ def parse_line_v3(line):
     #syslog type of message
     #<LOCAL_DATE> hostname glexec.mon[<monitor_id>#<glexec_id>]: message\n
     indx=line.find("glexec.mon[")
-    tmp=line[:indx].strip()
+    tmp=line[:indx].strip().replace("  "," ")
     info = tmp.split(" ", 4)
     if len(tmp) >= 4:
         tmp = " ".join(info[:4])
