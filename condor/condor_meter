@@ -238,7 +238,9 @@ def main():
     register_gratia()
     GratiaCore.Initialize(opts.gratia_config)
 
-
+    # setup htcondor environment 
+    setup_environment()
+    
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
       DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
@@ -735,6 +737,19 @@ def add_unique_id(classad):
         DebugPrint(6, "Unique ID: %s" % classad['UniqGlobalJobId'])
     return classad
 
+def setup_environment():
+    """
+    Make sure environment variables for HTCondor are in place   
+    """ 
+    try:
+        condor_location = GratiaCore.Config.getConfigAttribute("CondorLocation")
+        os.environ['CONDOR_LOCATION'] = condor_location
+        condor_config = GratiaCore.Config.getConfigAttribute("CondorConfig")
+        os.environ['CONDOR_CONFIG'] = condor_config
+    except:
+        DebugPrint(0, "Can't setup CONDOR_LOCATION and CONDOR_CONFIG, exiting")
+        return False
+        
 def htcondor_configured():
     """
     Make sure HTCondor is configured correctly for Gratia.   
