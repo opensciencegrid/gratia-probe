@@ -597,7 +597,7 @@ def classadToJUR(classad):
     else:
         classad['LocalUserCpu'] = 0
 
-    if 'RemoteSysCpu' in classad:
+    if 'RemoteSysCpu' in classad and int(classadd['RemoteSysCpu']) != 2147483648:
         r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
     else:
         classad['RemoteSysCpu'] = 0
