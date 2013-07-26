@@ -598,7 +598,7 @@ def classadToJUR(classad):
         classad['LocalUserCpu'] = 0
 
     if 'RemoteSysCpu' in classad:
-        if  classadd['RemoteSysCpu'] == 2147483648:
+        if  classad['RemoteSysCpu'] == 2147483648:
             DebugPrint(2, "Record has invalid RemoteSysCpu time of 2147483648s\n%s" % str(classad))
             classad['RemoteSysCpu'] = 0
         else:
@@ -747,8 +747,10 @@ def setup_environment():
     """ 
     try:
         condor_location = GratiaCore.Config.getConfigAttribute("CondorLocation")
-        os.environ['CONDOR_LOCATION'] = condor_location
+        os.environ['CONDOR_LOCATION'] = condor_location        
         condor_config = GratiaCore.Config.getConfigAttribute("CondorConfig")
+        if condor_config == '':
+            condor_config = os.path.join(condor_location, 'etc')
         os.environ['CONDOR_CONFIG'] = condor_config
     except:
         DebugPrint(0, "Can't setup CONDOR_LOCATION and CONDOR_CONFIG, exiting")
