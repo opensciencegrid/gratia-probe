@@ -750,7 +750,6 @@ def setup_environment():
         os.environ['CONDOR_LOCATION'] = condor_location        
         condor_config = GratiaCore.Config.getConfigAttribute("CondorConfig")
         if condor_config != '':
-            condor_config = os.path.join(condor_location, 'etc', 'condor_config')
             os.environ['CONDOR_CONFIG'] = condor_config
     except:
         DebugPrint(0, "Can't setup CONDOR_LOCATION and CONDOR_CONFIG, exiting")
