@@ -602,7 +602,7 @@ def classadToJUR(classad):
 
     if 'RemoteUserCpu' in classad:
         if  invalidDuration(classad, 'RemoteUserCpu'):
-            DebugPrint(2, "Record has invalid RemoteUserCpu time:\n%s" % str(classad))
+            DebugPrint(1, "Record has invalid RemoteUserCpu time:\n%s" % str(classad))
             classad['RemoteUserCpu'] = 0
         else:
             r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
@@ -618,7 +618,7 @@ def classadToJUR(classad):
 
     if 'RemoteSysCpu' in classad:
         if  invalidDuration(classad, 'RemoteSysCpu'):
-            DebugPrint(2, "Record has invalid RemoteSysCpu time:\n%s" % str(classad))
+            DebugPrint(1, "Record has invalid RemoteSysCpu time:\n%s" % str(classad))
             classad['RemoteSysCpu'] = 0
         else:
             r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
