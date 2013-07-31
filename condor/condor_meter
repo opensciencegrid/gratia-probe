@@ -133,10 +133,10 @@ This reduces the load on the Gratia collector.""",
         default=0, type="int")
 
     parser.add_option("-r", "--history", 
-        help="""Process output from condor_history, ignoring the NTCondor 
+        help="""Process output from condor_history, ignoring the HTCondor 
 PER_JOB_HISTORY_DIR directory.  This option should be used with the 
 --start-time and --end-time options to reduce the load on the Gratia 
-collector.  It will look through all the NTCondor history records and 
+collector.  It will look through all the HTCondor history records and 
 attempt to send them to Gratia unless a start and end time are 
 specified.""",
         dest="condor_history",
@@ -542,6 +542,19 @@ global_job_id_re = re.compile("(.*)\#\d+\.?\d*\#.*")
 campus_factory_usage = re.compile("(.*)\-CF$")
 campus_flock_usage = re.compile("(.*)\-Flock$")
 def classadToJUR(classad):
+    def invalidDuration(classad, field):
+        """
+        Local function to check duration and make sure it's reasonable
+        """
+        if field not in ['RemoteSysCpu', 'RemoteUserCpu']:
+            return False      
+        if classad[field] < 2000000000:
+            return False
+        slot_ratio = classad[field] / (float(classad['CumulativeSlotTime']) + 1)
+        if slot_ratio > 1000:
+            return True
+        return False
+          
 
     if 'ClusterId' not in classad:
         DebugPrint(2, "No data passed to classadToJUR: %s" % str(classad))
@@ -588,6 +601,12 @@ def classadToJUR(classad):
     setIfExists(r.WallDuration, classad, 'RemoteWallClockTime', "Was entered in seconds")
 
     if 'RemoteUserCpu' in classad:
+        if  invalidDuration(classad, 'RemoteUserCpu'):
+            DebugPrint(2, "Record has invalid RemoteUserCpu time:\n%s" % str(classad))
+            classad['RemoteUserCpu'] = 0
+        else:
+            r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
+      
         r.TimeDuration(classad['RemoteUserCpu'], "RemoteUserCpu")
     else:
         classad['RemoteUserCpu'] = 0
@@ -598,8 +617,8 @@ def classadToJUR(classad):
         classad['LocalUserCpu'] = 0
 
     if 'RemoteSysCpu' in classad:
-        if  classad['RemoteSysCpu'] == 2147483648:
-            DebugPrint(2, "Record has invalid RemoteSysCpu time of 2147483648s\n%s" % str(classad))
+        if  invalidDuration(classad, 'RemoteSysCpu'):
+            DebugPrint(2, "Record has invalid RemoteSysCpu time:\n%s" % str(classad))
             classad['RemoteSysCpu'] = 0
         else:
             r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
