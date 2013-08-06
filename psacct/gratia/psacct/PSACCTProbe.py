@@ -148,6 +148,7 @@ class Aggregate:
         data = record  # record.split("|")
     
         self.JobName = data[sysinfo.Indices['Cmd']]
+	DebugPrint(0,"Found "+self.JobName)
         self.CpuUserDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['CpuUser']]))
         self.CpuSystemDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['CpuSys']]))
         self.WallDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['Wall']]))
@@ -527,6 +528,7 @@ psacct = PsacctFiles()
 #   each record..
 #
 def Read(PSACCTFileName, structFormat, structSize):
+    import platform
     DebugPrint(5, "Reading PSACCT file:  ", PSACCTFileName)
 
     # TODO:  Instead of parsing the binary PSACCT file, I've switched to simply running the 'dump-acct' command
@@ -557,7 +559,20 @@ def Read(PSACCTFileName, structFormat, structSize):
     #for record in allPSACCTRecords:
     for record in output:
         record = record.strip()
-        data = record.split("|")
+        tmp = record.split("|")
+        # Tanya's comments
+        # added ugly platform depenedency here 
+        # because of the output of /usr/sbin/dump-acctt
+        # the meaning of concreate field depends on the version of kernel package
+        # keys are harcoded in SystemInfo indices 
+	if platform.release().find("el5") >0 and len(tmp)== 8:
+		data=tmp
+	elif platform.release().find("el6") >0 and len(tmp)== 9:
+		del tmp[7]
+		data=tmp
+	else:
+		DebugPrint(1, "Don't know what to do ",platform.release()," and length of output is ", len(tmp))
+		data=tmp
         if len(data) == 8:
             rcount = rcount + 1
             #Convert(record)
