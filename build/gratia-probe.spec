@@ -814,7 +814,7 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Fed Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
+* Wed Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
 - Fix psacct for sl6 (GRATIA-115)
 
 * Wed Jul 31 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.15-1
