@@ -106,7 +106,7 @@ class SlurmProbe:
             passwd = self.get_password(Gratia.Config
                             .getConfigAttribute('SlurmDbPasswordFile')),
             db     = Gratia.Config.getConfigAttribute('SlurmDbName'),
-            cursorclass = MySQLdb.cursors.DictCursor)
+            cursorclass = MySQLdb.cursors.SSDictCursor)
 
     def get_password(self, pwfile):
         """Read a password from a given file, checking permissions"""
@@ -202,8 +202,20 @@ class SlurmAcct(object):
 
     def completed_jobs(self, ts):
         """Completed jobs, ordered by completion time"""
-        where = 'j.time_start > 0 AND j.time_end >= %s' % long(ts)
-        return self._jobs(where)
+
+        # We need *all* job_table records for jobs which completed inside the
+        # time range. This needs to include jobs which were preempted and
+        # resumed.
+        where = '''id_job IN (
+                SELECT id_job FROM %(cluster)s_job_table
+                WHERE time_start > 0 AND time_end >= %(end)s
+            )
+        ''' % { 'cluster': self._cluster, 'end': long(ts) }
+
+        # The job is not running and has not been requeued
+        having = 'MIN(j.time_end) > 0 AND MIN(j.time_start) > 0'
+
+        return self._jobs(where, having)
 
     def running_jobs(self):
         where = 'j.time_end = 0'
@@ -275,8 +287,13 @@ class SlurmAcct(object):
             self._addUserInfoIfMissing(r)
             yield r
 
-    def _jobs(self, where):
+    def _jobs(self, where, having = '1=1'):
         cursor = self._conn.cursor()
+
+        # Note: When jobs are preempted, multiple cluster_job_table records
+        #       are inserted, each with distinct start and end times.
+        #       We consider the walltime to be the total time running,
+        #       adding up all the records.
 
         sql = '''SELECT j.id_job
             , j.exit_code
@@ -286,21 +303,32 @@ class SlurmAcct(object):
             , j.cpus_alloc
             , j.partition
             , j.state
-            , j.time_start
-            , j.time_end
-            , j.time_suspended
+            , MIN(j.time_start) AS time_start
+            , MAX(j.time_end) AS time_end
+            , SUM(j.time_suspended) AS time_suspended
+            , SUM(j.time_end - j.time_start - j.time_suspended) AS wall_time
             , a.acct
             , a.user
-            , MAX(s.max_rss) AS max_rss /* Note: Will underreport jobs containing simultaneous steps */
-            , SUM(s.user_sec) + SUM(s.user_usec)/1000000 AS cpu_user
-            , SUM(s.sys_sec) + SUM(s.sys_usec)/1000000 AS cpu_sys
+            , ( SELECT MAX(s.max_rss)
+                FROM %(cluster)s_step_table s
+                WHERE s.job_db_inx = j.job_db_inx
+                /* Note: Will underreport mem for jobs with simultaneous steps */
+              ) AS max_rss
+            , ( SELECT SUM(s.user_sec) + SUM(s.user_usec/1000000)
+                FROM %(cluster)s_step_table s
+                WHERE s.job_db_inx = j.job_db_inx
+              ) AS cpu_user
+            , ( SELECT SUM(s.sys_sec) + SUM(s.sys_usec/1000000)
+                FROM %(cluster)s_step_table s
+                WHERE s.job_db_inx = j.job_db_inx
+              ) AS cpu_sys
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
-            LEFT JOIN %(cluster)s_step_table AS s ON j.job_db_inx = s.job_db_inx
             WHERE %(where)s
             GROUP BY id_job
-            ORDER BY time_end
-        ''' % { 'cluster': self._cluster, 'where': where }
+            HAVING %(having)s
+            ORDER BY j.time_end
+        ''' % { 'cluster': self._cluster, 'where': where, 'having': having }
 
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)

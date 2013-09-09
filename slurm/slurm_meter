@@ -48,7 +48,7 @@ def job_to_jur(job, server_id):
     r.Status(job['exit_code'])
 
     # 3.10 WallDuration
-    r.WallDuration(job['time_end'] - job['time_start'] - job['time_suspended'])
+    r.WallDuration(int(job['wall_time']))
 
     # 3.11 CpuDuration
     if job['cpu_user']:
