@@ -50,9 +50,9 @@ def main():
     GratiaCore.quiet = 1
 
     if customConfig:
-        GratiaCore.Config = GratiaCore.ProbeConfiguration(customConfig)
+    	GratiaCore.Initialize(customConfig)
     else:
-        GratiaCore.Config = GratiaCore.ProbeConfiguration()
+    	GratiaCore.Initialize()
 
     GratiaCore.quiet = 0
 
