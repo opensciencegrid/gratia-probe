@@ -1,0 +1,112 @@
+#!/usr/bin/python
+# /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
+
+###########################################################################
+# slurm_meter_test
+#
+# Validation tool for SLURM Gratia probe
+# 
+# John Thiltges, 2013-Jul-08
+# 
+# Copyright 2013 University of Nebraska-Lincoln. Released under GPL v2.
+###########################################################################
+
+import sys, os
+import time
+import optparse
+import MySQLdb, MySQLdb.cursors
+from collections import defaultdict
+
+# Add parent directory to import path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from SlurmProbe import SlurmAcct
+
+class SlurmTest():
+    opts    = None
+    args    = None
+    conn    = None
+    sacct   = None
+
+    def parse_opts(self):
+
+        parser = optparse.OptionParser(usage="%prog [options]",
+            add_help_option=False)
+
+        parser.add_option("-?", "--help", action="help",
+            help="show this help message and exit")
+
+        parser.add_option("-h", "--host", help="MySQL hostname"
+            " [default: '%default'].",
+            dest="host", default="localhost")
+        parser.add_option("-P", "--port", help="MySQL port"
+            " [default: %default].", type="int",
+            dest="port", default=3389)
+        parser.add_option("-u", "--user", help="MySQL username"
+            " [default: '%default'].",
+            dest="user", default="root")
+        parser.add_option("-p", "--password", help="MySQL password"
+            " [default: '%default'].",
+            dest="passwd", default="")
+        parser.add_option("-D", "--database", help="MySQL database"
+            " [default: '%default'].",
+            dest="db", default="slurm_acct_db")
+        parser.add_option("-c", "--cluster", help="SLURM cluster name"
+            " [default: '%default'].",
+            dest="cluster", default="cluster")
+        parser.add_option("-s", "--start", help="Start time for scanning"
+            " accounting table, in epoch seconds [default: last 5 days].",
+            type="int", dest="start", default=(time.time() - 5*86400))
+
+        # Options are stored into opts/args class variables
+        return parser.parse_args()
+
+    def __init__(self):
+        try:
+            self.opts, self.args = self.parse_opts()
+        except Exception, e:
+            print >> sys.stderr, str(e)
+            sys.exit(1)
+
+    def main(self):
+        self.conn = MySQLdb.connect(
+            host   = self.opts.host,
+            port   = self.opts.port,
+            user   = self.opts.user,
+            passwd = self.opts.passwd,
+            db     = self.opts.db,
+            cursorclass = MySQLdb.cursors.DictCursor)
+
+        total_jobs = 0
+        total_time = 0
+
+        # A dictionary of dictionaries holding ints, default of 0
+        total_by_day = defaultdict(lambda: defaultdict(int))
+
+        self.sacct = SlurmAcct(self.conn, self.opts.cluster)
+
+        print "Retrieving jobs completed after %s" % \
+            time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(self.opts.start))
+
+        for job in self.sacct.completed_jobs(self.opts.start):
+            time_end = time.gmtime(job['time_end'])
+
+            day = time.strftime('%Y-%m-%d', time_end)
+            wall = job['cpus_alloc'] * job['wall_time']
+
+            total_by_day[day]['jobs'] += 1
+            total_by_day[day]['wall'] += wall
+
+            total_jobs += 1
+            total_time += wall
+
+        # Print results
+        print "Date      \tJobs   \tHours "
+        print "----------\t-------\t-------"
+        for d in iter(sorted(total_by_day.iteritems())):
+            print "%s\t%d\t%d" % (d[0], d[1]['jobs'], d[1]['wall']/3600)
+        print "----------\t-------\t-------"
+        print "%s\t%d\t%d" % ("total     ", total_jobs, total_time/3600)
+
+if __name__ == "__main__":
+    SlurmTest().main()
+

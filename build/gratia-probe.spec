@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.16
+Version:            1.13.17
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,12 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Sep 19 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.17-1
+- Fix pbs-lsf probe - set to 0 CPUUserDuration if the value is too high (GRATIA-119)
+- Add logging of invalid record with CPUSystem duration too high (SOFTWARE-1207)
+- Add slurm patch provided by John Thiltges related to (GRATIA-118)
+- Fix DebugPrint bug found by Matyas Selmeci (GRATIA-122)
+
 * Wed Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
 - Fix psacct for sl6 (GRATIA-115)
 
