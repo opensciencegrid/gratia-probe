@@ -544,7 +544,8 @@ campus_flock_usage = re.compile("(.*)\-Flock$")
 def classadToJUR(classad):
     def invalidDuration(classad, field):
         """
-        Local function to check duration and make sure it's reasonable
+        Local function to check duration and make sure it's reasonable.  Values obtained
+        from HTCondor team and discussed in SOFTWARE-1132
         """
         if field not in ['RemoteSysCpu', 'RemoteUserCpu']:
             return False      
@@ -574,10 +575,13 @@ def classadToJUR(classad):
 
     r.GlobalJobId(classad.get("UniqGlobalJobId", ""))
 
+    job_id = 'Unknown'
     if "ProcId" in classad and int(classad["ProcId"]) > 0:
         r.LocalJobId("%s.%s" % (classad["ClusterId"], classad["ProcId"]))
+        job_id = "%s.%s" % (classad["ClusterId"], classad["ProcId"])
     else:
         r.LocalJobId(str(classad['ClusterId']))
+        job_id = classad['ClusterId']
 
     # I don't think ProcessId was ever correct - used to take the UDP port 
     # from the LastClaimId?
@@ -590,6 +594,7 @@ def classadToJUR(classad):
 
     if 'GlobalJobId' in classad:
         r.JobName(classad["GlobalJobId"])
+        job_id = classad["GlobalJobId"]
         m = global_job_id_re.match(classad['GlobalJobId'])
         if m:
             submit_host = m.groups()[0]
@@ -602,26 +607,31 @@ def classadToJUR(classad):
 
     if 'RemoteUserCpu' in classad:
         if  invalidDuration(classad, 'RemoteUserCpu'):
-            DebugPrint(1, "Record has invalid RemoteUserCpu time:\n%s" % str(classad))
+            DebugPrint(1, 
+                       "Record for %s has invalid RemoteUserCpu time %s, " \
+                       "replacing value with 0\n" % (job_id, classad['RemoteUserCpu']))
             classad['RemoteUserCpu'] = 0
-        else:
-            r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
-      
         r.TimeDuration(classad['RemoteUserCpu'], "RemoteUserCpu")
     else:
         classad['RemoteUserCpu'] = 0
 
     if 'LocalUserCpu' in classad:
+        if  invalidDuration(classad, 'LocalUserCpu'):
+            DebugPrint(1, 
+                       "Record for %s has invalid LocalUserCpu time %s, " \
+                       "replacing value with 0\n" % (job_id, classad['RemoteUserCpu']))
+            classad['LocalUserCpu'] = 0      
         r.TimeDuration(classad['LocalUserCpu'], 'LocalUserCpu')
     else:
         classad['LocalUserCpu'] = 0
 
     if 'RemoteSysCpu' in classad:
         if  invalidDuration(classad, 'RemoteSysCpu'):
-            DebugPrint(1, "Record has invalid RemoteSysCpu time:\n%s" % str(classad))
+            DebugPrint(1, 
+                       "Record for %s has invalid RemoteSysCpu time %s, " \
+                       "replacing value with 0\n" % (job_id,  classad['RemoteSysCpu']))
             classad['RemoteSysCpu'] = 0
-        else:
-            r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
+        r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
     else:
         classad['RemoteSysCpu'] = 0
 

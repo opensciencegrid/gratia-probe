@@ -938,18 +938,21 @@ sub writeGGFURFile {
       print "Determined user VO: $userVo\n";
    }
    
-   # Filter out records with impossible efficiencies
-   # if walltime / (cputime * cores) > 1000 then the record
-   # is probably invalid
-   # Since pbs doesn't record core information, we'll assume it's 24 
-   if (exists($urAcctlogInfo{walltime}) &&
-       exists($urAcctlogInfo{cput})) {
-       if (($urAcctlogInfo{cput} > 0) &&
-            (($urAcctlogInfo{walltime} / ($urAcctlogInfo{cput} * 24)) > 1000)) {
-           print "CPU Efficiency appears to be invalid, skipping record\n";
-           return 0;
-       }
-    }
+
+   # Fixes for invalid records (see GRATIA-119), zero out time fields if they 
+   # have really large numbers, threshold time based on bad values used in 
+   # condor probe
+   if ($urAcctlogInfo{cput} > 2000000000 ) {
+   	  print "WARNING: Record for $gridJobId has invalid cpu time ".$urAcctlogInfo{cput}.
+            "replacing value with 0\n";
+      $urAcctlogInfo{cput} = 0;  
+   }
+   
+   if ($urAcctlogInfo{walltime} > 2000000000) {
+      print "WARNING: Record for $gridJobId has invalid walltime time ".$urAcctlogInfo{walltime}.
+            "replacing value with 0\n";
+      $urAcctlogInfo{walltime} = 0;  
+   }
    
    ### compose urCreator command line
    my $cmd = "$urCreatorExecutable -t \"".&timestamp2String("".time(),"Z")."\""
