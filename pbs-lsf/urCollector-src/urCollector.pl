@@ -943,14 +943,14 @@ sub writeGGFURFile {
    # have really large numbers, threshold time based on bad values used in 
    # condor probe
    if ($urAcctlogInfo{cput} > 2000000000 ) {
-   	  print "WARNING: Record for $gridJobId has invalid cpu time ".$urAcctlogInfo{cput}.
-            "replacing value with 0\n";
+   	  print "WARNING: INVALID DATA: Record for $gridJobId has invalid cpu ".
+   	        "time ".$urAcctlogInfo{cput}."replacing value with 0\n";
       $urAcctlogInfo{cput} = 0;  
    }
    
    if ($urAcctlogInfo{walltime} > 2000000000) {
-      print "WARNING: Record for $gridJobId has invalid walltime time ".$urAcctlogInfo{walltime}.
-            "replacing value with 0\n";
+      print "WARNING: INVALID DATA: Record for $gridJobId has invalid ".
+            "walltime time ".$urAcctlogInfo{walltime}."replacing value with 0\n";
       $urAcctlogInfo{walltime} = 0;  
    }
    

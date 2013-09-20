@@ -608,8 +608,9 @@ def classadToJUR(classad):
     if 'RemoteUserCpu' in classad:
         if  invalidDuration(classad, 'RemoteUserCpu'):
             DebugPrint(1, 
-                       "Record for %s has invalid RemoteUserCpu time %s, " \
-                       "replacing value with 0\n" % (job_id, classad['RemoteUserCpu']))
+                       "WARNING: INVALID DATA: Record for %s has invalid " \
+                       "RemoteUserCpu time %s, replacing value with " \
+                       "0\n" % (job_id, classad['RemoteUserCpu']))
             classad['RemoteUserCpu'] = 0
         r.TimeDuration(classad['RemoteUserCpu'], "RemoteUserCpu")
     else:
@@ -618,8 +619,9 @@ def classadToJUR(classad):
     if 'LocalUserCpu' in classad:
         if  invalidDuration(classad, 'LocalUserCpu'):
             DebugPrint(1, 
-                       "Record for %s has invalid LocalUserCpu time %s, " \
-                       "replacing value with 0\n" % (job_id, classad['RemoteUserCpu']))
+                       "WARNING: INVALID DATA: Record for %s has invalid " \
+                       "LocalUserCpu time %s, replacing value with " \
+                       "0\n" % (job_id, classad['RemoteUserCpu']))
             classad['LocalUserCpu'] = 0      
         r.TimeDuration(classad['LocalUserCpu'], 'LocalUserCpu')
     else:
@@ -628,8 +630,9 @@ def classadToJUR(classad):
     if 'RemoteSysCpu' in classad:
         if  invalidDuration(classad, 'RemoteSysCpu'):
             DebugPrint(1, 
-                       "Record for %s has invalid RemoteSysCpu time %s, " \
-                       "replacing value with 0\n" % (job_id,  classad['RemoteSysCpu']))
+                       "WARNING: INVALID DATA: Record for %s has invalid " \
+                       "RemoteSysCpu time %s, replacing value with " \
+                       "0\n" % (job_id,  classad['RemoteSysCpu']))                       
             classad['RemoteSysCpu'] = 0
         r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
     else:
