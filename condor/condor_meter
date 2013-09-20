@@ -617,12 +617,6 @@ def classadToJUR(classad):
         classad['RemoteUserCpu'] = 0
 
     if 'LocalUserCpu' in classad:
-        if  invalidDuration(classad, 'LocalUserCpu'):
-            DebugPrint(1, 
-                       "WARNING: INVALID DATA: Record for %s has invalid " \
-                       "LocalUserCpu time %s, replacing value with " \
-                       "0\n" % (job_id, classad['RemoteUserCpu']))
-            classad['LocalUserCpu'] = 0      
         r.TimeDuration(classad['LocalUserCpu'], 'LocalUserCpu')
     else:
         classad['LocalUserCpu'] = 0
