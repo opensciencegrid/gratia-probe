@@ -317,12 +317,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
 XmlChecker.AddChecker(UsageCheckXmldoc)
 
 
-def CheckAndExtendUserIdentity(
-    xmlDoc,
-    userIdentityNode,
-    namespace,
-    prefix,
-    ):
+def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     '''Check the contents of the UserIdentity block and extend if necessary'''
 
     result = {}
@@ -393,14 +388,6 @@ def CheckAndExtendUserIdentity(
     #
     # 5. VOName from reverse map file.
 
-    DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
-    vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
-    DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
-    if vo_info != None:
-        result['has_certinfo'] = 1
-        if vo_info and not (vo_info['VOName'] or vo_info['ReportableVOName']):
-            DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
-            vo_info = None  # Reset if no output.
 
     # 1. Initial values
 
@@ -414,7 +401,17 @@ def CheckAndExtendUserIdentity(
 
     # 2. Certinfo
 
-    if vo_info and (not VOName or VOName[0] != r'/'):
+    vo_info = None
+    if (not VOName or VOName[0] != r'/'):
+        DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
+        vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
+        DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
+        if vo_info != None:
+            result['has_certinfo'] = 1
+            if vo_info and not (vo_info['VOName'] or vo_info['ReportableVOName']):
+                DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
+                vo_info = None  # Reset if no output.
+
         DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
                    + str(vo_info['ReportableVOName']))
         VONameNodes[0].firstChild.data = vo_info['VOName']
