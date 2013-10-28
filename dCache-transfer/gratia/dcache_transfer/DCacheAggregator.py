@@ -138,7 +138,8 @@ BILLINGDB_SELECT_CMD = """
         b.initiator AS doorlink,
         COALESCE(d.owner, 'unknown') AS initiator,
         COALESCE(d.client, 'Unknown') AS initiatorHost,
-        d.mappeduid as mappeduid
+        d.mappeduid as mappeduid,
+        d.mappedgid as mappedgid
     FROM
         (
             SELECT *
@@ -501,6 +502,7 @@ class DCacheAggregator:
         # If we included the mapped uid as the local user id, then
         # Gratia will make a best effort to map this to the VO name.
         mappedUID = row['mappeduid']
+        mappedGID = row['mappedgid']
         try:
             username = 'Unknown'
             if mappedUID != None and int(mappedUID) >= 0:
@@ -508,9 +510,25 @@ class DCacheAggregator:
                     info = pwd.getpwuid(int(mappedUID))
                     username = info[0]
                 except:
-                    self._log.warn("UID %s not found locally; make sure " \
-                        "/etc/passwd on this host and your dCache are using " \
-                        "the same UIDs!" % str(int(mappedUID)))
+		    #will try to get id from storage-authzdb
+		    try:
+			found=0
+			fd=open("/etc/gratia/dCache-transfer/unix.uid.list")
+			for line in fd.readlines():
+				uid,gid,fullname,uname=line[:-1].split(":")
+				if int(mappedUID)==int(uid) and int(gid)==int(mappedGID): 
+					username=uname
+					found=1
+					break
+			if not found:
+				self._log.warn("UID %s %s not found locally; make sure " \
+                                	"/etc/grid-security/unix.uid.list on this host and your dCache are using " \
+                                	"the same UIDs,GIDs!" % (str(int(mappedUID)),str(int(mappedGID))))
+			fd.close()
+		    except:
+                    	self._log.warn("UID %s not found locally; make sure " \
+                        	"/etc/passwd on this host and your dCache are using " \
+                        	"the same UIDs!" % str(int(mappedUID)))
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
