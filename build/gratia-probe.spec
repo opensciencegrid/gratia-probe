@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.18
+Version:            1.13.19
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,12 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Dec 6 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.19-1
+- Disable certinfo* check for probes that do not need it (GRATIA-111)
+- Add mapping options for gratia-dcache-transfer GRATIA-101
+- Fixed deletion of old files from quarantine subdirectories
+- Set limit on version length: GRATIA-128
+
 * Fri Sep 20 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.18-1
 - Add minor modification to log message related to invalid cpu duration (pbs-lsf and condor)
 
