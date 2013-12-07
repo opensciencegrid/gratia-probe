@@ -13,19 +13,19 @@ __handshakeReg__ = []
 def RegisterReporterLibrary(name, version):
     """Register the library named 'name' with version 'version'"""
 
-    __handshakeReg__.append(('ReporterLibrary', 'version="' + version + '"', name))
+    __handshakeReg__.append(('ReporterLibrary', 'version="' + version[0:254] + '"', name))
 
 
 def RegisterReporter(name, version):
     """Register the software named 'name' with version 'version'"""
 
-    __handshakeReg__.append(('Reporter', 'version="' + version + '"', name))
+    __handshakeReg__.append(('Reporter', 'version="' + version[0:254]+ '"', name))
 
 
 def RegisterService(name, version):
     '''Register the service (Condor, PBS, LSF, DCache) which is being reported on '''
 
-    __handshakeReg__.append(('Service', 'version="' + version + '"', name))
+    __handshakeReg__.append(('Service', 'version="' + version[0:254] + '"', name))
 
 
 class ProbeDetails(record.Record):
@@ -49,14 +49,14 @@ class ProbeDetails(record.Record):
             self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, data[0], data[1], data[2])
 
     def ReporterLibrary(self, name, version):
-        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'ReporterLibrary', 'version="' + version + '"'
+        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'ReporterLibrary', 'version="' + version[0:254] + '"'
                                               , name)
 
     def Reporter(self, name, version):
-        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'Reporter', 'version="' + version + '"', name)
+        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'Reporter', 'version="' + version[0:254] + '"', name)
 
     def Service(self, name, version):
-        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'Service', 'version="' + version + '"', name)
+        self.__ProbeDetails__ = self.AppendToList(self.__ProbeDetails__, 'Service', 'version="' + version[0:254] + '"', name)
 
     def XmlAddMembers(self):
         """ This should add the value of the 'data' member of ProbeDetails """
