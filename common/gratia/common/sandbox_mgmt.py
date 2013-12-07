@@ -226,16 +226,21 @@ def RemoveOldJobData(nDays=31):
 def RemoveOldQuarantine(nDays=31, maxSize=200):
 
     # Default to 31 days or 200Mb whichever is lower.
-
-    RemoveOldFiles(nDays, os.path.join(os.path.join(Config.get_DataFolder(),"quarantine"),"*"))
+    quarantine=os.path.join(os.path.join(Config.get_DataFolder(),"quarantine"))
+    if os.path.exists(quarantine):
+	    #quarantine files are under subdirectory 
+	    subpath=os.listdir(quarantine)
+	    for dir_quar in subpath:
+            	DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', "%s/%s" % (quarantine,dir_quar))
+            	RemoveOldFiles(nDays, os.path.join("%s/%s/" % (quarantine,dir_quar), '*'), maxSize)
     fragment = Config.getFilenameFragment()
     for current_dir in backupDirList:
         gratiapath = os.path.join(current_dir, 'gratiafiles')
         subpath = os.path.join(gratiapath, 'subdir.' + fragment)
         quarantine = os.path.join(subpath, 'quarantine')
         if os.path.exists(quarantine):
-            DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
-            RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
+            	DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
+            	RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
 
 
 def DirListAdd(value):
