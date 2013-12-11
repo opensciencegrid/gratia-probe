@@ -406,23 +406,25 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
         vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
-        if vo_info != None:
+        if vo_info is not None:
             result['has_certinfo'] = 1
             if vo_info and not (vo_info['VOName'] or vo_info['ReportableVOName']):
                 DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
                 vo_info = None  # Reset if no output.
-
-        DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
-                   + str(vo_info['ReportableVOName']))
-        VONameNodes[0].firstChild.data = vo_info['VOName']
-        VOName = vo_info['VOName']
-        if vo_info['ReportableVOName'] == None:
-            if VOName[0] == r'/':
-                vo_info['ReportableVOName'] = string.split(VOName,r'/')[1]
-            else:
-                vo_info['ReportableVOName'] = VOName
-        ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
-        ReportableVOName = vo_info['ReportableVOName']
+        
+        # need this because vo_info could have been reset above or may not have been set
+        if vo_info:
+            DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
+                       + str(vo_info['ReportableVOName']))
+            VONameNodes[0].firstChild.data = vo_info['VOName']
+            VOName = vo_info['VOName']
+            if vo_info['ReportableVOName'] == None:
+                if VOName[0] == r'/':
+                    vo_info['ReportableVOName'] = string.split(VOName,r'/')[1]
+                else:
+                    vo_info['ReportableVOName'] = VOName
+            ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
+            ReportableVOName = vo_info['ReportableVOName']
 
     # 3. Condor-CE query
 
