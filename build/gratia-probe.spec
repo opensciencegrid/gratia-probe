@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.19
+Version:            1.13.20
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Wed Dec 11 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.20-1
+- Suchandra's fixes for xml_utils.py(Fix certinfo patch to handle cases where vo_info is reset to None or isn't set at all)
+
 * Fri Dec 6 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.19-1
 - Disable certinfo* check for probes that do not need it (GRATIA-111)
 - Add mapping options for gratia-dcache-transfer GRATIA-101
