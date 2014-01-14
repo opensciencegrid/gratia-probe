@@ -13,6 +13,7 @@
 ###########################################################################
 
 from SlurmProbe import SlurmProbe
+from gratia.common.Gratia import DebugPrint
 
 import optparse
 import gratia.common.Gratia as Gratia
@@ -47,14 +48,108 @@ def job_to_jur(job, server_id):
     # 3.9 Status
     r.Status(job['exit_code'])
 
-    # 3.10 WallDuration
-    r.WallDuration(int(job['wall_time']))
+    # 4.6 Processors
+    # if cpus allocated is unreadable or < 1,
+    #    then set to 1 and write a warning.
+    cpus_allocated = 0
+    if job['cpus_alloc']:
+        cpus_allocated = int(job['cpus_alloc'])
+    else:
+        DebugPrint(2, "CPUs allocated for job %s is not readable.  Below is the full job description" % (str(job['id_job'])))
+        DebugPrint(2, str(job))
+        cpus_allocated = 1
+        DebugPrint(2, "Setting CPUs allocated to %s" % cpus_allocated)
+    if cpus_allocated < 1:
+        DebugPrint(2, "CPUs allocated(%s) < 1 on job %s.  Below is the full job description" % (cpus_allocated,str(job['id_job'])))
+        DebugPrint(2, str(job))
+        cpus_allocated = 1
+        DebugPrint(2, "Setting CPUs allocated to %s" % cpus_allocated)
+    r.Processors(cpus_allocated)
 
-    # 3.11 CpuDuration
+    # 3.10 WallDuration and 3.11 CpuDuration
+    # The validations here attempt to take into account multi-core processors
+    # and the reporting by the job managers for wall and cpu.
+    # For example, a 2 core node,
+    #    could have wall of 1 day and total cpu of 2 days
+    # So, the number of cores (cpus allocated) is a factor in evaluating
+    # thresholds for wall and cpu time.
+    # The intent here is to avoid sending garbage up to Gratia.
+    #
+    # If the user or system cpu unreadable,
+    #    then set to 0 and write a warning
+    # If the wall time is unreadable,
+    #    then set to total cpu / cpus_allocated and write a warning
+    # If either system or user cpu exceed the cpu threshold,
+    #    then assume a job manager error, set to zero and write a warning
+    # If the (wall time * cpus allocated) is over n days,
+    #    then set the walltime to n days and write a warning
+    # If total cpu exceeds (wall time * cpus allocated),
+    #    then set wall to the (total cpu / cpus allocated) and write a warning
+
+    # thresholds for wall and cpu times
+    threshold_days = 60
+    wall_threshold = 86400 * threshold_days
+    cpu_threshold  = wall_threshold * cpus_allocated
+
+    # User CPU validations
+    usercpu = 0.0
     if job['cpu_user']:
-        r.CpuDuration(float(job['cpu_user']), "user", "Was entered in seconds")
+        usercpu = float(job['cpu_user'])
+    else:
+        DebugPrint(2, "User CPU for job %s is not readable.  Below is the full job description" % (str(job['id_job'])))
+        DebugPrint(2, str(job))
+        usercpu = 0.0
+        DebugPrint(2, "Setting User CPU to %s" % usercpu)
+
+    if usercpu > cpu_threshold:
+        DebugPrint(2, "User CPU time (%f) for job %s > %s days.  Below is the full job description" % (usercpu,str(job['id_job']),threshold_days))
+        DebugPrint(2, str(job))
+        usercpu = 0
+        DebugPrint(2, "Setting User CPU to %f" % usercpu)
+
+    # System CPU validations
+    systemcpu = 0.0
     if job['cpu_sys']:
-        r.CpuDuration(float(job['cpu_sys']), "system", "Was entered in seconds")
+        systemcpu= float(job['cpu_sys'])
+    else:
+        DebugPrint(2, "System CPU for job %s is not readable.  Below is the full job description" % (str(job['id_job'])))
+        DebugPrint(2, str(job))
+        systemcpu = 0.0
+        DebugPrint(2, "Setting System CPU to %s" % systemcpu)
+
+    if systemcpu > cpu_threshold:
+        DebugPrint(2, "User CPU time (%f) for job %s > %s days.  Below is the full job description" % (systemcpu,str(job['id_job']),threshold_days))
+        DebugPrint(2, str(job))
+        systemcpu = 0
+        DebugPrint(2, "Setting System CPU to %s" % systemcpu)
+
+    # Wall time validations
+    walltime = 0
+    if job['wall_time']:
+        walltime = float(job['wall_time'])
+    else:
+        DebugPrint(2, "Wall time for job %s is not readable.  Below is the full job description" % (str(job['id_job'])))
+        DebugPrint(2, str(job))
+        walltime = (usercpu + systemcpu) / cpus_allocated
+        DebugPrint(2, "Setting Wall time to %s" % walltime)
+
+    if walltime > wall_threshold:
+        DebugPrint(2, "Wall time (%f) for job %s > %s days.  Below is the full job description" % (walltime,str(job['id_job']),threshold_days))
+        DebugPrint(2, str(job))
+        walltime = wall_threshold
+        DebugPrint(2, "Setting Wall time to %s" % walltime)
+
+    if (walltime * cpus_allocated) < (usercpu + systemcpu):
+        DebugPrint(2, "Wall time is less than total CPU for job %s: wall(%f) cpus(%s) user cpu(%f) system cpu(%f).  Below is the full job description" % \
+            (str(job['id_job']),walltime,cpus_allocated,usercpu,systemcpu))
+        DebugPrint(2, str(job))
+        walltime = (usercpu + systemcpu) / cpus_allocated
+        DebugPrint(2, "Setting Walltime to CPU: %s" % walltime)
+
+
+    r.WallDuration(walltime)
+    r.CpuDuration(usercpu,   "user",   "Was entered in seconds")
+    r.CpuDuration(systemcpu, "system", "Was entered in seconds")
 
     # 3.12 EndTime
     r.EndTime(job['time_end'],"Was entered in seconds")
