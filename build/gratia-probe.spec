@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.20
+Version:            1.13.21
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Jan 17 2014 Tanya Levshina <tlevshin@fnal.gov> - 1.13.21-1
+- John/Derek fixes for slurm probe (SOFTWARE-1321/GRATIA-125,GRATIA-118,GRATIA-127)
+
 * Wed Dec 11 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.20-1
 - Suchandra's fixes for xml_utils.py(Fix certinfo patch to handle cases where vo_info is reset to None or isn't set at all)
 
