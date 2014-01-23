@@ -240,12 +240,17 @@ def main():
 
     # setup htcondor environment 
     setup_environment()
-    
+        
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
       DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
       sys.exit(1)
 
+    # Do some sanity checks of gratia configuration before starting    
+    if not check_gratia():
+      DebugPrint(-1, "ERROR: Gratia settings not correct, exiting")
+      sys.exit(1)
+      
     if opts.condor_history is True:
         process_using_condor_history(opts.history_start_time, opts.history_end_time)
     else:
@@ -718,7 +723,7 @@ def classadToJUR(classad):
 
 classad_bool_re = re.compile("^(\w{1,255}) = (true|True|TRUE|false|False|FALSE)$")
 classad_int_re = re.compile("^(\w{1,255}) = (-?\d{1,30})$")
-classad_double_re = re.compile("(\w{1,255}) = (-?\d{1,30}\.?\d{1,30}?)")
+classad_double_re = re.compile("(\w{1,255}) = (-?\d{1,30}\.?\d{1,30}?(?:E[\+\-]?\d{1,30})?)")
 classad_string_re = re.compile("^(\S+) = \"(.*)\"$")
 classad_catchall_re = re.compile("^(\S+) = (.*)$")
 def fd_to_classad(fd):
@@ -814,6 +819,12 @@ def htcondor_configured():
                             "non-existent or invalid directory: " \
                             "%s" % cmd_stdout.strip())
             return False
+        cmd_stdout = cmd_stdout.strip()
+        data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
+        if cmd_stdout != data_folder:
+          DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
+                         "setting (%s) do not match!" %(cmd_stdout, data_folder))
+          return False
         return True
     except subprocess.CalledProcessError:
         DebugPrint(-1, "ERROR: Can't get information on PER_JOB_HISTORY_DIR, " \
@@ -821,6 +832,18 @@ def htcondor_configured():
     return False
   
   
+def check_gratia():
+  """
+  Make sure gratia configuration is somewhat sane before processing records
+  """
+  valid = True
+  data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
+  if data_folder[-1] != '/':
+    DebugPrint(-1, "ERROR: DataFolder must have a trailing / otherwise records "
+                   "will not be processed correctly")
+    valid = False
+  return valid
+
 if __name__ == "__main__":
     main()
 
