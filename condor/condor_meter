@@ -821,7 +821,7 @@ def htcondor_configured():
             return False
         cmd_stdout = cmd_stdout.strip()
         data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
-        if cmd_stdout != data_folder:
+        if not os.path.samefile(cmd_stdout, data_folder):
           DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
                          "setting (%s) do not match!" %(cmd_stdout, data_folder))
           return False
