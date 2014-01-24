@@ -723,7 +723,7 @@ def classadToJUR(classad):
 
 classad_bool_re = re.compile("^(\w{1,255}) = (true|True|TRUE|false|False|FALSE)$")
 classad_int_re = re.compile("^(\w{1,255}) = (-?\d{1,30})$")
-classad_double_re = re.compile("(\w{1,255}) = (-?\d{1,30}\.?\d{1,30}?(?:E[\+\-]?\d{1,30})?)")
+classad_double_re = re.compile("^(\w{1,255}) = ([+-]? *(?:\d{1,30}\.?\d{0,30}|\.\d{1,30})(?:[Ee][+-]?\d{1,30})?)$")
 classad_string_re = re.compile("^(\S+) = \"(.*)\"$")
 classad_catchall_re = re.compile("^(\S+) = (.*)$")
 def fd_to_classad(fd):
