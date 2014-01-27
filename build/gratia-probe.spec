@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.21
+Version:            1.13.22
 Release:            1%{?dist}
 
 License:            GPL
@@ -814,6 +814,10 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Sun Jan 26 2014 Tanya Levshina <tlevshin@fnal.gov> - 1.13.22-1
+- Marco, Suchandra fixed double parsing regex (GRATIA-123)
+- Suchandra added python's path comparision to verify that PER_JOB_HISTORY and DataFolder  are the same (GRATIA-126)
+
 * Fri Jan 17 2014 Tanya Levshina <tlevshin@fnal.gov> - 1.13.21-1
 - John/Derek fixes for slurm probe (SOFTWARE-1321/GRATIA-125,GRATIA-118,GRATIA-127)
 
