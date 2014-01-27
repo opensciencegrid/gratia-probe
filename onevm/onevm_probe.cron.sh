@@ -8,46 +8,45 @@ _currentfile=${_gratia_data_dir}/query_one.log
 
 #version
 _version=`/sbin/runuser - oneadmin -c "onevm --version|grep ^OpenNebula|cut -d' ' -f2"`
-#_version=2.0.0
 if [ x${_version} = "x" ]
 then
 	_version=3.2
 fi
 _version=`echo ${_version%.*}`
 options=""
-if [ ${_version} = "3.2" ]
+exitCode=1
+if [ `echo ${_version:0:1}` -ge 3 ]
 then
-	export ONE_LOCATION=/cloud/app/one/3.2/
-	export PATH=$ONE_LOCATION/bin:$PATH
-	#check if chkpt_vm_DoNotDelete exists
-	if [ ! -f ${_gratia_data_dir}/chkpt_vm_DoNotDelete ]
+        #check if chkpt_vm_DoNotDelete exists
+        if [ ! -f ${_gratia_data_dir}/chkpt_vm_DoNotDelete ]
+        then
+                #we will start from the beginig
+                options="-a"
+        else
+                ct=`date +%s`
+                let delta=${ct}-`cut -d'.' -f 1 /var/lib/gratia/data/chkpt_vm_DoNotDelete`
+                options="-t ${ct} -d -${delta}"
+        fi
+	if [ ${_version} = "3.2" ]
 	then
-		#we will start from the beginig
-		options="-a"
+		export ONE_LOCATION=/cloud/app/one/3.2/
+		export PATH=$ONE_LOCATION/bin:$PATH
+		/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
+		exitCode=$?
+	elif [ ${_version} = "4.4" ]
+	then
+		export ONE_LOCATION=/fcon-4.4
+		export PATH=$PATH:$ONE_LOCATION/bin
+        	/sbin/runuser - oneadmin -c "oneuser login oneadmin --x509 --cert /etc/grid-security/hostcert.pem --key /etc/grid-security/hostkey.pem 1>/dev/null;export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile} "
+		exitCode=$?
 	else
-		ct=`date +%s`
-		let delta=${ct}-`cut -d'.' -f 1 /var/lib/gratia/data/chkpt_vm_DoNotDelete`
-		options="-t ${ct} -d -${delta}"
+		echo "oops, don't know how to handle version: ${_version}"
 	fi
-	/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
-        if  [ $? -ne 0 ]
-        then
-                echo "Failure to get information from ONE, exiting"
-                exit 1
-        fi
-
-else
-	#get the latest vmid
-	exit
-	_vmid=`/sbin/runuser - oneadmin -c "onevm list -l id|sort -n|tail -1"`
-	/sbin/runuser - oneadmin -c "${_gratia_dir}/onevm/query_one_2.0.0 ${_vmid}" >  "${_currentfile}"
-        if  [ $? -ne 0 ] 
-        then
-                echo "Failure to get information from ONE, exiting"
-                exit 1
-        fi
 fi
-	
-#echo "End onevm dump " `date`
-${_gratia_dir}/onevm/VMGratiaProbe  -f ${_currentfile} -V ${_version} 
+if  [ ${exitCode} -ne 0 ]
+then
+	echo "Failure to get information from ONE, exiting"
+        exit 1
+fi
+${_gratia_dir}/onevm/VMGratiaProbe   -f ${_currentfile} -V ${_version} 
 exit $?

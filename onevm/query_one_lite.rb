@@ -23,8 +23,13 @@ $: << RUBY_LIB_LOCATION
 require 'pp'
 require 'optparse'
 require 'singleton'
-require 'OpenNebula'
-require 'OpenNebula/Pool'
+begin
+	require 'opennebula'
+	require 'opennebula/pool'
+rescue LoadError
+	require 'OpenNebula'
+	require 'OpenNebula/Pool'
+end
  
 include OpenNebula
  

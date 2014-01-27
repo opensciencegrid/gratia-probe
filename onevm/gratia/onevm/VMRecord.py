@@ -103,7 +103,7 @@ class VMRecord:
             else:
                 self.ip=self.info["IP"]
 	if self.info.has_key("DN"):
-		if type(self.info["DN"])==list:
+		if type(self.info["DN"])==list and len(self.info["DN"]):
 			#don't know what to do with multiple dn
 			self.dn=self.info["DN"][0]
 		else:
@@ -179,7 +179,6 @@ class VMRecord:
             self.createRecord(ct,self.info["HISTORY_STIME"],self.info["HISTORY_ETIME"],
                            hostname,self.state,reason)
                     
-
     def getRecords(self):
 	return self.records
     def getLocalUserId(self):

@@ -99,7 +99,7 @@ def parse_opts():
         "defaults to /etc/gratia/onevm/ProbeConfig.", dest="gratia_config",
         default="/etc/gratia/onevm/ProbeConfig")
     parser.add_option("-V", "--onevm_version",type="choice", help="OpenNebula version; "
-        "defaults to 3.0",choices=["2.0","3.0","3.2"], dest="version",
+        "defaults to 3.0",choices=["2.0","3.0","3.2","4.4"], dest="version",
         default="3.0")
     opts, args = parser.parse_args()
     if not opts.one_query_file or not os.path.isfile(opts.one_query_file):
