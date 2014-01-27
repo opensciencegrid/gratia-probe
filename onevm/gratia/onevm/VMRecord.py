@@ -105,7 +105,7 @@ class VMRecord:
 	if self.info.has_key("DN"):
 		if type(self.info["DN"])==list and len(self.info["DN"]):
 			#don't know what to do with multiple dn
-			self.dn=self.info["DN"][0]
+			self.dn=self.info["DN"][0].replace("\\20"," ")
 		else:
 			self.dn=self.info["DN"]
         self.records=[]
