@@ -27,26 +27,13 @@ then
                 let delta=${ct}-`cut -d'.' -f 1 /var/lib/gratia/data/chkpt_vm_DoNotDelete`
                 options="-t ${ct} -d -${delta}"
         fi
-	if [ ${_version} = "3.2" ]
-	then
-		export ONE_LOCATION=/cloud/app/one/3.2/
-		export PATH=$ONE_LOCATION/bin:$PATH
-		/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
-		exitCode=$?
-	elif [ ${_version} = "4.4" ]
-	then
-		export ONE_LOCATION=/fcon-4.4
-		export PATH=$PATH:$ONE_LOCATION/bin
-        	/sbin/runuser - oneadmin -c "oneuser login oneadmin --x509 --cert /etc/grid-security/hostcert.pem --key /etc/grid-security/hostkey.pem 1>/dev/null;export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile} "
-		exitCode=$?
-	else
-		echo "oops, don't know how to handle version: ${_version}"
-	fi
+	/sbin/runuser - oneadmin -c "export ONE_AUTH=/var/lib/one/.one/one_x509; ${_gratia_dir}/onevm/query_one_lite.rb ${options} -c ${_gratia_data_dir} -o ${_currentfile}"
+	exitCode=$?
 fi
 if  [ ${exitCode} -ne 0 ]
 then
 	echo "Failure to get information from ONE, exiting"
         exit 1
 fi
-${_gratia_dir}/onevm/VMGratiaProbe   -f ${_currentfile} -V ${_version} 
+${_gratia_dir}/onevm/VMGratiaProbe  -f ${_currentfile} -V ${_version} 
 exit $?
