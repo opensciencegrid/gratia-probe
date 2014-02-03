@@ -148,7 +148,7 @@ class Aggregate:
         data = record  # record.split("|")
     
         self.JobName = data[sysinfo.Indices['Cmd']]
-	DebugPrint(0,"Found "+self.JobName)
+	DebugPrint(5,"Found command "+self.JobName)
         self.CpuUserDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['CpuUser']]))
         self.CpuSystemDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['CpuSys']]))
         self.WallDuration = sysinfo.Seconds(string.atof(data[sysinfo.Indices['Wall']]))
