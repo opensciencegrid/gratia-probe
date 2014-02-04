@@ -208,7 +208,7 @@ def readCertInfoFile(localJobId, probeName):
 
     if len(certinfo_files) == 1:
         DebugPrint(4, 'readCertInfo: found certinfo file ' + certinfo_files[0])
-    else:
+    elif glob_files:
         DebugPrint(4, 'readCertInfo: globbing for certinfo file')
         certinfo_files = glob.glob(Config.get_DataFolder() + 'gratia_certinfo_*_' + localJobId + '*')
         if certinfo_files == None or len(certinfo_files) == 0:
