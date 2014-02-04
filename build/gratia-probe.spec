@@ -772,8 +772,6 @@ Gratia OSG accounting system probe for providing VM accounting.
 %dir %{default_prefix}/gratia/onevm
 %{default_prefix}/gratia/onevm/ProbeConfig
 %{default_prefix}/gratia/onevm/VMGratiaProbe
-%{default_prefix}/gratia/onevm/query_one.rb
-%{default_prefix}/gratia/onevm/query_one_2.0.0
 %{default_prefix}/gratia/onevm/query_one_lite.rb
 
 %config(noreplace) %{_sysconfdir}/gratia/onevm/ProbeConfig
