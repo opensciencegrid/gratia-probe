@@ -112,6 +112,7 @@ def populateFromCertInfo(certInfo, xmlDoc, userIdentityNode, namespace):
 
 
 jobManagers = []
+glob_files = True
 
 def readCertInfoLog(localJobId):
     ''' Look for and read contents of certificate log if present'''
@@ -212,13 +213,22 @@ def readCertInfoFile(localJobId, probeName):
         certinfo_files = glob.glob(Config.get_DataFolder() + 'gratia_certinfo_*_' + localJobId + '*')
         if certinfo_files == None or len(certinfo_files) == 0:
             DebugPrint(4, 'readCertInfo: could not find certinfo files matching localJobId ' + str(localJobId))
+            glob_files = False
+            DebugPrint(4, 'readCertInfo: could not find certinfo files, disabling globbing')
             return None  # No files
 
         if len(certinfo_files) == 1:
             fileMatch = __certinfoJobManagerExtractor.search(certinfo_files[0])
             if fileMatch:
-                jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
-                DebugPrint(4, 'readCertInfo: (1) saving jobManager ' + fileMatch.group(1)
+                if fileMatch.group(1) in jobManagers:
+                    # we're already checking for this jobmanager so future globbing won't help
+                    glob_files = False
+                    DebugPrint(4, 'readCertInfo: (1) jobManager ' + fileMatch.group(1)
+                           + 'already being checked, disabling globbing')
+                    
+                else:
+                    jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
+                    DebugPrint(4, 'readCertInfo: (1) saving jobManager ' + fileMatch.group(1)
                            + ' for future reference')
 
     result = None
