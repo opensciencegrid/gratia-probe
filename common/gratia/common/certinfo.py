@@ -112,7 +112,6 @@ def populateFromCertInfo(certInfo, xmlDoc, userIdentityNode, namespace):
 
 
 jobManagers = []
-glob_files = True
 
 def readCertInfoLog(localJobId):
     ''' Look for and read contents of certificate log if present'''
@@ -162,9 +161,11 @@ def readCertInfoLog(localJobId):
     DebugPrint(0, 'Warning: unable to find valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern)
     return None
 
+glob_files = True
 def readCertInfoFile(localJobId, probeName):
     ''' Look for and read contents of cert info file if present'''
 
+    global glob_files
     certinfo_files = []
 
     DebugPrint(4, 'readCertInfo: received (' + str(localJobId) + r', ' + str(probeName) + ')')
