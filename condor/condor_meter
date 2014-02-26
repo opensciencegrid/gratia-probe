@@ -243,13 +243,13 @@ def main():
         
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
-      DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
-      sys.exit(1)
+        DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
+        sys.exit(1)
 
     # Do some sanity checks of gratia configuration before starting    
     if not check_gratia():
-      DebugPrint(-1, "ERROR: Gratia settings not correct, exiting")
-      sys.exit(1)
+        DebugPrint(-1, "ERROR: Gratia settings not correct, exiting")
+        sys.exit(1)
       
     if opts.condor_history is True:
         process_using_condor_history(opts.history_start_time, opts.history_end_time)
@@ -569,6 +569,9 @@ def classadToJUR(classad):
 
     cmd = os.path.split(classad.get("Cmd", "foo"))[-1]
     if cmd == "condor_dagman":
+        if 'logfile' in classad:
+            DebugPrint(1, 'Deleting transient condor_dagman input file: '+classad["logfile"])
+            Gratia.RemoveFile(classad["logfile"])
         raise IgnoreClassadException("Ignoring classad for condor_dagman monitor.")
 
     resource_type = "Batch"
