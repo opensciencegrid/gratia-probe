@@ -2,16 +2,21 @@
 
 # Filename: sge.py 
 # Author: Shreyas Cholia, NERSC-LBL, scholia@lbl.gov
+# Modified by Lisa Gerhardt, NERSC-LBL, lgerhardt@lbl.gov
 # Description: SGE probe for gratia
 #
 # Usage: sge.py [options]
 # options:
 #  -h, --help            show this help message and exit
-#  -aACCOUNTING, --accounting=ACCOUNTING
+#  -a, --accounting=ACCOUNTING
 #                        SGE accounting file. Default:
 #                        $SGE_ROOT/default/common/accounting
-#  -mGRIDMAP, --gridmap=GRIDMAP
+#  -p, --prev-accounting=PACCOUNTING
+#                        previous SGE accounting file. Default:
+#                        $SGE_ROOT/$SGE_CELL/common/accounting.previous
+#  -m, --gridmap=GRIDMAP
 #                        grid-mapfile. Default: /etc/grid-security/grid-mapfile
+#  -n, --nogridmap       Turn off grid-mapfile account to DN mapping
 #  -d, --debug           print debug output
 #  -c, --checkpoint      Only reports records past checkpoint. Default is to
 #                        report all records.
@@ -32,6 +37,7 @@ verbose_level = 0
 debug_level = 0
 noGridmap = False
 gridmapFile = ""
+debug = False
 
 class SGE:
     sgeRecord = {}
@@ -126,7 +132,6 @@ class SGE:
 
         # 3.1 RecordIdentity is set by Gratia.py on record creation 
         # RecordIdentity is a required string which must be unique
-        # RecordIdentity is a required string which must be unique
 
         # 3.2 GlobalJobId - optional, string
         # format: SGE:hostname:job_number.index
@@ -185,7 +190,8 @@ class SGE:
         # SGE ru_utime is the user CpuDuration
         # SGE ru_stime is the sys CpuDuration
         # Use float or int so that Gratia can format it appropriately
-        r.CpuDuration(float(self.sgeRecord['ru_utime']),"user","was entered in seconds")
+        # fix to correctly calculate CPU times
+        r.CpuDuration(float(self.sgeRecord['cpu'])-float(self.sgeRecord['ru_stime']),"user","was entered in seconds")
         r.CpuDuration(float(self.sgeRecord['ru_stime']),"sys","was entered in seconds")
 
         # 3.12  EndTime - "The time at which the job completed"
@@ -275,120 +281,25 @@ class SGE:
             Gratia.DebugPrint(debug_level, key +  " : " + self.sgeRecord[key])
         Gratia.DebugPrint(debug_level, "=================================")
                 
-            
-def main():
 
-    sgeRoot = os.getenv("SGE_ROOT", "/sge")
-    sgeCell = os.getenv("SGE_CELL", "default") 
-
-    
-    gridmapFile = os.getenv("GRIDMAP", "/etc/grid-security/grid-mapfile")
-
-
-    # parse options
-
-    optParser = OptionParser()
-
-    optParser.add_option("-a", "--accounting",
-                         action="store", dest="accounting", type="string",
-                         help="SGE accounting file. Default: $SGE_ROOT/$SGE_CELL/common/accounting" )
-    optParser.add_option("-m", "--gridmap",
-                         action="store", dest="gridmap", type="string",
-                         default=gridmapFile,
-                         help="grid-mapfile. Default: /etc/grid-security/grid-mapfile" )
-    optParser.add_option("-d", "--debug",
-                         action="store_true", dest="debug",
-                         default=False,
-                         help="print debug output")
-    optParser.add_option("-n", "--nogridmap",
-                         action="store_true", dest="noGridmap",
-                         default=False,
-                         help="turn off grid-mapfile account to DN mapping")
-    optParser.add_option("-c", "--checkpoint",
-                         action="store_true", dest="checkpoint",
-                         default=False,
-                         help="Only reports records past checkpoint. Default is to report all records.")    
-
-    
-    (opts, args)=optParser.parse_args()
-
-    debug = opts.debug
-    noGridmap = opts.noGridmap
-
-    if noGridmap:
-        gridmapFile = ""
-    else:
-        gridmapFile = opts.gridmap
-
-
-    # Initialize Gratia
-    Gratia.Initialize()
-
-    # Set the default accounting file per the ProbeConfig file if attribute exists
-    defaultAccountingFile = Gratia.Config.getConfigAttribute("SGEAccountingFile")
-    if not defaultAccountingFile or not os.path.exists(defaultAccountingFile):
-        defaultAccountingFile = sgeRoot+"/"+sgeCell+"/common/accounting"
-
-    # get the accounting file name
-
-    if opts.accounting:
-        accFileName = opts.accounting
-    else:
-        accFileName = defaultAccountingFile
-
-    
-
-    checkpointFile=os.path.join(Gratia.Config.get_WorkingFolder(), "checkpoint")
-    
-    if debug:
-        info_level = 0
-        verbose_level = 0
-        debug_level = 0
-    else:
-        info_level = 1
-        verbose_level = 2
-        debug_level = 3
-    
-    Gratia.DebugPrint(info_level, "Using " + checkpointFile)
-   
-
-    if opts.checkpoint:	
-        # Do some error checking if file io fails
-        if os.path.isfile(checkpointFile):
-            try:
-                CPFILE=open(checkpointFile, "r")
-                checkpoint=int(CPFILE.readline())
-                CPFILE.close()
-            except IOError:
-                Gratia.DebugPrint(info_level, "IOError: Failed to read checkpoint file " + checkpointFile)
-                checkpoint=0
-        else:
-            checkpoint=0
-             
-
-    Gratia.DebugPrint(verbose_level, "Using Accounting file: " + accFileName)
-    if noGridmap:
-        Gratia.DebugPrint(verbose_level, "Not using grid-mapfile")
-    else:
-        Gratia.DebugPrint(verbose_level, "Using grid-mapfile: " + gridmapFile)
-
-
-
-    linecount=0
-    # Make sure we can open file
+'''Read in the sge file and increment the checkpoint in the checkpointfile'''
+def readsgefile(filename,docheckpoint,checkpoint,checkpointFile):
+    # print 'reading file',filename
+    linecount = 0
     try:
-        file = open(accFileName, "r")
+        file = open(filename, "r")
     except IOError:
-        Gratia.DebugPrint(info_level, "IOError: Failed to read accounting file " + accFileName)
+        Gratia.DebugPrint(info_level, "IOError: Failed to read accounting file " + filename)
         sys.exit(5);
         
+    Gratia.DebugPrint(verbose_level, "Opened file: " + filename)
+
     for line in file:
         # keep going until we hit the checkpoint
         linecount = linecount + 1
-        # TBD Still need to handle file rotation
-        if opts.checkpoint:
-          if linecount <= checkpoint:
-              continue
+        if docheckpoint:
+            if linecount <= checkpoint:
+                continue
 
         if line[0] == '#':
             # ignore comments
@@ -417,7 +328,7 @@ def main():
         # send UsageRecord
         Gratia.Send(gratiaRec)
 
-        if opts.checkpoint:      
+        if docheckpoint:      
             # Write our checkpoint to a file 
             checkpoint = linecount
             # Do some error checking if file io fails
@@ -428,10 +339,152 @@ def main():
             except IOError:
                 Gratia.DebugPrint(info_level, "IOError: Failed to write checkpoint file " + checkpointFile)
     
+            
+
+
+def main():
+
+    sgeRoot = os.getenv("SGE_ROOT", "/sge")
+    sgeCell = os.getenv("SGE_CELL", "default") 
+
+    
+    gridmapFile = os.getenv("GRIDMAP", "/etc/grid-security/grid-mapfile")
+
+
+    # parse options
+
+    optParser = OptionParser()
+
+    optParser.add_option("-a", "--accounting",
+                         action="store", dest="accounting", type="string",
+                         help="SGE accounting file. Default: $SGE_ROOT/$SGE_CELL/common/accounting" )
+    optParser.add_option("-p", "--prev-accounting",
+                         action="store", dest="paccounting", type="string",
+                         help="Previous SGE accounting file. Default: $SGE_ROOT/$SGE_CELL/common/accounting.previous" )
+    optParser.add_option("-m", "--gridmap",
+                         action="store", dest="gridmap", type="string",
+                         default=gridmapFile,
+                         help="grid-mapfile. Default: /etc/grid-security/grid-mapfile" )
+    optParser.add_option("-d", "--debug",
+                         action="store_true", dest="debug",
+                         default=False,
+                         help="print debug output")
+    optParser.add_option("-n", "--nogridmap",
+                         action="store_true", dest="noGridmap",
+                         default=False,
+                         help="turn off grid-mapfile account to DN mapping")
+    optParser.add_option("-c", "--checkpoint",
+                         action="store_true", dest="checkpoint",
+                         default=False,
+                         help="Only reports records past checkpoint. Default is to report all records.")    
+    optParser.add_option("-r", "--rotate",
+                         action="store_true", dest="rotate",
+                         default=False,
+                         help="Take care of SGE account file rotation.")    
+
+    
+    (opts, args)=optParser.parse_args()
+
+    debug = opts.debug
+    noGridmap = opts.noGridmap
+
+    if noGridmap:
+        gridmapFile = ""
+    else:
+        gridmapFile = opts.gridmap
+
+
+    # Initialize Gratia
+    Gratia.Initialize()
+
+    # Set the default accounting file per the ProbeConfig file if attribute exists
+    defaultAccountingFile = Gratia.Config.getConfigAttribute("SGEAccountingFile")
+    if not defaultAccountingFile or not os.path.exists(defaultAccountingFile):
+        defaultAccountingFile = sgeRoot+"/"+sgeCell+"/common/accounting"
+
+    # get the accounting file name
+
+    if opts.accounting:
+        accFileName = opts.accounting
+    else:
+        accFileName = defaultAccountingFile
+
+    prevAccFileName=''
+    if opts.rotate:
+        # Set the default previous accounting file per the ProbeConfig file if attribute exists
+        defaultPrevAccountingFile = Gratia.Config.getConfigAttribute("SGEPrevAccountingFile")
+        if not defaultPrevAccountingFile or not os.path.exists(defaultPrevAccountingFile):
+            defaultPrevAccountingFile = sgeRoot+"/"+sgeCell+"/common/accounting.previous"
+
+         # get the previous accounting file name
+
+        if opts.paccounting:
+            prevAccFileName = opts.paccounting
+        else:
+            prevAccFileName = defaultPrevAccountingFile
+
+    
+
+    checkpointFile=os.path.join(Gratia.Config.get_WorkingFolder(), "checkpoint")
+    
+    if debug:
+        info_level = 0
+        verbose_level = 0
+        debug_level = 0
+    else:
+        info_level = 1
+        verbose_level = 1
+        debug_level = 1
+    
+    Gratia.DebugPrint(info_level, "Using " + checkpointFile)
+   
+
+    checkpoint=0
+    if opts.checkpoint:	
+        # Do some error checking if file io fails
+        if os.path.isfile(checkpointFile):
+            try:
+                CPFILE=open(checkpointFile, "r")
+                checkpoint=int(CPFILE.readline())
+                CPFILE.close()
+            except IOError:
+                Gratia.DebugPrint(info_level, "IOError: Failed to read checkpoint file " + checkpointFile)
+                checkpoint=0
+        else:
+            checkpoint=0
+             
+
+    Gratia.DebugPrint(verbose_level, "Using Accounting file: " + accFileName)
+    if prevAccFileName:
+        Gratia.DebugPrint(verbose_level, "Using previous Accounting file: " + prevAccFileName)
+    if opts.rotate:
+        Gratia.DebugPrint(verbose_level, "Expecting accounting files to rotate at some point.")
+    if noGridmap:
+        Gratia.DebugPrint(verbose_level, "Not using grid-mapfile")
+    else:
+        Gratia.DebugPrint(verbose_level, "Using grid-mapfile: " + gridmapFile)
+
+
+
+#    if opts.checkpoint and prevAccFileName:
+    if opts.checkpoint and opts.rotate:
+        #check if rotation has happened since the last time 
+        chkage=os.stat(checkpointFile).st_mtime
+        sgeage=os.stat(prevAccFileName).st_mtime
+        Gratia.DebugPrint(verbose_level, "Checking file ages: checkpoint file: " + str(chkage) + " previous file " + str(sgeage))
+        if chkage<sgeage:
+            #accounting file has rotated, need to look at previous file first
+	    Gratia.DebugPrint(verbose_level, "Account file has rotated, looking at previous file first. Checkpoint value at " + str(checkpoint))
+            readsgefile(prevAccFileName,opts.checkpoint,checkpoint,checkpointFile)
+            checkpoint=0
+    Gratia.DebugPrint(verbose_level, "Looking at regular file. Checkpoint value at " + str(checkpoint))
+    readsgefile(accFileName,opts.checkpoint,checkpoint,checkpointFile)
+            
 
     # Clean things up
     # Do we need to define a clean exit function?
 
 if __name__ == '__main__':
     main()
+
 
