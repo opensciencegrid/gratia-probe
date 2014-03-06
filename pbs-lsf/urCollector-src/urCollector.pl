@@ -1436,7 +1436,9 @@ sub parseUR_lsf {
    $urAcctlogInfo{processors}=$$lrmsJobRecordFields[6];
    if ($$lrmsJobRecordFields[10]) {
       $urAcctlogInfo{walltime}=$$lrmsJobRecordFields[2]-$$lrmsJobRecordFields[10];
-      $urAcctlogInfo{cput}=int($$lrmsJobRecordFields[28+$shift2])+int($$lrmsJobRecordFields[29+$shift2]);
+      #$urAcctlogInfo{cput}=int($$lrmsJobRecordFields[28+$shift2])+int($$lrmsJobRecordFields[29+$shift2]);
+      #see Jira ticket https://jira.opensciencegrid.org/browse/GRATIA-133 and problem at SLAC 
+      $urAcctlogInfo{cput}=int($$lrmsJobRecordFields[28+$shift2+$shift1])+int($$lrmsJobRecordFields[29+$shift2+$shift1]);
    } else {
       $urAcctlogInfo{walltime}=0;
       $urAcctlogInfo{cput}=0;
