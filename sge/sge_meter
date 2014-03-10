@@ -191,6 +191,7 @@ class SGE:
         # SGE ru_stime is the sys CpuDuration
         # Use float or int so that Gratia can format it appropriately
         # fix to correctly calculate CPU times
+        # r.CpuDuration(float(self.sgeRecord['ru_utime']),"user","was entered in seconds")
         r.CpuDuration(float(self.sgeRecord['cpu'])-float(self.sgeRecord['ru_stime']),"user","was entered in seconds")
         r.CpuDuration(float(self.sgeRecord['ru_stime']),"sys","was entered in seconds")
 
@@ -377,10 +378,6 @@ def main():
                          action="store_true", dest="checkpoint",
                          default=False,
                          help="Only reports records past checkpoint. Default is to report all records.")    
-    optParser.add_option("-r", "--rotate",
-                         action="store_true", dest="rotate",
-                         default=False,
-                         help="Take care of SGE account file rotation.")    
 
     
     (opts, args)=optParser.parse_args()
@@ -399,6 +396,7 @@ def main():
 
     # Set the default accounting file per the ProbeConfig file if attribute exists
     defaultAccountingFile = Gratia.Config.getConfigAttribute("SGEAccountingFile")
+#    defaultAccountingFile = ''
     if not defaultAccountingFile or not os.path.exists(defaultAccountingFile):
         defaultAccountingFile = sgeRoot+"/"+sgeCell+"/common/accounting"
 
@@ -410,18 +408,18 @@ def main():
         accFileName = defaultAccountingFile
 
     prevAccFileName=''
-    if opts.rotate:
-        # Set the default previous accounting file per the ProbeConfig file if attribute exists
-        defaultPrevAccountingFile = Gratia.Config.getConfigAttribute("SGEPrevAccountingFile")
-        if not defaultPrevAccountingFile or not os.path.exists(defaultPrevAccountingFile):
-            defaultPrevAccountingFile = sgeRoot+"/"+sgeCell+"/common/accounting.previous"
+    # Set the default previous accounting file per the ProbeConfig file if attribute exists
+    defaultPrevAccountingFile = Gratia.Config.getConfigAttribute("SGEPrevAccountingFile")
+    if not os.path.exists(defaultPrevAccountingFile):
+        defaultPrevAccountingFile = ""
 
-         # get the previous accounting file name
-
-        if opts.paccounting:
-            prevAccFileName = opts.paccounting
-        else:
+    # get the previous accounting file name
+    if opts.paccounting:
+        prevAccFileName = opts.paccounting
+        if not os.path.exists(prevAccFileName):
             prevAccFileName = defaultPrevAccountingFile
+    else:
+        prevAccFileName = defaultPrevAccountingFile
 
     
 
@@ -433,6 +431,8 @@ def main():
         debug_level = 0
     else:
         info_level = 1
+#        verbose_level = 2
+#        debug_level = 3
         verbose_level = 1
         debug_level = 1
     
@@ -446,6 +446,7 @@ def main():
             try:
                 CPFILE=open(checkpointFile, "r")
                 checkpoint=int(CPFILE.readline())
+                # print "checkpoint is",checkpoint
                 CPFILE.close()
             except IOError:
                 Gratia.DebugPrint(info_level, "IOError: Failed to read checkpoint file " + checkpointFile)
@@ -457,7 +458,6 @@ def main():
     Gratia.DebugPrint(verbose_level, "Using Accounting file: " + accFileName)
     if prevAccFileName:
         Gratia.DebugPrint(verbose_level, "Using previous Accounting file: " + prevAccFileName)
-    if opts.rotate:
         Gratia.DebugPrint(verbose_level, "Expecting accounting files to rotate at some point.")
     if noGridmap:
         Gratia.DebugPrint(verbose_level, "Not using grid-mapfile")
@@ -466,8 +466,7 @@ def main():
 
 
 
-#    if opts.checkpoint and prevAccFileName:
-    if opts.checkpoint and opts.rotate:
+    if opts.checkpoint and prevAccFileName:
         #check if rotation has happened since the last time 
         chkage=os.stat(checkpointFile).st_mtime
         sgeage=os.stat(prevAccFileName).st_mtime
