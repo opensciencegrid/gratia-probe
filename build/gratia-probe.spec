@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.24
+Version:            1.13.25
 Release:            1%{?dist}
 
 License:            GPL
@@ -812,6 +812,11 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Wed Mar 19 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.25-1
+- New version of SGE probe with support for log rotation (GRATIA-120)
+- Fix for condor probe not deleting dagman job history (GRATIA-130)
+- Fix for lsf probe reporting wrong cpu time (GRATIA-133)
+
 * Fri Feb 7 2014 Tanya Levshina <tlevshin@fnal.gov> - 1.13.24-1
 - Another attempt by Suchandra to fix GRATIA-111
 - Also a fix for GRATIA-132
