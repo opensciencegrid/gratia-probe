@@ -1355,6 +1355,9 @@ sub parseUR_pbs {
          # counted!? What about SMP machines; is their
          # hostname listed N times or only once??
          next;
+      } elsif ( $record_field =~ /^Resource_List\.neednodes=(\d+):ppn=(\d+)/o) {
+         $urAcctlogInfo{neednodes} = ${1} * ( ${2} || 1 );
+         next;
       } elsif ( $record_field =~ /^Resource_List\.nodect=(\d+)/o ) {
          $urAcctlogInfo{nodect} = $1;
          next;
@@ -1371,7 +1374,13 @@ sub parseUR_pbs {
          $urAcctlogInfo{nodes} = ${1} * ( ${2} || 1 );
          next;
       } elsif ( $record_field =~ /^Resource_List\.ncpus=(\d+)/o ) {
-         $urAcctlogInfo{cores} = ${1};
+         # ignore this if ncpus=1
+         if (${1} > 1) {
+            $urAcctlogInfo{ncpus} = ${1};
+         }
+         next;
+      } elsif ( $record_field =~ /^Resource_List\.procs=(\d+)/o ) {
+         $urAcctlogInfo{procs} = $1;
          next;
       }
       if ( $record_field =~ /^group=(.*)$/o) {        
@@ -1416,12 +1425,13 @@ sub parseUR_pbs {
       }
    }
    $urAcctlogInfo{processors} = 
-    $urAcctlogInfo{cores} ||       # Number of cores used.
-    $urAcctlogInfo{select} ||      # Number of cores selected
-    $urAcctlogInfo{nodes} ||       # Alternative way? of counting core used
-    $urAcctlogInfo{nodect} ||      # Number of nodes used
-    $urAcctlogInfo{neednodes} ||   # 
-    $urAcctlogInfo{mppwidth} || 1;
+    $urAcctlogInfo{ncpus}     ||    # Number of cpus requested
+    $urAcctlogInfo{select}    ||    # Number of cores selected
+    $urAcctlogInfo{nodes}     ||    # Number of nodes needed by job * ppn
+    $urAcctlogInfo{neednodes} ||    #
+    $urAcctlogInfo{procs}     ||    #
+    $urAcctlogInfo{nodect}    ||    # Number of nodes used
+    $urAcctlogInfo{mppwidth}  || 1;
 }
 
 sub parseUR_lsf {
