@@ -38,6 +38,41 @@ def GetNodeData(nodeList, nodeIndex=0):
     return nodeList.item(0).firstChild.data
 
 
+def removeCertInfoFile(
+    xmlDoc,
+    userIdentityNode,
+    namespace,
+    ):
+    ''' Use localJobID and probeName to find cert info file and remove file'''
+    # Collect data needed by certinfo reader
+
+    DebugPrint(4, 'DEBUG: Get JobIdentity')
+    jobIdentityNode = GetNode(xmlDoc.getElementsByTagNameNS(namespace, 'JobIdentity'))
+    if jobIdentityNode == None:
+        return
+    DebugPrint(4, 'DEBUG: Get JobIdentity: OK')
+    localJobId = GetNodeData(jobIdentityNode.getElementsByTagNameNS(namespace, 'LocalJobId'))
+    DebugPrint(4, 'DEBUG: Get localJobId: ', localJobId)
+    usageRecord = userIdentityNode.parentNode
+    probeName = GetNodeData(usageRecord.getElementsByTagNameNS(namespace, 'ProbeName'))
+    DebugPrint(4, 'DEBUG: Get probeName: ', probeName)
+
+    # Use _findCertinfoFile to find and remove the file, XML is ignored
+    # A faster alternative would be to try to remove only the constructed name 
+    # (without trying globbing if the name is not found)
+    DebugPrint(4, 'DEBUG: call _findCertinfoFile(' + str(localJobId) + r', ' + str(probeName) + ')')
+    certinfo_touple = _findCertinfoFile(localJobId, probeName)
+    if not certinfo_touple:
+        # matching certinfo file not found
+        DebugPrint(4, 'DEBUG: unable to find and remove  certinfo file')
+        return None
+    # Get results and remove file
+    certinfo_fname =  certinfo_touple[0]
+    DebugPrint(4, 'DEBUG: removing certinfo file' + str(certinfo_fname))
+    file_utils.RemoveFile(certinfo_fname)  # Clean up.
+    return certinfo_fname
+
+
 def verifyFromCertInfo(
     xmlDoc,
     userIdentityNode,
@@ -111,7 +146,6 @@ def populateFromCertInfo(certInfo, xmlDoc, userIdentityNode, namespace):
     return {'VOName': certInfo['FQAN'], 'ReportableVOName': certInfo['VO']}
 
 
-jobManagers = []
 
 def readCertInfoLog(localJobId):
     ''' Look for and read contents of certificate log if present'''
@@ -161,45 +195,43 @@ def readCertInfoLog(localJobId):
     DebugPrint(0, 'Warning: unable to find valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern)
     return None
 
-glob_files = True
-def readCertInfoFile(localJobId, probeName):
-    ''' Look for and read contents of cert info file if present'''
-
-    global glob_files
+def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files':True}):
+    ''' Look for cert info file if present.'''
     certinfo_files = []
+    
+    # certinfo file name is composed by job ID and jobManager (LRMS) name
+    DebugPrint(4, 'findCertInfoFile: received (' + str(localJobId) + r', ' + str(probeName) + ')')
 
-    DebugPrint(4, 'readCertInfo: received (' + str(localJobId) + r', ' + str(probeName) + ')')
-
-    # Ascertain LRMS type -- from explicit set method if possible, from probe name if not
-
+    
+    # Ascertain LRMS type (jobManager) -- from explicit set method if possible, from probe name if not
     lrms = utils.getProbeBatchManager()
     if lrms == None:
         match = re.search(r'^(?P<Type>.*?):', probeName)
         if match:
             lrms = string.lower(match.group('Type'))
-            DebugPrint(4, 'readCertInfo: obtained LRMS type ' + lrms + ' from ProbeName')
+            DebugPrint(4, 'findCertInfoFile: obtained LRMS type ' + lrms + ' from ProbeName')
         elif len(jobManagers) == 0:
             DebugPrint(0,
-                       'Warning: unable to ascertain lrms to match against multiple certinfo entries and no other possibilities found yet -- may be unable to resolve ambiguities'
+                       'WARNING: unable to ascertain LRMS to match against multiple certinfo entries and no other possibilities found yet -- may be unable to resolve ambiguities'
                        )
-    elif len(jobManagers) == 0:
+    elif len(jobManagers) == 0: # why not append any value not already there? it may be missing it in the loop below
         jobManagers.append(lrms)  # Useful default
-        DebugPrint(4, 'readCertInfo: added default LRMS type ' + lrms + ' to search list')
+        DebugPrint(4, 'findCertInfoFile: added default LRMS type ' + lrms + ' to search list')
 
     # Ascertain local job ID
 
     idMatch = __certinfoLocalJobIdMunger.search(localJobId)
     if idMatch:
-        DebugPrint(4, 'readCertInfo: trimming ' + localJobId + ' to ' + idMatch.group(1))
+        DebugPrint(4, 'findCertInfoFile: trimming ' + localJobId + ' to ' + idMatch.group(1))
         localJobId = idMatch.group('ID')
     if localJobId == None:  # No LocalJobId, so no dice
-        return
+        return None
 
-    DebugPrint(4, 'readCertInfo: continuing to process')
+    DebugPrint(4, 'findCertInfoFile: continuing to process')
 
     for jobManager in jobManagers:
         filestem = Config.get_DataFolder() + 'gratia_certinfo' + r'_' + jobManager + r'_' + localJobId
-        DebugPrint(4, 'readCertInfo: looking for ' + filestem)
+        DebugPrint(4, 'findCertInfoFile: looking for ' + filestem)
         if os.path.exists(filestem):
             certinfo_files.append(filestem)
             break
@@ -208,14 +240,14 @@ def readCertInfoFile(localJobId, probeName):
             break
 
     if len(certinfo_files) == 1:
-        DebugPrint(4, 'readCertInfo: found certinfo file ' + certinfo_files[0])
-    elif glob_files:
-        DebugPrint(4, 'readCertInfo: globbing for certinfo file')
+        DebugPrint(4, 'findCertInfoFile: found certinfo files %s' % (certinfo_files))
+    elif static['glob_files']:
+        DebugPrint(4, 'findCertInfoFile: globbing for certinfo file')
         certinfo_files = glob.glob(Config.get_DataFolder() + 'gratia_certinfo_*_' + localJobId + '*')
         if certinfo_files == None or len(certinfo_files) == 0:
-            DebugPrint(4, 'readCertInfo: could not find certinfo files matching localJobId ' + str(localJobId))
-            glob_files = False
-            DebugPrint(4, 'readCertInfo: could not find certinfo files, disabling globbing')
+            DebugPrint(4, 'findCertInfoFile: could not find certinfo files matching localJobId ' + str(localJobId))
+            static['glob_files'] = False
+            DebugPrint(4, 'findCertInfoFile: could not find certinfo files, disabling globbing')
             return None  # No files
 
         if len(certinfo_files) == 1:
@@ -223,19 +255,17 @@ def readCertInfoFile(localJobId, probeName):
             if fileMatch:
                 if fileMatch.group(1) in jobManagers:
                     # we're already checking for this jobmanager so future globbing won't help
-                    glob_files = False
-                    DebugPrint(4, 'readCertInfo: (1) jobManager ' + fileMatch.group(1)
+                    static['glob_files'] = False
+                    DebugPrint(4, 'findCertInfoFile: (1) jobManager ' + fileMatch.group(1)
                            + 'already being checked, disabling globbing')
                     
                 else:
                     jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
-                    DebugPrint(4, 'readCertInfo: (1) saving jobManager ' + fileMatch.group(1)
+                    DebugPrint(4, 'findCertInfoFile: (1) saving jobManager ' + fileMatch.group(1)
                            + ' for future reference')
 
-    result = None
     for certinfo in certinfo_files:
         found = 0  # Keep track of whether to return info for this file.
-        result = None
 
         try:
             certinfo_doc = xml.dom.minidom.parse(certinfo)
@@ -259,28 +289,45 @@ def readCertInfoFile(localJobId, probeName):
 
                 certinfo_lrms = string.lower(GetNodeData(certinfo_nodes[0].getElementsByTagName('BatchManager'
                                              ), 0))
-                DebugPrint(4, 'readCertInfo: want LRMS ' + lrms + ': found ' + certinfo_lrms)
+                DebugPrint(4, 'findCertInfoFile: want LRMS ' + lrms + ': found ' + certinfo_lrms)
                 if certinfo_lrms == lrms:  # Match
                     found = 1
                     fileMatch = __certinfoJobManagerExtractor.search(certinfo)
                     if fileMatch:
                         jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
-                        DebugPrint(4, 'readCertInfo: saving jobManager ' + fileMatch.group(1)
+                        DebugPrint(4, 'findCertInfoFile: saving jobManager ' + fileMatch.group(1)
                                    + ' for future reference')
+                        # should globbung be disabled here?
 
             if found == 1:
-                result = {'DN': GetNodeData(certinfo_nodes[0].getElementsByTagName('DN'), 0),
-                          'VO': GetNodeData(certinfo_nodes[0].getElementsByTagName('VO'), 0),
-                          'FQAN': GetNodeData(certinfo_nodes[0].getElementsByTagName('FQAN'), 0)}
-                DebugPrint(4, 'readCertInfo: removing ' + str(certinfo))
-                file_utils.RemoveFile(certinfo)  # Clean up.
-                break  # Done -- stop looking
+                DebugPrint(4, 'findCertInfoFile: found certinfo ' + str(certinfo))
+                return (certinfo, certinfo_nodes[0])
+                #result = {'DN': GetNodeData(certinfo_nodes[0].getElementsByTagName('DN'), 0),
+                #          'VO': GetNodeData(certinfo_nodes[0].getElementsByTagName('VO'), 0),
+                #          'FQAN': GetNodeData(certinfo_nodes[0].getElementsByTagName('FQAN'), 0)}
+                #DebugPrint(4, 'readCertInfo: removing ' + str(certinfo))
+                #file_utils.RemoveFile(certinfo)  # Clean up.
+                #break  # Done -- stop looking
         else:
-            DebugPrint(0, 'ERROR: certinfo file ' + certinfo + ' does not contain one valid GratiaCertInfo node'
+            DebugPrint(0, 'ERROR: certinfo file ' + certinfo + ' does not contain one single valid GratiaCertInfo node'
                        )
 
-    if result == None:
-        DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId)
+    # if here, no result found
+    DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId)
+    return None
+
+def readCertInfoFile(localJobId, probeName):
+    ''' Look for and read contents of cert info file if present. And delete the file'''
+    certinfo_touple = _findCertinfoFile(localJobId, probeName)
+    if not certinfo_touple:
+        # matching certinfo file not found
+        return None
+    # Get results and remove file 
+    result = {'DN': GetNodeData(certinfo_touple[1].getElementsByTagName('DN'), 0),
+              'VO': GetNodeData(certinfo_touple[1].getElementsByTagName('VO'), 0),
+              'FQAN': GetNodeData(certinfo_touple[1].getElementsByTagName('FQAN'), 0)}
+    DebugPrint(4, 'readCertInfo: removing ' + str(certinfo_touple[0]))
+    file_utils.RemoveFile(certinfo_touple[0])  # Clean up.
     return result
 
 
