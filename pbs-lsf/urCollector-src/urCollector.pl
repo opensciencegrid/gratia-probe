@@ -963,7 +963,9 @@ sub writeGGFURFile {
    }
    
    if (exists($urAcctlogInfo{user}) && $urAcctlogInfo{user} ne "") {
-      $cmd .= "-u \"$urAcctlogInfo{user}\" ";
+      # $cmd .= "-u \"$urAcctlogInfo{user}\" ";
+      # suppress local unix id / LocalUserId (GRATIA-142)
+      $cmd .= "-u \"Unknown\" ";
    }
    
    if (exists($urGridInfo{USER_DN}) && $urGridInfo{USER_DN} ne "") {
