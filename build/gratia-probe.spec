@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.13.27
-Release:            1%{?dist}
+Release:            1.1_ndsu%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -812,6 +812,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Mon May 19 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.27-1.1_ndsu
+- Patched pbs-lsf probe to suppress LocalUserId for NDSU (GRATIA-142)
+
 * Mon May 12 2014 Marco Mambelli <marcom@fnal.gov> -  1.13.27-1
 - Fix for job probes not deleting certinfo files (GRATIA-140)
 
