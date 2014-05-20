@@ -38,11 +38,7 @@ def GetNodeData(nodeList, nodeIndex=0):
     return nodeList.item(0).firstChild.data
 
 
-def removeCertInfoFile(
-    xmlDoc,
-    userIdentityNode,
-    namespace,
-    ):
+def removeCertInfoFile(xmlDoc, userIdentityNode, namespace):
     ''' Use localJobID and probeName to find cert info file and remove file'''
     # Collect data needed by certinfo reader
 
@@ -58,10 +54,11 @@ def removeCertInfoFile(
     DebugPrint(4, 'DEBUG: Get probeName: ', probeName)
 
     # Use _findCertinfoFile to find and remove the file, XML is ignored
-    # A faster alternative would be to try to remove only the constructed name 
-    # (without trying globbing if the name is not found)
+    # Looking only for exact match, globbing is disabled. 
+    # Use _findCertinfoFile(localJobId, probeName) to look for more files with globbing if the exact matck
+    # is not found (gratia_certinfo_*_localJobId*)
     DebugPrint(4, 'DEBUG: call _findCertinfoFile(' + str(localJobId) + r', ' + str(probeName) + ')')
-    certinfo_touple = _findCertinfoFile(localJobId, probeName)
+    certinfo_touple = _findCertinfoFile(localJobId, probeName, static={'glob_files':False})
     if not certinfo_touple:
         # matching certinfo file not found
         DebugPrint(4, 'DEBUG: unable to find and remove  certinfo file')
