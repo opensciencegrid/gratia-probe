@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.27
+Version:            1.13.28
 Release:            1%{?dist}
 
 License:            GPL
@@ -812,6 +812,11 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue May 27 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.28-1
+- Fix SGE probe startup check for other running pid (GRATIA-144)
+- Update hadoop storage probe to use hadoop2 commands/paths (GRATIA-137)
+- Disable globbing when removing unused certinfo files (GRATIA-140)
+
 * Mon May 12 2014 Marco Mambelli <marcom@fnal.gov> -  1.13.27-1
 - Fix for job probes not deleting certinfo files (GRATIA-140)
 
