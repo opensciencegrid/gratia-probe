@@ -17,8 +17,17 @@ import gratia.services.StorageElementRecord as StorageElementRecord
 # Bootstrap hadoop
 if 'JAVA_HOME' not in os.environ:
     os.environ['JAVA_HOME'] = '/usr/java/default'
+
+if get_version(None).startswith("Hadoop 0.20"):
+    HDFS_CMD = "hadoop"
+    HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop-0.20/conf'
+else:
+    # for hadoop 2
+    HDFS_CMD = "hdfs"
+    HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop/conf'
+
 if 'HADOOP_CONF_DIR' not in os.environ:
-    os.environ['HADOOP_CONF_DIR'] = '/etc/hadoop-0.20/conf'
+    os.environ['HADOOP_CONF_DIR'] = HADOOP_DEFAULT_CONF_DIR
 
 # Prevent us from sending in overly-large objects:
 MAX_DATA_LEN = 50*1024
@@ -65,7 +74,7 @@ def get_hostname(ipaddr):
 divider_re = re.compile('^-+$')
 attr_re = re.compile('(.*?): (.*)')
 def collect_site_data(cp):
-    cmd = 'hadoop dfsadmin -report'
+    cmd = '%s dfsadmin -report' % HDFS_CMD
     fd = os.popen(cmd)
     output = fd.read()
     if fd.close():
@@ -335,7 +344,7 @@ def collect_area_data(area, cp):
         Gratia.Send(sar)
 
 def collect_fsck_data(cp):
-    collect_data("hadoop fsck / | grep -v '^[\.].*$' | grep -v '^$'",
+    collect_data("%s fsck / | grep -v '^[\.].*$' | grep -v '^$'" % HDFS_CMD,
         "FSCK Data", cp)
 
 def collect_data(cmd, name, cp):
