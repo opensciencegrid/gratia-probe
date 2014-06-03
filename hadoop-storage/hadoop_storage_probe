@@ -14,20 +14,21 @@ import gratia.common.Gratia as Gratia
 import gratia.services.StorageElement as StorageElement
 import gratia.services.StorageElementRecord as StorageElementRecord
 
-# Bootstrap hadoop
-if 'JAVA_HOME' not in os.environ:
-    os.environ['JAVA_HOME'] = '/usr/java/default'
+def bootstrap_hadoop():
+    if 'JAVA_HOME' not in os.environ:
+        os.environ['JAVA_HOME'] = '/usr/java/default'
 
-if get_version(None).startswith("Hadoop 0.20"):
-    HDFS_CMD = "hadoop"
-    HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop-0.20/conf'
-else:
-    # for hadoop 2
-    HDFS_CMD = "hdfs"
-    HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop/conf'
+    global HDFS_CMD
+    if get_version(None).startswith("Hadoop 0.20"):
+        HDFS_CMD = "hadoop"
+        HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop-0.20/conf'
+    else:
+        # for hadoop 2
+        HDFS_CMD = "hdfs"
+        HADOOP_DEFAULT_CONF_DIR = '/etc/hadoop/conf'
 
-if 'HADOOP_CONF_DIR' not in os.environ:
-    os.environ['HADOOP_CONF_DIR'] = HADOOP_DEFAULT_CONF_DIR
+    if 'HADOOP_CONF_DIR' not in os.environ:
+        os.environ['HADOOP_CONF_DIR'] = HADOOP_DEFAULT_CONF_DIR
 
 # Prevent us from sending in overly-large objects:
 MAX_DATA_LEN = 50*1024
@@ -410,6 +411,7 @@ def configure():
     return cp
 
 def main():
+    bootstrap_hadoop()
     try:
         cp = configure()
     except Exception, e:
