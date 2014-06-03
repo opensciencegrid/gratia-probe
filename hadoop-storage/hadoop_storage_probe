@@ -16,7 +16,7 @@ import gratia.services.StorageElementRecord as StorageElementRecord
 
 def bootstrap_hadoop():
     if 'JAVA_HOME' not in os.environ:
-        os.environ['JAVA_HOME'] = '/usr/java/default'
+        os.environ['JAVA_HOME'] = '/etc/alternatives/jre'
 
     global HDFS_CMD
     if get_version(None).startswith("Hadoop 0.20"):
