@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.28
+Version:            1.13.29
 Release:            1%{?dist}
 
 License:            GPL
@@ -812,6 +812,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1
+- Bugfix for hadoop storage probe (GRATIA-137)
+
 * Tue May 27 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.28-1
 - Fix SGE probe startup check for other running pid (GRATIA-144)
 - Update hadoop storage probe to use hadoop2 commands/paths (GRATIA-137)
