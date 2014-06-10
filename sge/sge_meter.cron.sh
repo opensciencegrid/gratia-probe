@@ -49,10 +49,8 @@ if [ ${NCMeter} -ne 0 -a -e ${WorkingFolder}/sge_meter.cron.pid ]; then
   # started it.
   
   otherpid=`cat ${WorkingFolder}/sge_meter.cron.pid`
-  # get ps output, use perl to collapse whitespaces and then grep the 2nd field (PID) for our pid
-  NCCron=`ps -ef | perl -pe 's/ +/ /g' | cut -f 2 -d' ' | grep ${otherpid} |  wc -l`
-  if [ ${NCCron} -ne 0 ]; then 
- 
+  # exit if otherpid is non-empty and still running
+  if [[ -n ${otherpid} && -e /proc/${otherpid} ]]; then
      ${Logger} "There is a 'sge_meter.py' task running already."
      exit 0
   fi

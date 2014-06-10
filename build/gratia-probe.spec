@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.24
+Version:            1.13.29
 Release:            1%{?dist}
 
 License:            GPL
@@ -812,6 +812,25 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1
+- Bugfix for hadoop storage probe (GRATIA-137)
+
+* Tue May 27 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.28-1
+- Fix SGE probe startup check for other running pid (GRATIA-144)
+- Update hadoop storage probe to use hadoop2 commands/paths (GRATIA-137)
+- Disable globbing when removing unused certinfo files (GRATIA-140)
+
+* Mon May 12 2014 Marco Mambelli <marcom@fnal.gov> -  1.13.27-1
+- Fix for job probes not deleting certinfo files (GRATIA-140)
+
+* Fri May 02 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.26-1
+- Fix for pbs probe not detecting cores correctly (GRATIA-136)
+
+* Wed Mar 19 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.25-1
+- New version of SGE probe with support for log rotation (GRATIA-120)
+- Fix for condor probe not deleting dagman job history (GRATIA-130)
+- Fix for lsf probe reporting wrong cpu time (GRATIA-133)
+
 * Fri Feb 7 2014 Tanya Levshina <tlevshin@fnal.gov> - 1.13.24-1
 - Another attempt by Suchandra to fix GRATIA-111
 - Also a fix for GRATIA-132

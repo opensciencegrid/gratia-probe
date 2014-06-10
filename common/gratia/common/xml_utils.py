@@ -404,6 +404,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     vo_info = None
     if (not VOName or VOName[0] != r'/'):
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
+        # look for vo_info and delete certinfo file
         vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
         if vo_info is not None:
@@ -425,7 +426,11 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
                     vo_info['ReportableVOName'] = VOName
             ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
             ReportableVOName = vo_info['ReportableVOName']
-
+    else:
+        # Must delete possible certinfo file even if all information is available
+        DebugPrint(4, 'DEBUG: Calling removeCertInfoFile')
+        certinfo.removeCertInfoFile(xmlDoc, userIdentityNode, namespace)
+         
     # 3. Condor-CE query
 
     if not vo_info:
