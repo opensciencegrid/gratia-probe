@@ -1,0 +1,1 @@
+0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/sample/ProbeConfig && /usr/share/gratia/sample/sample_probe -s 900

@@ -1,0 +1,505 @@
+#!/usr/bin/python
+#
+# sample_probe - Python-based sample probe for Gratia
+#       By Marco Mambelli; Jun 9, 2014
+#
+
+import os
+import re
+import sys
+import time
+import random
+import os.path
+import optparse
+import subprocess
+
+from gratia.common.Gratia import DebugPrint
+import gratia.common.GratiaCore as GratiaCore
+import gratia.common.GratiaWrapper as GratiaWrapper
+import gratia.common.Gratia as Gratia
+
+prog_version = "%%%RPMVERSION%%%"
+prog_revision = '$Revision: 5268 $'
+
+# --- constants -----------------------------------------------------------------------
+PROBE_NAME="sample"
+DEFAULT_CONFIG="/etc/gratia/%s/ProbeConfig" % PROBE_NAME
+min_start_time = time.time() - 120*86400
+
+
+# --- classes -------------------------------------------------------------------------
+
+# -- exceptions ---------
+class SampleException(Exception):
+    pass
+
+
+
+# --- functions -----------------------------------------------------------------------
+
+def parse_opts():
+
+    parser = optparse.OptionParser(usage="""%prog [options] [dir1 [dir2]] 
+
+Normal cron usage: $prog --sleep SECONDS
+
+Command line usage: $prog --recovery
+                    $prog --recovery --start-time=STARTTIME --end-time-ENDTIME""")
+    parser.add_option("-f", "--gratia_config", 
+        help="""Location of the Gratia config; defaults to 
+%default.""", 
+        dest="gratia_config",
+        default=DEFAULT_CONFIG)
+
+    parser.add_option("-s", "--sleep", 
+        help="""This should be used with normal cron usage. It sets a random 
+amount of sleep, up to the specified number of seconds before running.  
+This reduces the load on the Gratia collector.""", 
+        dest="sleep",
+        default=0, type="int")
+
+    parser.add_option("-r", "--recovery", 
+        help="""Recovers the records from come history or log file (e.g. condor_history, 
+accounting, ...), ignoring the live records.
+This works also because Gratia recognizes and ignores duplicate records.
+This option should be used with the --start-time and --end-time options 
+to reduce the load on the Gratia collector.  It will look through all the 
+historic records and attempt to send them to Gratia unless a start and end 
+time are specified.""",
+        dest="recovery_mode",
+        default=False, action="store_true")
+
+    parser.add_option("--start-time", 
+        help="""First time to include when processing records using --recovery 
+option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
+is assumed to be 00:00:00 if omitted.""", 
+        dest="recovery_start_time",
+        default=None)
+
+    parser.add_option("--end-time", 
+        help="""Last time to include when processing records using --recovery 
+option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
+is assumed to be 00:00:00 if omitted""", 
+        dest="recovery_end_time", 
+        default=None)    
+
+    parser.add_option("-v", "--verbose", 
+        help="Enable verbose logging to stdout.",
+        default=False, action="store_true", dest="verbose")
+
+    opts, args = parser.parse_args()
+
+    # Initialize Gratia
+    if not opts.gratia_config or not os.path.exists(opts.gratia_config):
+        raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
+    GratiaCore.Config = GratiaCore.ProbeConfiguration(opts.gratia_config)
+
+    if opts.verbose:
+        GratiaCore.Config.set_DebugLevel(5)
+
+    if not args and not opts.recovery_mode:
+        args = [GratiaCore.Config.getConfigAttribute("DataFolder")]
+        DebugPrint(5, "Defaulting processing directory to %s as none are specified on command line" % args[0])
+
+    return opts, args
+
+
+# Regular expression to recognize log files within a directory
+# examples:
+# condor_history_re = re.compile("^history.(\d+)\.(\d+)")
+# logfile_re = re.compile("^history\.(?:.*?\#)?\d+\.\d+")
+#
+logfile_re = re.compile("^datafile\.(?:.*?\#)?\d+\.log")
+def logfiles_to_process(args):
+    for arg in args:
+        if os.path.isfile(arg) and os.stat(arg).st_size:
+            DebugPrint(5, "Processing logfile %s" % arg)
+            yield arg
+        elif os.path.isdir(arg):
+            DebugPrint(5, "Processing directory %s." % arg)
+            for logfile in os.listdir(arg):
+                m = logfile_re.match(logfile)
+                if m:
+                    DebugPrint(5, "Processing logfile %s" % logfile)
+                    yield os.path.join(arg, logfile)
+
+def main():
+    try:
+        opts, dirs = parse_opts()
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except Exception, e:
+        print >> sys.stderr, str(e)
+        sys.exit(1)
+
+    # Sanity checks for the probe's runtime environment.
+    GratiaWrapper.CheckPreconditions()
+
+      
+    if opts.sleep:
+        rnd = random.randint(1, int(opts.sleep))
+        DebugPrint(2, "Sleeping for %d seconds before proceeding." % rnd)
+        time.sleep(rnd)
+
+    # Make sure we have an exclusive lock for this probe.
+    GratiaWrapper.ExclusiveLock()
+
+    register_gratia()
+    GratiaCore.Initialize(opts.gratia_config)
+
+    # Do all setup and checks (environment systems the probe interacts with)
+    setup_environment()
+        
+    # Check to make sure HTCondor config is set correctly
+    if not system_configured():
+        DebugPrint(-1, "ERROR: The system is not configured correctly, exiting")
+        sys.exit(1)
+
+    # Do some sanity checks of gratia configuration before starting    
+    if not check_gratia():
+        DebugPrint(-1, "ERROR: Gratia settings not correct, exiting")
+        sys.exit(1)
+    
+    if opts.recovery_mode is True:
+        process_recovery(opts.recovery_start_time, opts.recovery_end_time)
+    else:
+        process_data_dirs(dirs)
+   
+def process_recovery(start_time = None, end_time = None):
+    if start_time is not None or end_time is not None:
+        # using a start and end date
+        DebugPrint(-1, "RUNNING the probe MANUALLY in recovery mode " \
+                       "from %s to %s" % (start_time, end_time))
+        if start_time is None or end_time is None:
+            DebugPrint(-1, "Recovery mode ERROR: Either None or Both " \
+                           "--start and --end args are required")
+            sys.exit(1)
+        start_time = parse_date(start_time)
+        if start_time is None:
+            DebugPrint(-1, "Recovery mode ERROR: Can't parse start time")
+            sys.exit(1)
+        end_time = parse_date(end_time)
+        if end_time is None:
+            DebugPrint(-1, "Recovery mode ERROR: Can't parse end time") 
+            sys.exit(1)
+        if start_time > end_time:
+            DebugPrint(-1, "Recovery mode ERROR: The end time is after " \
+                          "the start time")
+            sys.exit(1)
+        if start_time > time.time():
+            DebugPrint(-1, "Recovery mode ERROR: The start time is in " \
+                           "the future")
+            sys.exit(1)
+    else:  # using condor history for all dates
+        DebugPrint(-1 , "RUNNING the probe MANUALLY in recovery mode ")
+
+    do_process_recovery(start_time, end_time)
+    DebugPrint(-11, "RUNNING condor_meter MANUALLY Finished")
+
+def parse_date(date_string):
+    """
+    Parse a date/time string in %m-%d-%Y or %m-%d-%Y %H:%M:%S format
+    
+    Returns None if string can't be parsed, otherwise returns time formatted
+    as the number of seconds since the Epoch
+    """    
+    result = None
+    try:
+        result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")        
+        return int(round(time.mktime(result)))
+    except ValueError:
+        pass
+    except Exception,e:
+        return None
+    
+    try:
+        result = time.strptime(date_string, "%Y-%m-%d")
+        return int(round(time.mktime(result)))
+    except ValueError:
+        pass
+    except Exception,e:
+        return None
+    
+    return result
+
+def register_gratia():
+    GratiaCore.RegisterReporter("condor_meter", "%s (tag %s)" % \
+        (prog_revision, prog_version))
+    try:
+        condor_version = getCondorVersion()
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except Exception, e:
+        DebugPrint(0, "Unable to successfully invoke condor_version: %s" %
+            str(e))
+        sys.exit(1)
+
+    GratiaCore.RegisterService("Condor", condor_version)
+    GratiaCore.setProbeBatchManager("condor")
+
+def process_data_dirs(dirs):
+    submit_count = 0
+    found_count = 0
+    logs_found = 0
+    logfile_errors = 0
+    # Note we are not ordering logfiles by type, as we don't want to
+    # pull them all into memory at once.
+    DebugPrint(4, "We will process the following directories: %s." % ", ".join(dirs))
+    for log in logfiles_to_process(dirs):
+        logs_found += 1
+        _, logfile_name = os.path.split(log)
+        # This should actually not be needed (done in the itarator)
+        # Make sure the filename is in a reasonable format
+        m = logfile_re.match(logfile_name)
+        if not m:
+            DebugPrint(2, "Ignoring log file with invalid name: %s" % log)
+            continue
+        cnt_submit, cnt_found = process_data_file(log)
+        if cnt_submit == cnt_found and cnt_submit > 0:
+            DebugPrint(5, "Processed %i records from file %s" % (cnt_submit, log))
+        else:
+            DebugPrint(2, "Unable to process records from file (will add to quarantine): %s.  Submit count %d; found count %d" % (log, cnt_submit, cnt_found))
+            GratiaCore.QuarantineFile(log, False)
+            logfile_errors += 1
+        submit_count += cnt_submit
+        found_count += cnt_found
+
+    DebugPrint(2, "Number of logfiles processed: %d" % logs_found)
+    DebugPrint(2, "Number of logfiles with errors: %d" % logfile_errors)
+    DebugPrint(2, "Number of usage records submitted: %d" % submit_count)
+    DebugPrint(2, "Number of usage records found: %d" % found_count)
+
+
+def process_data_file(logfile):
+    # Open the file and send it to process
+    try:
+        fd = open(logfile, 'r')
+    except IOError, ie:
+        DebugPrint(2, "Cannot process %s: (errno=%d) %s" % (logfile, ie.errno,
+            ie.strerror))
+        return 0, 0
+
+    return process_data_fd(fd, logfile)
+
+
+def do_process_recovery(start_time = None, end_time = None):
+    """ Recovery procedure
+    the recovery command will output the records that are 
+    processed and sent to Gratia by process_recovery_fd
+    """
+    rec_command = None
+    if start_time is not None and end_time is not None:
+      rec_command = "rec %s %s" % (start_time, end_time) 
+    else:
+      rec_command = "rec"
+    DebugPrint(-1, "RUNNING: %s" % hist_command)
+    fd = os.popen(rec_command)
+    submit_count, found_count = process_data_fd(fd)
+    if fd.close():
+        DebugPrint(-1, "Recovery mode ERROR: Call to rec " \
+                       "failed: %s" % rec_command)
+
+    DebugPrint(-1, "Recovery mode: Usage records submitted: " \
+                   "%d" % submit_count)
+    DebugPrint(-1, "Recovery mode: Usage records found: " \
+                   "%d" % found_count)
+
+def process_data_fd(fd, filename=None):
+    """
+    Process records from a file descriptor.  
+    If filename is None there are no transient files (e.g. recovery mode)
+    Otherwise filename is a transient file Gratia will attempt to cleanup 
+    afterward.
+    Transient files are associated with the first record in the file. This 
+    works well only if transient files habe only one record, otherwise they 
+    will be deleted if the first record is processed successfully (or 
+    deemed uninteresting), quarantined if the first record fails to process.
+    """
+    count_submit = 0
+    count_found  = 0
+    if filename:
+        added_transient = False
+    else:
+        added_transient = True        
+
+    for record in fd_to_record(fd):
+        count_found += 1
+        if not record:
+            DebugPrint(5, "Ignoring empty record from file: %s" % fd.name)
+            continue
+        if not added_transient:
+            record['gratia_logfile'] = filename
+            added_transient = True
+        try:
+            gratia_record = process_record(record)
+        except KeyboardInterrupt:
+            raise
+        except SystemExit:
+            raise
+        except IgnoreRecordException, e:
+            DebugPrint(3, "Ignoring Record: %s" % str(e))
+            count_submit += 1
+            continue
+        except Exception, e:
+            DebugPrint(2, "Exception while processing the record: %s" % str(e))
+            continue
+
+        # Here you can add some additional filtering (conditions to exclude records)
+        if False:
+            DebugPrint(2, "Ignoring record because...: %s" % record)
+            continue
+
+        response = GratiaCore.Send(gratia_record)
+        if response[:2] == 'OK':
+            count_submit += 1
+
+    return count_submit, count_found
+
+def process_record(record):
+    # logfile attribute (if present) is used to keep track and delete files
+
+    DebugPrint(5, "Creating JUR for %s" % record)
+
+    # Filter out uninteresting records (and remove their files)
+    if False:
+        if 'gratia_logfile' in record:
+            DebugPrint(1, 'Deleting transient record file: '+record["gratia_logfile"])
+            Gratia.RemoveFile(record['gratia_logfile'])
+        raise IgnoreRecordException("Ignoring record.")
+
+    # Define the record
+    # UsageRecord is defined in https://twiki.opensciencegrid.org/bin/view/Accounting/ProbeDevelopement
+    # setters have the name of the attribute 
+    # Set resource type ( Batch, BatchPilot, GridMonitor, Storage, ActiveTape )
+    resource_type = "Batch"
+    r = Gratia.UsageRecord(resource_type)
+
+    # fill r using the values in record
+
+    # remember to specify the transient file (that will be removed if the record 
+    # is acquired succesfully)
+    if 'logfile' in record:
+        r.AddTransientInputFile(record['gratia_logfile'])
+
+    return r
+
+val_bool_re = re.compile("^(\w{1,255}) = (true|True|TRUE|false|False|FALSE)$")
+val_int_re = re.compile("^(\w{1,255}) = (-?\d{1,30})$")
+val_double_re = re.compile("^(\w{1,255}) = ([+-]? *(?:\d{1,30}\.?\d{0,30}|\.\d{1,30})(?:[Ee][+-]?\d{1,30})?)$")
+val_string_re = re.compile("^(\S+) = \"(.*)\"$")
+val_catchall_re = re.compile("^(\S+) = (.*)$")
+def fd_to_record(fd):
+    """Parse a stream of data into a record (data structure)
+    Here regular expressions are used to match values for a dictionary
+    The input steram is a series of "name = value" lines with
+    empty lines or the end of a stream separating records
+    '#' at the beginning of the line is used to add comments (skipped)
+    """
+    # dictionary, caseless_dictionary, sorted dictionary, array
+    # are all possible structures, be consistent with what you use in process_record
+    record = {}
+    for line in fd.readlines():
+        line = line.strip()
+        m = var_bool_re.match(line)
+        if m:
+            attr, val = m.groups()
+            if val.lower().find("true") >= 0:
+                record[attr] = True
+            else:
+                record[attr] = False
+            continue
+        m = val_int_re.match(line)
+        if m:
+            attr, val = m.groups()
+            record[attr] = int(val)
+            continue
+        m = val_double_re.match(line)
+        if m:
+            attr, val = m.groups()
+            record[attr] = float(val)
+            continue
+        m = val_string_re.match(line)
+        if m:
+            attr, val = m.groups()
+            record[attr] = str(val)
+            continue
+        m = val_catchall_re.match(line)
+        if m:
+            attr, val = m.groups()
+            record[attr] = str(val)
+            continue
+        if not line:
+            yield add_unique_id(record)
+            record = {}
+            continue
+        if line[0]=='#':
+            continue
+        DebugPrint(2, "Invalid line in record stream: %s" % line)
+
+    yield add_unique_id(record)
+
+def add_unique_id(record):
+    # Using IDs unique in the space of the records measured by the probe
+    # e.g. GlobalJobId for HTCondor
+    if 'GlobalId' in record:
+        record['UniqGlobalId'] = '%s.%s' % (PROBE_NAME, record['GlobalId'])
+        DebugPrint(6, "Unique ID: %s" % record['UniqGlobalId'])
+    return record
+
+
+       
+def setup_environment():
+    """
+    Make sure environment variables are in place   
+    """ 
+    try:
+        # e.g. for HTCondor
+        condor_location = GratiaCore.Config.getConfigAttribute("CondorLocation")
+        os.environ['CONDOR_LOCATION'] = condor_location        
+        condor_config = GratiaCore.Config.getConfigAttribute("CondorConfig")
+        if condor_config != '':
+            os.environ['CONDOR_CONFIG'] = condor_config
+    except:
+        DebugPrint(0, "Can't setup CONDOR_LOCATION and CONDOR_CONFIG, exiting")
+        return False
+        
+def system_configured():
+    """
+    Make sure the system is configured correctly for Gratia.   
+    """ 
+    try:
+        # Control if paths exist
+        # if commands are in the path
+        # if variables are in the environment
+        # ...
+        all_ok=True
+        path = GratiaCore.Config.getConfigAttribute("CondorLocation")
+        condor_config_path = os.path.join(path, "bin", "condor_config_val")
+        if not all_ok:
+            DebugPrint(-1, "ERROR: system .... ")
+            return False
+       return True
+    except subprocess.CalledProcessError:
+        DebugPrint(-1, "ERROR: Can't get information on system")
+    return False
+  
+  
+def check_gratia():
+  """
+  Make sure gratia configuration is somewhat sane before processing records
+  """
+  valid = True
+  data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
+  if data_folder[-1] != '/':
+    DebugPrint(-1, "ERROR: DataFolder must have a trailing / otherwise records "
+                   "will not be processed correctly")
+    valid = False
+  return valid
+
+if __name__ == "__main__":
+    main()
+
