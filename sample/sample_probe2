@@ -1,0 +1,65 @@
+#!/usr/bin/python
+#
+# sample_probe - Python-based sample probe for Gratia
+#       By Marco Mambelli; Jun 9, 2014
+#
+
+import os
+import re
+import sys
+import time
+
+from gratia.common.Gratia import DebugPrint
+import gratia.common.GratiaCore as GratiaCore
+import gratia.common.GratiaWrapper as GratiaWrapper
+import gratia.common.Gratia as Gratia
+
+prog_version = "%%%RPMVERSION%%%"
+prog_revision = '$Revision: 5268 $'
+
+# --- constants -----------------------------------------------------------------------
+
+
+# Initialize the Gratia library (read the Probe configuration file)
+Gratia.Initialize()
+
+ddic={ 'se': "MyStorageElement",
+    'name': "MyPoolName",
+    'status': 'OK',
+    'implementation': 'dCache',
+    'version': '0.1',
+    'host_info_get_total_kb': 56*1024,
+    'host_info_get_total_free_kb': 30*1024,
+    'host_info_get_total_used_kb': 26*1024,
+    }
+
+timestamp = time.time()
+unique_id = '%s:Pool:%s' % (ddic['se], ddic['name'])
+parent_id = "%s:SE:%s" % (ddic['se'], ddic['se'])
+
+
+# Create the record
+
+sa = StorageElement.StorageElement()
+sar = StorageElementRecord.StorageElementRecord()
+sa.UniqueID(unique_id)
+sa.Name(name)
+sa.SE(se)
+sa.SpaceType("Pool")
+sa.Implementation(ddic['implementation'])
+sa.Version(ddic['version'])
+sa.Status(ddic['status'])
+sa.ParentID(parent_id)
+sa.Timestamp(timestamp)
+sar.Timestamp(timestamp)
+sar.UniqueID(unique_id)
+sar.MeasurementType("raw")
+sar.StorageType("disk")
+sar.TotalSpace(1024*ddic['host_info_get_total_kb'])
+sar.FreeSpace(1024*ddic['host_info_get_total_free_kb'])
+sar.UsedSpace(1024*ddic['host_info_get_total_used_kb'])
+Gratia.Send(sa)
+Gratia.Send(sar)
+
+
+
