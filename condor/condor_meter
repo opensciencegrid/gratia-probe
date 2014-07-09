@@ -240,7 +240,7 @@ def main():
 
     # setup htcondor environment 
     setup_environment()
-        
+
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
         DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
@@ -816,13 +816,14 @@ def htcondor_configured():
             DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR not set in condor " \
                            "config, please set it")
             return False
-        elif (not os.path.exists(cmd_stdout.strip()) or 
-              not os.path.isdir(cmd_stdout.strip())):
+        # cmd_stdout contains the directory path, removing spaces
+        cmd_stdout = cmd_stdout.strip()
+        elif (not os.path.exists(cmd_stdout) or 
+              not os.path.isdir(cmd_stdout)):
             DebugPrint(-1 , "ERROR: PER_JOB_HISTORY_DIR points to a " \
                             "non-existent or invalid directory: " \
-                            "%s" % cmd_stdout.strip())
+                            "%s" % cmd_stdout)
             return False
-        cmd_stdout = cmd_stdout.strip()
         data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
         if not os.path.samefile(cmd_stdout, data_folder):
           DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
