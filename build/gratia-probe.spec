@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.13.30
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -814,6 +814,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Jul 10 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.30-2
+- Set NoCertinfoBatchRecordsAreLocal="0" by default (GRATIA-149)
+
 * Thu Jul 10 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.30-1
 - Bugfix for condor grid jobs incorrectly interpreted as Local (GRATIA-149)
 
