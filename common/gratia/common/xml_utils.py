@@ -97,12 +97,7 @@ def FindBestJobId(usageRecord, namespace):
     return ['Unknown', 'Unknown']
 
 
-def StandardCheckXmldoc(
-    xmlDoc,
-    recordElement,
-    external,
-    prefix, 
-    ):      
+def StandardCheckXmldoc(xmlDoc, recordElement, external, prefix):      
     '''Check for and fill in suitable values for important attributes'''
         
     if not xmlDoc.documentElement:  # Major problem
@@ -213,7 +208,6 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
         # Identity info check
 
         VOName = None
-        id_info = {}
 
         DebugPrint(4, 'DEBUG: Finding userIdentityNodes')
         userIdentityNodes = usageRecord.getElementsByTagNameNS(namespace, 'UserIdentity')
@@ -224,6 +218,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
             DebugPrint(0, 'Warning: no UserIdentity block in ' + jobIdType + ' ' + jobId)
         else:
             try:
+                id_info = {}
                 DebugPrint(4, 'DEBUG: Finding userIdentityNodes (processing 2)')
                 DebugPrint(4, 'DEBUG: Finding userIdentityNodes: ' + str(userIdentityNodes.length))
                 if userIdentityNodes.length > 1:
@@ -275,39 +270,33 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
         # about if osg-user-vo-map.txt is not well-cared-for).
 
         reason = None
-	isQuarantined=False
+        isQuarantined=False
         grid = GetElement(xmlDoc, usageRecord, namespace, prefix, 'Grid')
         if Config.get_SuppressgridLocalRecords() and grid and string.lower(grid) == 'local':
-
             # 1
-
             reason = 'Grid == Local'
         elif Config.get_SuppressNoDNRecords() and not usageRecord.getElementsByTagNameNS(namespace, 'DN'):
-
             # 2
-
             reason = 'missing DN'
         elif Config.get_SuppressUnknownVORecords() and (not VOName or VOName == 'Unknown'):
-
             # 3
-
             reason = 'unknown or null VOName'
-	elif Config.get_QuarantineUnknownVORecords() and (not VOName or VOName == 'Unknown'):
-	    reason ='unknown or null VOName, will be quarantined in %s' % (os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
-	    isQuarantined=True
+        elif Config.get_QuarantineUnknownVORecords() and (not VOName or VOName == 'Unknown'):
+            reason ='unknown or null VOName, will be quarantined in %s' % (os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
+            isQuarantined=True
 
         if reason:
             [jobIdType, jobId] = FindBestJobId(usageRecord, namespace)
             DebugPrint(0, 'Info: suppressing record with ' + jobIdType + ' ' + jobId + ' due to ' + reason)
             usageRecord.parentNode.removeChild(usageRecord)
-	    if isQuarantined:
-		subdir=os.path.join(Config.get_DataFolder(),"quarantine",'subdir.' + Config.getFilenameFragment())
+            if isQuarantined:
+                subdir=os.path.join(Config.get_DataFolder(),"quarantine",'subdir.' + Config.getFilenameFragment())
                 if not os.path.exists(subdir):
                         os.mkdir(subdir)
                 fn=sandbox_mgmt.GenerateFilename("r.",subdir)
-		writer=open(fn,'w')
-		usageRecord.writexml(writer)
-		writer.close()
+                writer=open(fn,'w')
+                usageRecord.writexml(writer)
+                writer.close()
             usageRecord.unlink()
             continue
 
@@ -318,13 +307,19 @@ XmlChecker.AddChecker(UsageCheckXmldoc)
 
 
 def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
-    '''Check the contents of the UserIdentity block and extend if necessary'''
+    '''Check the contents of the UserIdentity block and extend if necessary
+    - if Local user ID is not in the XML, then abort and return {}
+    - if there are multiple (>1) VOName or ReportableVOName nodes then the XML is malformed,
+      abort and return {}
+    - otherwise get VOName, ReportableVOName from existing XML (if FQAN), certinfo file, Condor-CE, 
+      existing XML (also if not FQAN), reverse map file; update the values in XML and return them
+    - result, dictionary w/ VOName, ReportableVOName and has_certinfo
+    '''
 
     result = {}
     jobIdType, jobId = None, None
 
-    # LocalUserId
-
+    # LocalUserId, used in log messages or to guess VO if all else fails 
     localUserIdNodes = userIdentityNode.getElementsByTagNameNS(namespace, 'LocalUserId')
     if not localUserIdNodes or localUserIdNodes.length != 1 or not (localUserIdNodes[0].firstChild
             and localUserIdNodes[0].firstChild.data):
@@ -340,12 +335,12 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     VONameNodes = userIdentityNode.getElementsByTagNameNS(namespace, 'VOName')
     if VONameNodes and  VONameNodes.length == 1:
         if VONameNodes[0].hasChildNodes():
-		if not VONameNodes[0].firstChild.data:
-            		[jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
-            		DebugPrint(0, 'Warning: UserIdentity block has VOName node, but value is set to None  in ' + jobIdType + ' ' + jobId)
-        		VONameNodes = None 
-	else:
-        	VONameNodes = None 
+            if not VONameNodes[0].firstChild.data:
+                [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
+                DebugPrint(0, 'Warning: UserIdentity block has VOName node, but value is set to None  in ' + jobIdType + ' ' + jobId)
+                VONameNodes = None 
+        else:
+            VONameNodes = None 
     if not VONameNodes:
         DebugPrint(4, 'DEBUG: Creating VONameNodes elements')
         VONameNodes = []
@@ -387,8 +382,12 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     # 4. Existing VOName if not FQAN.
     #
     # 5. VOName from reverse map file.
+    #
+    # If 1 has no value or invalid values, the first one of 2, 3, 4, 5 assigns the value (and other ar enot checked)
 
-
+    vo_info = None
+    no_initial_values = True
+ 
     # 1. Initial values
 
     DebugPrint(4, 'DEBUG: reading initial VOName')
@@ -399,17 +398,26 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     ReportableVOName = ReportableVONameNodes[0].firstChild.data
     DebugPrint(4, 'DEBUG: current ReportableVOName = ' + ReportableVONameNodes[0].firstChild.data)
 
-    # 2. Certinfo
+    # 2. Certinfo (if initial values are not OK)
 
-    vo_info = None
-    if (not VOName or VOName[0] != r'/'):
+    if VOName and VOName[0] == r'/':
+        # Initial values are valid (1)
+        # Information is available and is FQAN (starts with /)
+        # Must delete possible certinfo file also when all information is available
+        DebugPrint(4, 'DEBUG: Calling removeCertInfoFile')
+        certinfo.removeCertInfoFile(xmlDoc, userIdentityNode, namespace)
+        # Must set has_certinfo (to avoid to be considered local)
+        result['has_certinfo'] = 1
+        no_initial_values = False
+    else:
+        # Use certinfo
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
         # look for vo_info and delete certinfo file
         vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
         DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
-        if vo_info is not None:
+        if vo_info:
             result['has_certinfo'] = 1
-            if vo_info and not (vo_info['VOName'] or vo_info['ReportableVOName']):
+            if not (vo_info['VOName'] or vo_info['ReportableVOName']):
                 DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
                 vo_info = None  # Reset if no output.
         
@@ -417,23 +425,20 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
         if vo_info:
             DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
                        + str(vo_info['ReportableVOName']))
-            VONameNodes[0].firstChild.data = vo_info['VOName']
             VOName = vo_info['VOName']
             if vo_info['ReportableVOName'] == None:
                 if VOName[0] == r'/':
                     vo_info['ReportableVOName'] = string.split(VOName,r'/')[1]
                 else:
                     vo_info['ReportableVOName'] = VOName
-            ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
-            ReportableVOName = vo_info['ReportableVOName']
-    else:
-        # Must delete possible certinfo file even if all information is available
-        DebugPrint(4, 'DEBUG: Calling removeCertInfoFile')
-        certinfo.removeCertInfoFile(xmlDoc, userIdentityNode, namespace)
-         
+            #This will be done below - TODO: remove these commented lines after tests
+            #VONameNodes[0].firstChild.data = vo_info['VOName']
+            #ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
+            #ReportableVOName = vo_info['ReportableVOName']
+        
     # 3. Condor-CE query
 
-    if not vo_info:
+    if no_initial_values and not vo_info:
         DebugPrint(4, "Querying the Condor-CE directly")
         jobIdentityNode = certinfo.GetNode(xmlDoc.getElementsByTagNameNS(namespace, 'JobIdentity'))
         if jobIdentityNode:
@@ -445,7 +450,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
 
     # 4. & 5.
 
-    if not vo_info and not VOName:
+    if no_initial_values and not vo_info:
         DebugPrint(4, 'DEBUG: Calling VOfromUser')
         vo_info = vo.VOfromUser(LocalUserId)
         if Config.get_MapUnknownToGroup() and not vo_info:
@@ -460,6 +465,8 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
 
             # Check the differen VO mapping methods
             if Config.get_MapGroupToRole() and Config.get_VOOverride():
+                # TODO: FQAN syntax is  <group>[/Role=[<role>][/Capability=<capability>]]
+                # Group is part of the path, otherwise there are Role and Capability, no LocalGroup
                 vo_info = {'VOName': "/%s/LocalGroup=%s" % (Config.get_VOOverride(), groupid), 'ReportableVOName': Config.get_VOOverride()}
             elif Config.get_VOOverride():
                 vo_info = {'VOName': Config.get_VOOverride(), 'ReportableVOName': Config.get_VOOverride()}
