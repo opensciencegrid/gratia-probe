@@ -184,6 +184,8 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     SlurmDbPasswordFile="/etc/gratia/slurm/pwfile" \
     SlurmDbName="slurm_acct_db" \
     SlurmCluster="mycluster"#' $PROBE_DIR/ProbeConfig
+    elif [ $probe == "condor" ]; then
+      sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
     fi
