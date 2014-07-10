@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.29
+Version:            1.13.30
 Release:            1%{?dist}
 
 License:            GPL
@@ -812,6 +812,9 @@ The SLURM probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Jul 10 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.30-1
+- Bugfix for condor grid jobs incorrectly interpreted as Local (GRATIA-149)
+
 * Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1
 - Bugfix for hadoop storage probe (GRATIA-137)
 
