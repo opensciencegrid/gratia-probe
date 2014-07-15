@@ -44,7 +44,7 @@ class IgnoreClassadException(Exception):
 # ********************************************
 
 class caselessDict:
-    def __init__(self,inDict=None):
+    def __init__(self, inDict=None):
         """Constructor: takes conventional dictionary
            as input (or nothing)"""
         self.dict = {}
@@ -58,7 +58,7 @@ class caselessDict:
 
     def __iter__(self):
         self.iterPosition = 0
-        return(self)
+        return self
 
     def next(self):
         if self.iterPosition >= len(self.keyList):
@@ -101,7 +101,7 @@ class caselessDict:
         return self.dict.has_key(item.lower())
 
     def __repr__(self):
-        items = ", ".join([("%r: %r" % (k,v)) for k,v in self.items()])
+        items = ", ".join([("%r: %r" % (k, v)) for k, v in self.items()])
         return "{%s}" % items
 
     def __str__(self):
@@ -256,7 +256,7 @@ def main():
     else:
         process_history_dirs(dirs)
    
-def process_using_condor_history(start_time = None, end_time = None):
+def process_using_condor_history(start_time=None, end_time=None):
     if start_time is not None or end_time is not None:
         # using a start and end date
         DebugPrint(-1, "RUNNING condor_meter MANUALLY using HTCondor history " \
@@ -282,8 +282,8 @@ def process_using_condor_history(start_time = None, end_time = None):
                            "the future")
             sys.exit(1)
     else:  # using condor history for all dates
-        DebugPrint(-1 , "RUNNING condor_meter MANUALLY using all HTCondor " \
-                        "history")
+        DebugPrint(-1, "RUNNING condor_meter MANUALLY using all HTCondor " \
+                       "history")
 
     process_condor_history(start_time, end_time)
     DebugPrint(-11, "RUNNING condor_meter MANUALLY Finished")
@@ -301,15 +301,15 @@ def parse_date(date_string):
         return int(round(time.mktime(result)))
     except ValueError:
         pass
-    except Exception,e:
+    except Exception, e:
         return None
-    
+
     try:
         result = time.strptime(date_string, "%Y-%m-%d")
         return int(round(time.mktime(result)))
     except ValueError:
         pass
-    except Exception,e:
+    except Exception, e:
         return None
     
     return result
@@ -413,14 +413,14 @@ def process_history_file(logfile):
 
     return count_submit, count_found
 
-def process_condor_history(start_time = None, end_time = None):
+def process_condor_history(start_time=None, end_time=None):
     hist_command = None
     if start_time is not None and end_time is not None:
-      hist_command = "condor_history -l -constraint " \
-                     "'((JobCurrentStartDate > %s) && (JobCurrentStartDate " \
-                     "< %s))'" % (start_time, end_time) 
+        hist_command = "condor_history -l -constraint " \
+                       "'((JobCurrentStartDate > %s) && (JobCurrentStartDate " \
+                       "< %s))'" % (start_time, end_time) 
     else:
-      hist_command = "condor_history -l"
+        hist_command = "condor_history -l"
     DebugPrint(-1, "RUNNING: %s" % hist_command)
     fd = os.popen(hist_command)
     submit_count, found_count = process_history_fd(fd)
@@ -440,7 +440,7 @@ def process_history_fd(fd):
     files it will attempt to cleanup afterward.
     """
     count_submit = 0
-    count_found  = 0
+    count_found = 0
     for classad in fd_to_classad(fd):
         count_found += 1
         if not classad:
@@ -634,7 +634,7 @@ def classadToJUR(classad):
             DebugPrint(1, 
                        "WARNING: INVALID DATA: Record for %s has invalid " \
                        "RemoteSysCpu time %s, replacing value with " \
-                       "0\n" % (job_id,  classad['RemoteSysCpu']))                       
+                       "0\n" % (job_id, classad['RemoteSysCpu']))                       
             classad['RemoteSysCpu'] = 0
         r.TimeDuration(classad['RemoteSysCpu'], 'RemoteSysCpu')
     else:
@@ -805,10 +805,11 @@ def htcondor_configured():
         else:
             cmd = subprocess.Popen('condor_config_val -schedd ' +
                                    'PER_JOB_HISTORY_DIR',
-                                   stdout = subprocess.PIPE,
-                                   shell = True)
+                                   stdout=subprocess.PIPE,
+                                   shell=True)
         (cmd_stdout, cmd_stderr) = cmd.communicate()
         # cmd_stdout contains the directory path, removing spaces
+        # It will always be a string even if returncode != 0 
         cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
             DebugPrint(-1, "ERROR: condor_config_val returned a non-zero " \
@@ -826,27 +827,27 @@ def htcondor_configured():
             return False
         data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
         if not os.path.samefile(cmd_stdout, data_folder):
-          DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
-                         "setting (%s) do not match!" %(cmd_stdout, data_folder))
-          return False
+            DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
+                           "setting (%s) do not match!" %(cmd_stdout, data_folder))
+            return False
         return True
     except subprocess.CalledProcessError:
         DebugPrint(-1, "ERROR: Can't get information on PER_JOB_HISTORY_DIR, " \
                        "condor_config_val returned non-zero exit code")
     return False
-  
-  
+
+
 def check_gratia():
-  """
-  Make sure gratia configuration is somewhat sane before processing records
-  """
-  valid = True
-  data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
-  if data_folder[-1] != '/':
-    DebugPrint(-1, "ERROR: DataFolder must have a trailing / otherwise records "
-                   "will not be processed correctly")
-    valid = False
-  return valid
+    """
+    Make sure gratia configuration is somewhat sane before processing records
+    """
+    valid = True
+    data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
+    if data_folder[-1] != '/':
+        DebugPrint(-1, "ERROR: DataFolder must have a trailing / otherwise records "
+                       "will not be processed correctly")
+        valid = False
+    return valid
 
 if __name__ == "__main__":
     main()
