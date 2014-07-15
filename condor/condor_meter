@@ -808,6 +808,8 @@ def htcondor_configured():
                                    stdout = subprocess.PIPE,
                                    shell = True)
         (cmd_stdout, cmd_stderr) = cmd.communicate()
+        # cmd_stdout contains the directory path, removing spaces
+        cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
             DebugPrint(-1, "ERROR: condor_config_val returned a non-zero " \
                            "return code")
@@ -816,8 +818,6 @@ def htcondor_configured():
             DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR not set in condor " \
                            "config, please set it")
             return False
-        # cmd_stdout contains the directory path, removing spaces
-        cmd_stdout = cmd_stdout.strip()
         elif (not os.path.exists(cmd_stdout) or 
               not os.path.isdir(cmd_stdout)):
             DebugPrint(-1 , "ERROR: PER_JOB_HISTORY_DIR points to a " \
