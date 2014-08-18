@@ -34,7 +34,7 @@ ddic={ 'se': "MyStorageElement",
     }
 
 timestamp = time.time()
-unique_id = '%s:Pool:%s' % (ddic['se], ddic['name'])
+unique_id = '%s:Pool:%s' % (ddic['se'], ddic['name'])
 parent_id = "%s:SE:%s" % (ddic['se'], ddic['se'])
 
 
