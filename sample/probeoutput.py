@@ -43,6 +43,8 @@ def user_to_cer(probe_name, user, server_id, time_now):
 # https://redmine.ogf.org/dmsf_files/13010?download=
 
 
+def rec_to_sr(record, server_id):
+    pass
 
 def job_to_jur(job, server_id):
     """Convert a job record into a Gratia UsageRecord"""

@@ -2,14 +2,21 @@
 
 # inputs for probes
 
+import os
+import stat
+import pwd, grp   # for user utility
 
 from gratia.common.Gratia import DebugPrint
 
 
+class IgnoreRecordException(Exception):
+    """Allows to skip code when ignoring a record
+    """
 
 
 class InputCheckpoint(object):
     """Read and write a checkpoint file
+    Checkpoint value is number of seconds from epoch
     If class is instantiated without a filename, class works as expected but
     data is not stored to disk
     """
@@ -25,8 +32,8 @@ class InputCheckpoint(object):
         """
         if target:
             try:
-                fd        = os.open(target, os.O_RDWR | os.O_CREAT)
-                self._fp  = os.fdopen(fd, 'r+')
+                fd = os.open(target, os.O_RDWR | os.O_CREAT)
+                self._fp = os.fdopen(fd, 'r+')
                 self._val = long(self._fp.readline())
                 DebugPrint(1, "Resuming from checkpoint in %s" % target)
             except IOError:
@@ -59,12 +66,29 @@ class ProbeInput(object):
     Includes some utility functions
     """
 
-    def __init__(self, conn=None, static_info=None):
-        self._conn = conn
+    UNKNOWN = "unknown"
+
+    def __init__(self):
+        self.checkpoint = None
 
         # Filter static info if needed
+        self._static_info = None
+
+
+    def add_checkpoint(self, fname=None):
+        self.checkpoint = InputCheckpoint(fname)
+
+    def start(self, static_info):
         self._static_info = static_info
 
+    def add_static_info(self, static_info):
+        if not static_info:
+            return
+        for k in static_info:
+            if k in self._static_info:
+                DebugPrint(5, "Updating probe %s from %s to %s" % 
+                    (k, self._static_info[k], static_info[k]))
+            self._static_info[k] = static_info[k]
 
     # Utility functions
     ## User functions 
@@ -74,6 +98,7 @@ class ProbeInput(object):
             return pwd.getpwuid(uid)[0]
         except (KeyError, TypeError):
             return err
+
     def _get_group(self, gid, err=None):
         """Convenience function to resolve gid to group"""
         try:
@@ -85,22 +110,32 @@ class ProbeInput(object):
         """Add user/acct if missing (resolving uid/gid)"""
         if r['user'] is None:
             # Set user to info from NSS, or unknown
-            r['user'] = self._get_user(r['id_user'], 'unknown')
+            r['user'] = self._get_user(r['id_user'], ProbeInput.UNKNOWN)
         if r['acct'] is None:
             # Set acct to info from NSS, or unknown
-            r['acct'] = self._get_group(r['id_group'], 'unknown')
+            r['acct'] = self._get_group(r['id_group'], ProbeInput.UNKNOWN)
 
     # Main functions, implemented by the child class
-    def get_record(self):
+    def get_records(self):
+        """Return one iterators with all the records from the checkpoint on
+        """
         return None
         # fetch one record at the time
         # or fetch all records and use yeld to return them one at the time
+
+    def recover_records(self, start_time=None, end_time=None):
+        """Recoever all records in the selected time interval. Ignore the checkpoint
+        """
+        return None
 
     def get_version(self):
         """Return the input version (LRM version, server version). Normally form an external program.
         This is not the probe version"""
         #For error:    raise Exception("Unable to invoke %s" % cmd)
-        return "unknown"
+        return ProbeInput.UNKNOWN
+
+    def get_name(self):
+        return ProbeInput.UNKNOWN
 
 
 
@@ -109,6 +144,7 @@ class DbInput(ProbeInput):
     """
 
     def __init__(self):
+        ProbeInput.__init__(self)
         self._connection = None
 
     def get_init_params(self):
@@ -117,10 +153,10 @@ class DbInput(ProbeInput):
 
     def start(self, static_info):
         """start: connect to the database"""
-        self_static_info = static_info
+        self._static_info = static_info
         if static_info['DbPasswordFile'] and not static_info['DbPassword']:
             static_info['DbPassword'] = self.get_password(static_info['DbPasswordFile'])
-        get_db_conn(self)
+        self.open_db_conn()
 
     def open_db_conn(self):
         pass
