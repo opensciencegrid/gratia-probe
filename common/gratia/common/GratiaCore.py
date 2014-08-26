@@ -29,6 +29,7 @@ import gratia.common.bundle as bundle
 import gratia.common.connect_utils as connect_utils
 import gratia.common.probe_config as probe_config
 import gratia.common.probe_details as probe_details
+# TODO: why condor_ce is always imported and initialization is always looking for its history directory?
 import gratia.common.condor_ce as condor_ce
 
 # These are not necessary but for backward compatibility
