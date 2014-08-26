@@ -4,7 +4,7 @@
 import sys
 import traceback
 
-# For Postgress
+# For PostgresSQL
 import psycopg2
 import psycopg2.extras
 
@@ -15,7 +15,8 @@ from probeinput import DbInput
 
 
 class PgInput(DbInput):
-    """Postgress input
+    """PostgreSQL input
+    Database name, host, user are mandatory parameters. Port (5432) and password are optional
     """
 
     def __init__(self, conn=None):
@@ -26,11 +27,21 @@ class PgInput(DbInput):
 
     def open_db_conn(self):
         """Return a database connection"""
-        dburl = 'dbname=%s user=%s password=%s host=%s' % (
-            self._static_info['DbName'],
-            self._static_info['DbUser'],
-            self._static_info['DbPassword'],
-	    self._static_info['DbHost'] )
+        #  PG Defaults in libpq connection string / dsn parameters:
+        #  DbUser,user: same as UNIX user
+        #  DbName,dbname: DbUser
+        #  DbHost,host: UNIX socket
+        #  DbPort,port: 5432
+        # Other optional PG parameters:
+        # http://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+        dburl = 'dbname=%s user=%s host=%s' % (
+                self._static_info['DbName'],
+                self._static_info['DbUser'],
+                self._static_info['DbHost'] )
+        if self._static_info['DbPort']:
+            dburl += ' port=%s' % self._static_info['DbPort']
+        if self._static_info['DbPassword']:
+            dburl += ' password=%s' % self._static_info['DbPassword']
         try:
             self._connection = psycopg2.connect(dburl)
             self._cursor = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -46,7 +57,10 @@ class PgInput(DbInput):
     def query(self, sql):
         if not sql:
             DebugPrint(5, "No SQL provided: no query.")
-            return            
+            return
+        if not self._connection:
+            DebugPrint(5, "No connection provided: no query.")
+            return
         cursor = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)

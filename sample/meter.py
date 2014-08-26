@@ -3,15 +3,8 @@
 # /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 
 ###########################################################################
-# slurm_meter_running
 #
-# Python-based Gratia probe for SLURM accounting database
-# This probe reports ComputeElementRecords for running and waiting jobs
-# 
-# John Thiltges, 2012-Jun-19
-# Based on condor_meter by Brian Bockelman
-# 
-# Copyright 2012 University of Nebraska-Lincoln. Released under GPL v2.
+#
 ###########################################################################
 
 import sys, os, stat
@@ -19,18 +12,28 @@ import time
 import random
 import pwd, grp
 
+
+
+import optparse
+
+import gratia.common.Gratia as Gratia
+#import gratia.services.ComputeElement as ComputeElement
+#import gratia.services.ComputeElementRecord as ComputeElementRecord
+
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaWrapper as GratiaWrapper
-import gratia.common.Gratia as Gratia
 
 from probeinput import InputCheckpoint, ProbeInput
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
 
-class GratiaProbe(object):
 
-    # Constants (defined to avoid different spellins/cases)
+class GratiaProbe(object):
+    """GratiaProbe base class
+    """
+    # TODO: consider merging with GratiaMeter
+    # Constants (defined to avoid different spellings/cases)
     UNKNOWN = "unknown"
 
     _opts       = None
@@ -121,14 +124,22 @@ class GratiaProbe(object):
 
     # convenience functions
 
-    def get_config_params(self, param_list):
+    def get_config_params(self, param_list, mandatory=False):
         """Return a dictionary containing the values of a list of parameters"""
         #TODO: would an array be much more efficient?
         #TODO: check what happens if the parameter is not in the config file. Ideally None is returned
         retv = {}
         for param in param_list:
             retv[param] = Gratia.Config.getConfigAttribute(param)
+            if mandatory and not retv[param]:
+                raise Exception("Parameter '%s' not found in config file %s" % (param, self._opts.gratia_config))
         return retv
+
+    def get_site_name(self):
+        return self.get_config_params(["SiteName"], True)
+
+    def get_probe_name(self):
+        return self.get_config_params(["ProbeName"], True)
 
     def get_opts(self, option=None):
         """Return the command line option
@@ -257,22 +268,10 @@ class GratiaProbe(object):
         Gratia.RegisterService(self._probeinput.get_name(), input_version)
 
         # TODO: check which attributes need to ne set here (and not init)
-        # and which attributes are mandatori vs optional
+        # and which attributes are mandatory vs optional
         #Gratia.setProbeBatchManager("slurm")
         #GratiaCore.setProbeBatchManager("condor")
 
-
-
-
-
-
-
-import optparse
-import datetime
-
-import gratia.common.Gratia as Gratia
-import gratia.services.ComputeElement as ComputeElement
-import gratia.services.ComputeElementRecord as ComputeElementRecord
 
 
 class GratiaMeter(GratiaProbe):

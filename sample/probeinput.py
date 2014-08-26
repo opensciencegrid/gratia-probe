@@ -72,7 +72,7 @@ class ProbeInput(object):
         self.checkpoint = None
 
         # Filter static info if needed
-        self._static_info = None
+        self._static_info = {}
 
 
     def add_checkpoint(self, fname=None):
