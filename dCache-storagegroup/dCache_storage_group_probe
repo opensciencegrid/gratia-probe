@@ -106,6 +106,7 @@ def sendRecords(fn):
             sa.VO(sg)
             sa.Version(version)
             sa.Status(status)
+            parent_id = '%s:PoolGroup:%s' % (site, pg)
             sa.ParentID(parent_id)
             sa.Timestamp(timestamp)
             sar.Timestamp(timestamp)
