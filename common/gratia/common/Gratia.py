@@ -18,7 +18,7 @@ from gratia.common.send import Send
 from gratia.common.send import SendXMLFiles
 from gratia.common.reprocess import Reprocess
 from gratia.common.bundle import ProcessBundle
-from gratia.common.debug import DebugPrint, DebugPrintTraceback, Error
+from gratia.common.debug import DebugPrint, DebugPrintTraceback, Error, LogFileName
 
 from gratia.common.probe_config import ProbeConfiguration
 from gratia.common.probe_details import ProbeDetails

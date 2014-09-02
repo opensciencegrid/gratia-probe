@@ -93,8 +93,7 @@ def LogToFile(message):
         if os.path.exists(getGratiaConfig().get_LogFolder()) == 0:
             Mkdir(getGratiaConfig().get_LogFolder())
 
-        filename = time.strftime('%Y-%m-%d') + '.log'
-        filename = os.path.join(getGratiaConfig().get_LogFolder(), filename)
+        filename = LogFileName()
 
         if os.path.exists(filename) and not os.access(filename, os.W_OK):
             os.chown(filename, os.getuid(), os.getgid())
