@@ -3,6 +3,7 @@
 # inputs for probes
 
 import os
+import re  # re to parse rpm -q output
 import stat
 import pwd, grp   # for user utility
 
@@ -35,7 +36,7 @@ class InputCheckpoint(object):
                 fd = os.open(target, os.O_RDWR | os.O_CREAT)
                 self._fp = os.fdopen(fd, 'r+')
                 self._val = long(self._fp.readline())
-                DebugPrint(1, "Resuming from checkpoint in %s" % target)
+                DebugPrint(3, "Resuming from checkpoint in %s" % target)
             except IOError:
                 raise IOError("Could not open checkpoint file %s" % target)
             except ValueError:
@@ -70,23 +71,35 @@ class ProbeInput(object):
 
     def __init__(self):
         self.checkpoint = None
+        self._version = None
 
         # Filter static info if needed
-        self._static_info = {}
+        self._static_info = {'version': None}
 
 
     def add_checkpoint(self, fname=None):
         self.checkpoint = InputCheckpoint(fname)
 
+    def do_test(self, static_info=None):
+        """Prepare the input for testing, e.g. replacing some methods with stubs.
+        Invoked after init (object has been created and initializes) and before start
+        (static_info from config file not passed, final initialization not done) and get_records
+        """
+        pass
+
     def start(self, static_info):
-        self._static_info = static_info
+        self.add_static_info(static_info)
+
+    def get_init_params(self):
+        """Return list of parameters to read form the config file"""
+        return []
 
     def add_static_info(self, static_info):
         if not static_info:
             return
         for k in static_info:
             if k in self._static_info:
-                DebugPrint(5, "Updating probe %s from %s to %s" % 
+                DebugPrint(4, "Updating probe %s from %s to %s" %
                     (k, self._static_info[k], static_info[k]))
             self._static_info[k] = static_info[k]
 
@@ -121,21 +134,84 @@ class ProbeInput(object):
         """
         return None
         # fetch one record at the time
-        # or fetch all records and use yeld to return them one at the time
+        # or fetch all records and use yield to return them one at the time
 
     def recover_records(self, start_time=None, end_time=None):
-        """Recoever all records in the selected time interval. Ignore the checkpoint
+        """Recover all records in the selected time interval. Ignore the checkpoint
         """
         return None
+
+    def _set_version_config(self, value):
+        """Set the version provided by the config file (used only as fallback)"""
+        self._static_info['version'] = value
+
+    def _get_version(self, rpm_package_name=None, version_command=None, version_command_filter=None):
+        """Get program version looking in order for:
+        0. self._version (caching the value form previous executions)
+        1. rpm -q
+        2. the output of version_command filtered by version_command_filter
+        3. the value in the config file (stored in self._static_info['version']
+        This is a protected method
+        """
+        DebugPrint(5, "Called get_version (%s, %s; %s, %s, %s)" % (self._version, self._static_info['version'], rpm_package_name,
+                                                               version_command, version_command_filter))
+        if self._version:
+            return self._version
+        if rpm_package_name:
+            # Use RPM version, as specified in
+            # http://fedoraproject.org/wiki/Packaging%3aNamingGuidelines#Package_Versioning
+            # rpm --queryformat "%{NAME} %{VERSION} %{RELEASE} %{ARCH}" -q
+            # %% to escape %
+            fd = os.popen('rpm --queryformat "%%{NAME} %%{VERSION} %%{RELEASE} %%{ARCH}" -q %s' % rpm_package_name)
+            version = fd.read()
+            if fd.close():
+                DebugPrint(4, "Unable to invoke rpm to retrieve the %s version" % rpm_package_name)
+                #raise Exception("Unable to invoke rpm to retrieve version")
+            else:
+                rpm_version_re = re.compile("^(.*)\s+(.*)\s+(.*)\s+(.*)$")
+                m = rpm_version_re.match(version.strip())
+                if m:
+                    self._version = "%s-%s" % (m.groups()[1], m.groups()[2])
+                    return self._version
+                DebugPrint(4, "Unable to parse the %s version from 'rpm -q'" % rpm_package_name)
+        if version_command:
+            # Use version command
+            fd = os.popen(version_command)
+            version = fd.read()
+            if fd.close():
+                DebugPrint(4, "Unable to invoke '%s' to retrieve the version" % version_command)
+                #raise Exception("Unable to invoke command")
+            else:
+                if version_command_filter:
+                    version = version_command_filter(version.strip())
+                if version:
+                    self._version = version
+                    return self._version
+                DebugPrint(4, "Unable to parse the version from '%s'" % version_command)
+        # If other fail try the version attribute
+        retv = self._static_info['version']
+        if not retv:
+            DebugPrint(2, "Unable to retrieve the ProbeInput (%s) version" % type(self).__name__)
+            # raise Exception("Unable to parse condor_version output: %s" % version)
+            return ProbeInput.UNKNOWN
+        self._version = retv
+        return retv
 
     def get_version(self):
         """Return the input version (LRM version, server version). Normally form an external program.
         This is not the probe version"""
         #For error:    raise Exception("Unable to invoke %s" % cmd)
+        DebugPrint(2, "Called ProbeInput get_version instead of the Probe specific one.")
         return ProbeInput.UNKNOWN
 
     def get_name(self):
         return ProbeInput.UNKNOWN
+
+    def do_test(self):
+        """Function preparing the class for testing: substituting methods with stubs,
+        increasing verbosity, limiting actions, ...
+        """
+        DebugPrint(4, "ProbeInput test invoked but not defined")
 
 
 
@@ -144,21 +220,28 @@ class DbInput(ProbeInput):
     """
 
     def __init__(self):
+        """First initialization. Config file values are available only for start, not here"""
         ProbeInput.__init__(self)
-        self._connection = None
+        # this is not used here, define it in child classes:  self._connection = None
 
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
         return ['DbHost', 'DbPort', 'DbName', 'DbUser', 'DbPassword', 'DbPasswordFile']
 
     def start(self, static_info):
-        """start: connect to the database"""
-        self._static_info = static_info
+        """start: initialize adding values coming form the config file and connect to the database"""
+        # Protecting for missing optional parameters
+        for i in ['DbPort', 'DbPassword', 'DbPasswordFile']:
+            if not i in static_info:
+                static_info[i] = ""
         if static_info['DbPasswordFile'] and not static_info['DbPassword']:
             static_info['DbPassword'] = self.get_password(static_info['DbPasswordFile'])
+        self.add_static_info(static_info)
+        # Connect to DB
         self.open_db_conn()
 
     def open_db_conn(self):
+        """Open the Database connection"""
         pass
 
     def get_password(self, pwfile):

@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
-#import sys, os, stat
+#import sys,
+#import os  # for os.popen
+# , stat
 import time
 #import random
 #import pwd, grp
@@ -15,7 +17,107 @@ from meter import GratiaProbe, GratiaMeter
 
 from pgpinput import PgInput
 
+def DebugPrintLevel(level, *args):
+    if level <= 0:
+        level_str = "CRITICAL"
+    elif level >= 4:
+        level_str = "DEBUG"
+    else:
+        level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
+    level_str = "%s - EnstoreStorage: " % level_str
+    #DBMM
+    print "***MM calling DbP %s %s %s" % (level, level_str, args)
+    DebugPrint(level, level_str, *args)
+
+
+class _EnstoreStorageInputStub:
+    """Stub class, needs to be defined before the regular one, to avoid NameError
+    """
+    value_matrix = [[ '2013-05-01 00:00:00', 'ALEX',              27501971200 ,    29502252800 ,           94 ,         101],
+[ '2013-05-01 00:00:00', 'AMN',                         0 ,              0 ,            0 ,           0],
+[ '2013-05-01 00:00:00', 'ANM',             5324442004458 ,  5489039007858 ,         1645 ,        2087],
+[ '2013-05-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2013-06-01 00:00:00', 'ALEX',              32502444800 ,    34502726400 ,          111 ,         118],
+[ '2013-06-01 00:00:00', 'AMN',                         0 ,              0 ,            0 ,           0],
+[ '2013-06-01 00:00:00', 'ANM',             5330140154858 ,  5494737158258 ,         1654 ,        2096],
+[ '2013-06-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2013-07-01 00:00:00', 'ALEX',              32702534400 ,    34702816000 ,          112 ,         119],
+[ '2013-07-01 00:00:00', 'AMN',                         0 ,              0 ,            0 ,           0],
+[ '2013-07-01 00:00:00', 'ANM',             5363559205866 ,  5533639729266 ,         1745 ,        2190],
+[ '2013-07-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2013-08-01 00:00:00', 'ANM',             9715492242387 ,  9894136393825 ,         7715 ,        8179],
+[ '2013-08-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2014-02-01 00:00:00', 'ANM',             9999003890760 , 10599915674909 ,         7964 ,        8601],
+[ '2014-02-01 00:00:00', 'litvinse',            231480377 ,      231480377 ,          120 ,         120],
+[ '2014-02-01 00:00:00', 'test',                  2100468 ,        4200936 ,            3 ,           6],
+[ '2014-03-01 00:00:00', 'ALEX',              10400563200 ,    10400563200 ,           62 ,          62],
+[ '2014-03-01 00:00:00', 'ANM',             9343845119048 , 10192509713697 ,         7914 ,        8621],
+[ '2014-03-01 00:00:00', 'litvinse',            231480377 ,      231480377 ,          120 ,         120],
+[ '2014-03-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2014-03-01 00:00:00', 'test',                  2100468 ,        4200936 ,            3 ,           6],
+[ '2014-04-01 00:00:00', 'ALEX',              10400563200 ,    10400563200 ,           62 ,          62],
+[ '2014-04-01 00:00:00', 'ANM',             9430388985014 , 10280528687817 ,         8222 ,        9025],
+[ '2014-04-01 00:00:00', 'e906',                        0 ,              0 ,            0 ,           0],
+[ '2014-04-01 00:00:00', 'litvinse',            231480377 ,      231480377 ,          120 ,         120],
+[ '2014-04-01 00:00:00', 'none',                        0 ,              0 ,            0 ,           0],
+[ '2014-04-01 00:00:00', 'test',                  2100468 ,        4200936 ,            3 ,           6],
+[ '2014-05-01 00:00:00', 'ALEX',              15002131200 ,    15002131200 ,           54 ,          54],
+[ '2014-05-01 00:00:00', 'ANM',             9433767656334 ,  9654836052415 ,         8108 ,        8965],
+[ '2014-05-01 00:00:00', 'e906',                        0 ,              0 ,            0 ,           0],
+[ '2014-05-01 00:00:00', 'litvinse',            231480377 ,      231480377 ,          120 ,         120],
+[ '2014-05-01 00:00:00', 'test',                  2100468 ,        4200936 ,            3 ,           6],
+[ '2014-06-01 00:00:00', 'ALEX',               2900518400 ,     2900518400 ,           11 ,          11],
+[ '2014-06-01 00:00:00', 'ANM',             9434587326624 ,  9655655722705 ,         8145 ,        9002],
+[ '2014-06-01 00:00:00', 'e906',                        0 ,              0 ,            0 ,           0],
+[ '2014-06-01 00:00:00', 'litvinse',            231480377 ,      231480377 ,          120 ,         120],
+[ '2014-07-01 00:00:00', 'ALEX',             910905676800 ,   910905676800 ,         3044 ,        3044],
+[ '2014-07-01 00:00:00', 'ANM',            10344072760622 , 10565385542446 ,         8877 ,        9846],
+[ '2014-07-01 00:00:00', 'e906',                        0 ,              0 ,            0 ,           0],
+[ '2014-07-01 00:00:00', 'litvinse',            231480377 ,     1102439795 ,          120 ,      377322]
+]
+
+    def get_records():
+        for i in _EnstoreStorageInputStub.value_matrix:
+            retv = {'date': i[0],
+                    'storage_group': i[1],
+                    'active_bytes': i[2],
+                    'total_bytes': i[3],
+                    'active_files': i[4],
+                    'total_files': i[5]
+                    }
+            yield retv
+    get_records = staticmethod(get_records)
+
+
 class EnstoreStorageInput(PgInput):
+    """Query the records form the Enstore enstoredb DB
+    """
+
+    VERSION_ATTRIBUTE = 'EnstoreVersion'
+
+    def get_init_params(self):
+        """Return list of parameters to read form the config file"""
+        return PgInput.get_init_params(self) + [EnstoreStorageInput.VERSION_ATTRIBUTE]
+
+    def start(self, static_info):
+        PgInput.start(self, static_info)
+        DebugPrint(4, "ESI start, static info: %s" % static_info)
+        if EnstoreStorageInput.VERSION_ATTRIBUTE in static_info:
+            self._set_version_config(static_info[EnstoreStorageInput.VERSION_ATTRIBUTE])
+
+    def _start_stub(self, static_info):
+        try:
+            PgInput.start(self, static_info)
+        except:
+            DebugPrint(1, "Database connection may fail and is OK since stubs are used")
+        DebugPrint(4, "ESI start stub, static info: %s" % static_info)
+        if EnstoreStorageInput.VERSION_ATTRIBUTE in static_info:
+            self._set_version_config(static_info[EnstoreStorageInput.VERSION_ATTRIBUTE])
+
+    def get_version(self):
+        # RPM package is 'enstore'
+        return self._get_version('enstore')
+
     def get_records(self):
         """Select the usage records from the storage table
         enstoredb=> \d historic_tape_bytes;
@@ -66,7 +168,8 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
             FROM historic_tape_bytes
             ORDER BY date, storage_group
             ''' 
-        
+
+        DebugPrint(4, "Requesting new Enstore records %s" % sql)
         new_checkpoint = None
         for r in self.query(sql):
             # Add handy data to job record
@@ -79,6 +182,18 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
                     new_checkpoint = new_date
         if new_checkpoint:
             checkpoint.val = new_checkpoint
+
+    # Test functions
+    def do_test(self):
+        """Test with pre-arranged DB query results
+        """
+        # replace DB calls with stubs
+        self.start = self._start_stub
+        self.get_records = self._get_records_stub
+
+    def _get_records_stub(self):
+        for i in _EnstoreStorageInputStub.get_records():
+            yield i
 
 
 class EnstoreStorageProbe(GratiaMeter):
@@ -142,6 +257,7 @@ class EnstoreStorageProbe(GratiaMeter):
         """
         # SE
         selement.VO(inrecord['storage_group'])
+        selement.Name(inrecord['storage_group'])
         # SER
         used = inrecord['active_bytes']
         total = inrecord['total_bytes']
@@ -156,16 +272,16 @@ class EnstoreStorageProbe(GratiaMeter):
 
     def main(self):
         # Initialize the probe an the input
-        DebugPrint(5, "Starting the Enstore storage probe")
         self.start()
+        DebugPrintLevel(4, "Enstore storage probe started")
 
-
-        se = self.get_site_name()
-        name = self.get_probe_name()
+        se = "MyTestName4Now"  # self.get_sitename()
+        # Undertand the meening of the name: name = self.get_probename()
+        name = "parent"
         timestamp = time.time()
 
         # Parent storage element
-        DebugPrint(5, "Sending the parent StorageElement")
+        DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s)" % (se, name))
         unique_id = "%s:SE:%s" % (se, se)
         parent_id = unique_id
         gse = self.get_storage_element(unique_id, se, name, timestamp=timestamp)
@@ -175,12 +291,17 @@ class EnstoreStorageProbe(GratiaMeter):
         # Loop over storage records
         for srecord in self._probeinput.get_records():
             vo_name = srecord['storage_group']
-            DebugPrint(5, "Sending SE/SER for VO %s" % vo_name)
+            DebugPrint(4, "Sending SE/SER for VO %s" % vo_name)
             unique_id = "%s:StorageGroup:%s" % (se, vo_name)
-            gse = self.get_storage_element(unique_id, se, name, parent_id, timestamp)
+            # the name of the se is the vo_name
+            gse = self.get_storage_element(unique_id, se, vo_name, parent_id, timestamp)
             gser = self.get_storage_element_record(unique_id, timestamp)
 
             self.input_to_gsrs(srecord, gse, gser)
+
+            # To print the records being sent
+            #gse.Print()
+            #gser.Print()
 
             Gratia.Send(gse)
             Gratia.Send(gser)
@@ -205,3 +326,6 @@ class EnstoreStorageProbe(GratiaMeter):
 
 if __name__ == "__main__":
     EnstoreStorageProbe().main()
+
+
+

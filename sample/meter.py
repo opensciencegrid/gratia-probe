@@ -7,15 +7,20 @@
 #
 ###########################################################################
 
+# Standard libraries
 import sys, os, stat
 import time
 import random
 import pwd, grp
-
-
-
+import socket   # to get hostname
 import optparse
+#import re  # rpm parsing
 
+# Python profiler
+import hotshot
+import hotshot.stats
+
+# Gratia libraries
 import gratia.common.Gratia as Gratia
 #import gratia.services.ComputeElement as ComputeElement
 #import gratia.services.ComputeElementRecord as ComputeElementRecord
@@ -46,6 +51,7 @@ class GratiaProbe(object):
     probe_name = "gratia_probe"
     _probeinput = None
     _default_config = UNKNOWN
+    _version = None
 
     def __init__(self, probe_name=None):
         if probe_name:
@@ -71,6 +77,7 @@ class GratiaProbe(object):
         if not self._opts or not self._opts.gratia_config or not os.path.exists(self._opts.gratia_config):
             raise Exception("Gratia config file (%s) does not exist." %
                     self._opts.gratia_config)
+        # Initialization parses the config file. No debug print will work before this
         Gratia.Initialize(self._opts.gratia_config)
 
         if self._opts.verbose:
@@ -114,15 +121,33 @@ class GratiaProbe(object):
             self._probeinput = ProbeInput()
         input_parameters = self._probeinput.get_init_params()
         input_ini = self.get_config_params(input_parameters)
-        self._probeinput.add_static_info(input_ini)
-
-        # Connect to database
+        #parameters passed in start: self._probeinput.add_static_info(input_ini)
+        if 'input' in self._opts.test:
+            DebugPrint(3, "Running input in test mode")
+            self._probeinput.do_test()
+        # Finish input initialization, including DB connection (if used)
+        self._probeinput.start(input_ini)
 
         # Set other attributes form config file
         #self.cluster = Gratia.Config.getConfigAttribute('SlurmCluster')
 
 
     # convenience functions
+
+    def get_config_attribute(self, param, default=None, mandatory=False):
+        """Return the value of the requested parameter
+        - default is used if the value evaluates to False (None, empty string, ...)
+        - raise exception if mandatory, and the value (or default) evaluates to False
+        """
+        retv = Gratia.Config.getConfigAttribute(param)
+        # using Element.getAttribute from xml.dom underneath
+        # getConfigAttribute returns the value of the attribute named by name as a string.
+        # If no such attribute exists, an empty string is returned, as if the attribute had no value
+        if not retv and default is not None:
+            retv = default
+        if mandatory and not retv:
+                raise Exception("Attribute '%s' not found in config file %s" % (param, self._opts.gratia_config))
+        return retv
 
     def get_config_params(self, param_list, mandatory=False):
         """Return a dictionary containing the values of a list of parameters"""
@@ -132,14 +157,22 @@ class GratiaProbe(object):
         for param in param_list:
             retv[param] = Gratia.Config.getConfigAttribute(param)
             if mandatory and not retv[param]:
-                raise Exception("Parameter '%s' not found in config file %s" % (param, self._opts.gratia_config))
+                raise Exception("Attribute '%s' not found in config file %s" % (param, self._opts.gratia_config))
         return retv
 
-    def get_site_name(self):
-        return self.get_config_params(["SiteName"], True)
+    def get_hostname(self):
+        """Look for the host name in the configuration file first and second use fqdn
+        """
+        retv = self.get_config_attribute("HostName")
+        if not retv:
+            retv = socket.getfqdn()
+        return retv
 
-    def get_probe_name(self):
-        return self.get_config_params(["ProbeName"], True)
+    def get_sitename(self):
+        return self.get_config_attribute("SiteName", mandatory=True)
+
+    def get_probename(self):
+        return self.get_config_attribute("ProbeName", mandatory=True)
 
     def get_opts(self, option=None):
         """Return the command line option
@@ -242,7 +275,7 @@ class GratiaProbe(object):
             try:
                 input_version = self._probeinput.get_version()
             except Exception, e:
-                DebugPrint(0, "Unable to get input version: %s" % str(e))
+                DebugPrint(1, "Unable to get input version: %s" % str(e))
                 raise
             return input_version
         return GratiaProbe.UNKNOWN
@@ -277,7 +310,18 @@ class GratiaProbe(object):
 class GratiaMeter(GratiaProbe):
 
     def __init__(self, probe_name=None):
+        # calls also command line option parsing
         GratiaProbe.__init__(self, probe_name)
+
+        # Filter and adjust command line options
+        if self._opts and self._opts.test:
+            self._opts.test = self.check_test_values(self._opts.test)
+        #TODO: check here start and end time?
+
+        # Enable profiling
+        if self._opts.profile:
+            self._main = self.main
+            self.main = self.do_profile
 
     def get_opts_parser(self):
         """Return an options parser. It must invoke the parent option parser
@@ -289,10 +333,8 @@ class GratiaMeter(GratiaProbe):
             parser = super.get_opts_parser()
         except AttributeError:
             # base class initializes the parser
-            parser = optparse.OptionParser(usage="""%prog [options] [input1 [input2]] 
-
+            parser = optparse.OptionParser(usage="""%prog [options] [input1 [input2]]
 Example cron usage: $prog --sleep SECONDS
-
 Command line usage: $prog 
                     $prog --recovery --start-time=STARTTIME --end-time-ENDTIME""")
 
@@ -304,36 +346,46 @@ Command line usage: $prog
             "up to the specified number of seconds before running."
             "For use in cron invocation, to reduce Collector load from concurrent requests",
             dest="sleep", default=0, type="int")
-        parser.add_option("-v", "--verbose", 
+        parser.add_option("--test", help="Comma separated list of probe components to test using stubs, "
+            "e.g. input, output, all (=input,output).",
+            dest="test", default="")
+        parser.add_option("--profile", help="Enable probe profiling ",
+            dest="profile", default=False, action="store_true")
+        parser.add_option("-v", "--verbose",
             help="Enable verbose logging to stdout.",
-            default=False, action="store_true", dest="verbose")
+            dest="verbose", default=False, action="store_true")
         parser.add_option("-c", "--checkpoint", help="Only reports records past"
             " checkpoint; default is to report all records.",
-            default=False, action="store_true", dest="checkpoint")
+            dest="checkpoint", default=False, action="store_true")
         parser.add_option("-r", "--recovery", 
-            help="""Recovers the records from come history or log file (e.g. condor_history, 
-    accounting, ...), ignoring the live records.
-    This works also because Gratia recognizes and ignores duplicate records.
-    This option should be used with the --start-time and --end-time options 
-    to reduce the load on the Gratia collector.  It will look through all the 
-    historic records (or the ones in the selected time interval) and attempt to 
-    send them to Gratia.""",
-            dest="recovery_mode",
-            default=False, action="store_true")
+            help="Recovers the records from come history or log file (e.g. condor_history, "
+                 "accounting, ...), ignoring the live records. "
+                 "This works also because Gratia recognizes and ignores duplicate records. "
+                 "This option should be used with the --start-time and --end-time options "
+                 "to reduce the load on the Gratia collector.  It will look through all the "
+                 "historic records (or the ones in the selected time interval) and attempt to "
+                 "send them to Gratia.",
+            dest="recovery_mode", default=False, action="store_true")
         parser.add_option("--start-time", 
-            help="""First time to include when processing records using --recovery 
-    option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
-    is assumed to be 00:00:00 if omitted.""", 
-            dest="recovery_start_time",
-            default=None)
+            help="First time to include when processing records using --recovery "
+                 "option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS "
+                 "is assumed to be 00:00:00 if omitted.",
+            dest="recovery_start_time", default=None)
         parser.add_option("--end-time", 
-            help="""Last time to include when processing records using --recovery 
-    option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
-    is assumed to be 00:00:00 if omitted""", 
-            dest="recovery_end_time", 
-            default=None)    
+            help="Last time to include when processing records using --recovery "
+                 "option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS "
+                 "is assumed to be 00:00:00 if omitted",
+            dest="recovery_end_time", default=None)
 
         return parser
+
+    def check_test_values(self, test_string):
+        """Filter the test command line parameter
+        """
+        if test_string.strip() == 'all':
+            return ['input', 'output']
+        test_list = [i.strip() for i in test_string.split(',')]
+        return test_list
 
     def check_start_end_times(self, start_time = None, end_time = None):
         """Both or none of the times have to be present. Start time has to be in the past,
@@ -372,6 +424,19 @@ Command line usage: $prog
         parser = self.get_opts_parser()
         # Options are stored into opts/args class variables
         return parser.parse_args()
+
+    def do_profile(self):
+        """Wrap the main method in profiler execution
+        """
+        profiler = hotshot.Profile("profile.dat")
+        DebugPrint(4, "Enabled profiling")
+        retv = profiler.run("self._main()")
+        profiler.close()
+        stats = hotshot.stats.load("profile.dat")
+        stats.sort_stats('time', 'calls')
+        stats.print_stats()
+        return retv
+
 
     def main(self):
         # Loop over completed jobs
