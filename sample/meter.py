@@ -15,6 +15,8 @@ import pwd, grp
 import socket   # to get hostname
 import optparse
 #import re  # rpm parsing
+import signal  # is in the system library
+from Alarm import Alarm
 
 # Python profiler
 import hotshot
@@ -25,13 +27,25 @@ import gratia.common.Gratia as Gratia
 #import gratia.services.ComputeElement as ComputeElement
 #import gratia.services.ComputeElementRecord as ComputeElementRecord
 
-from gratia.common.Gratia import DebugPrint
+from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
 from probeinput import InputCheckpoint, ProbeInput
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
+
+
+def warn_of_signal_generator(alarm):
+    """Callback function for signal handling
+    alarm is curried by the method setting the handler
+    """
+    def f(signum, frame):
+        DebugPrint(2, "Going down on signal " + str(signum))
+        if alarm is not None:
+            alarm.event()
+        os._exit(1)
+    return f
 
 
 class GratiaProbe(object):
@@ -41,17 +55,20 @@ class GratiaProbe(object):
     # Constants (defined to avoid different spellings/cases)
     UNKNOWN = "unknown"
 
-    _opts       = None
-    _args       = None
+    _opts = None
+    _args = None
     checkpoint = None
-    _conn       = None
-    cluster    = None
+    _conn = None
+    cluster = None
     # probe name, e.g. slurm_meter
     #TODO: get it form config?
     probe_name = "gratia_probe"
     _probeinput = None
     _default_config = UNKNOWN
     _version = None
+    _alarm = None
+
+    #### Initialization and setup
 
     def __init__(self, probe_name=None):
         if probe_name:
@@ -66,9 +83,6 @@ class GratiaProbe(object):
             print >> sys.stderr, str(e)
             sys.exit(1)
 
-
-
-
     def start(self):
         """Initializes Gratia, does random sleep (if any),Must be invoked after options and parameters are parsed
         """
@@ -76,7 +90,7 @@ class GratiaProbe(object):
         # Initialize Gratia
         if not self._opts or not self._opts.gratia_config or not os.path.exists(self._opts.gratia_config):
             raise Exception("Gratia config file (%s) does not exist." %
-                    self._opts.gratia_config)
+                            self._opts.gratia_config)
         # Initialization parses the config file. No debug print will work before this
         Gratia.Initialize(self._opts.gratia_config)
 
@@ -114,7 +128,6 @@ class GratiaProbe(object):
 
         # Get static information form the config file
 
-
         # Initialize input
         # input must specify which parameters it requires form the config file
         if not self._probeinput:
@@ -131,8 +144,30 @@ class GratiaProbe(object):
         # Set other attributes form config file
         #self.cluster = Gratia.Config.getConfigAttribute('SlurmCluster')
 
+    #### Alarm to notify user and signal handling
 
-    # convenience functions
+    def set_alarm(self):
+        # Set up an alarm to send an email if the program terminates.
+        subject = "%s probe is going down unexpectedly" % self.probe_name
+        message = "The Gratia probe %s has terminated unexpectedly.\nPlease check the logfile\n   %s\n" \
+                  "for the cause.\n" % (self.probe_name, LogFileName())
+
+        self._alarm = Alarm(Gratia.Config.get_EmailServerHost(),
+                            Gratia.Config.get_EmailFromAddress(),
+                            Gratia.Config.get_EmailToList(),
+                            subject, message, 0, 0, False)
+
+    def add_signal_handlers(self):
+        # Ignore hangup signals. We shouldn't die just because our parent
+        # shell logs out.
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        # Try to catch common signals and send email before we die
+        warn_of_signal = warn_of_signal_generator(self._alarm)
+        signal.signal(signal.SIGINT,  warn_of_signal)
+        signal.signal(signal.SIGQUIT, warn_of_signal)
+        signal.signal(signal.SIGTERM, warn_of_signal)
+
+    #### Convenience functions
 
     def get_config_attribute(self, param, default=None, mandatory=False):
         """Return the value of the requested parameter
@@ -181,7 +216,7 @@ class GratiaProbe(object):
             return self._opts
         try:
             return self._opts[option]
-        except TypeError, KeyError:
+        except (TypeError, KeyError):
             DebugPrint(5, "No option %s, returning None" % option)
         return None
 
@@ -203,7 +238,7 @@ class GratiaProbe(object):
             return int(round(time.mktime(result)))
         except ValueError:
             pass
-        except Exception,e:
+        except Exception, e:
             return None
     
         try:
@@ -211,7 +246,7 @@ class GratiaProbe(object):
             return int(round(time.mktime(result)))
         except ValueError:
             pass
-        except Exception,e:
+        except Exception, e:
             return None
     
         return result
@@ -224,7 +259,7 @@ class GratiaProbe(object):
             result = time.strftime("%Y-%m-%d %H:%M:%S")
         except ValueError:
             pass
-        except Exception,e:
+        except Exception, e:
             return None
     
         return result
@@ -304,7 +339,6 @@ class GratiaProbe(object):
         # and which attributes are mandatory vs optional
         #Gratia.setProbeBatchManager("slurm")
         #GratiaCore.setProbeBatchManager("condor")
-
 
 
 class GratiaMeter(GratiaProbe):
@@ -436,7 +470,6 @@ Command line usage: $prog
         stats.sort_stats('time', 'calls')
         stats.print_stats()
         return retv
-
 
     def main(self):
         # Loop over completed jobs

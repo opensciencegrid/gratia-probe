@@ -106,6 +106,7 @@ class EnstoreStorageInput(PgInput):
             self._set_version_config(static_info[EnstoreStorageInput.VERSION_ATTRIBUTE])
 
     def _start_stub(self, static_info):
+        """start replacement for testing: database connection errors are trapped"""
         try:
             PgInput.start(self, static_info)
         except:
@@ -183,17 +184,17 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
         if new_checkpoint:
             checkpoint.val = new_checkpoint
 
-    # Test functions
+    def _get_records_stub(self):
+        """get_records replacement for tests: records are from a pre-filled array"""
+        for i in _EnstoreStorageInputStub.get_records():
+            yield i
+
     def do_test(self):
         """Test with pre-arranged DB query results
         """
         # replace DB calls with stubs
         self.start = self._start_stub
         self.get_records = self._get_records_stub
-
-    def _get_records_stub(self):
-        for i in _EnstoreStorageInputStub.get_records():
-            yield i
 
 
 class EnstoreStorageProbe(GratiaMeter):
