@@ -282,19 +282,19 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
             # 3
             reason = 'unknown or null VOName'
         elif Config.get_QuarantineUnknownVORecords() and (not VOName or VOName == 'Unknown'):
-            reason ='unknown or null VOName, will be quarantined in %s' % (os.path.join(os.path.join(Config.get_DataFolder(),"quarantine")))
-            isQuarantined=True
+            reason ='unknown or null VOName, will be quarantined in %s' % (os.path.join(os.path.join(Config.get_DataFolder(), "quarantine")))
+            isQuarantined = True
 
         if reason:
             [jobIdType, jobId] = FindBestJobId(usageRecord, namespace)
             DebugPrint(0, 'Info: suppressing record with ' + jobIdType + ' ' + jobId + ' due to ' + reason)
             usageRecord.parentNode.removeChild(usageRecord)
             if isQuarantined:
-                subdir=os.path.join(Config.get_DataFolder(),"quarantine",'subdir.' + Config.getFilenameFragment())
+                subdir = os.path.join(Config.get_DataFolder(), "quarantine", 'subdir.' + Config.getFilenameFragment())
                 if not os.path.exists(subdir):
-                        os.mkdir(subdir)
-                fn=sandbox_mgmt.GenerateFilename("r.",subdir)
-                writer=open(fn,'w')
+                    os.mkdir(subdir)
+                fn = sandbox_mgmt.GenerateFilename("r.", subdir)
+                writer = open(fn, 'w')
                 usageRecord.writexml(writer)
                 writer.close()
             usageRecord.unlink()
@@ -387,6 +387,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
 
     vo_info = None
     no_initial_values = True
+    real_fqan = False
  
     # 1. Initial values
 
@@ -425,17 +426,13 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
         if vo_info:
             DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
                        + str(vo_info['ReportableVOName']))
-            VOName = vo_info['VOName']
+            tmpVOName = vo_info['VOName']
             if vo_info['ReportableVOName'] == None:
-                if VOName[0] == r'/':
-                    vo_info['ReportableVOName'] = string.split(VOName,r'/')[1]
+                if tmpVOName[0] == r'/':
+                    vo_info['ReportableVOName'] = string.split(VOName, r'/')[1]
                 else:
-                    vo_info['ReportableVOName'] = VOName
-            #This will be done below - TODO: remove these commented lines after tests
-            #VONameNodes[0].firstChild.data = vo_info['VOName']
-            #ReportableVONameNodes[0].firstChild.data = vo_info['ReportableVOName']
-            #ReportableVOName = vo_info['ReportableVOName']
-        
+                    vo_info['ReportableVOName'] = tmpVOName
+
     # 3. Condor-CE query
 
     if no_initial_values and not vo_info:
@@ -447,6 +444,13 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
                 job_certinfo = condor_ce.queryJob(localJobId)
                 if job_certinfo:
                     vo_info = certinfo.populateFromCertInfo(job_certinfo, xmlDoc, userIdentityNode, namespace)
+
+    try:
+        if vo_info['VOName'][0] == r'/':
+            real_fqan = True
+    except:
+        # Could be NameError, TypeError, KeyError, IndexError 
+        pass
 
     # 4. & 5.
 
@@ -476,11 +480,16 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     # Resolve.
 
     if vo_info:
-        if vo_info['VOName'] == None:
-            vo_info['VOName'] = r''
-        if vo_info['ReportableVOName'] == None:
-            vo_info['ReportableVOName'] = r''
-        if not (VOName and ReportableVOName) or VOName == 'Unknown':
+        DebugPrint(4, 'DEBUG: Deciding wether to use the new vo_info (%s, %s, %s, %s)' % (VOName, ReportableVOName, no_initial_values, real_fqan))
+        if not (VOName and ReportableVOName) or VOName == 'Unknown' or (no_initial_values and real_fqan):
+            # Update the VO values if:
+            # 1. one of the initial VOName, ReportableVOName was null or empty OR
+            # 2. the initial VOName is 'Unknown' OR
+            # 3. the initial VOName is not a FQAN and vo_info['VOName'] is a real FQAN (from certinfo or HTCondor-CE) 
+            if vo_info['VOName'] == None:
+                vo_info['VOName'] = r''
+            if vo_info['ReportableVOName'] == None:
+                vo_info['ReportableVOName'] = r''
             DebugPrint(4, 'DEBUG: Updating VO info: (' + vo_info['VOName'] + r', ' + vo_info['ReportableVOName'
                        ] + ')')
 
@@ -493,8 +502,8 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     VOName = VONameNodes[0].firstChild.data
     ReportableVOName = ReportableVONameNodes[0].firstChild.data
 
-    DebugPrint(4, 'DEBUG: final VOName = ' + VONameNodes[0].firstChild.data)
-    DebugPrint(4, 'DEBUG: final ReportableVOName = ' + ReportableVONameNodes[0].firstChild.data)
+    DebugPrint(4, 'DEBUG: final VOName = ' + VOName)
+    DebugPrint(4, 'DEBUG: final ReportableVOName = ' + ReportableVOName)
 
     # ###################################################################
 
