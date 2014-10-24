@@ -225,11 +225,15 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
                     [jobIdType, jobId] = FindBestJobId(usageRecord, namespace)
                     DebugPrint(0, 'Warning: too many UserIdentity blocks  in ' + jobIdType + ' ' + jobId)
 
-                DebugPrint(4, 'DEBUG: Call CheckAndExtendUserIdentity')
-                id_info = CheckAndExtendUserIdentity(xmlDoc, userIdentityNodes[0], namespace, prefix)
-                DebugPrint(4, 'DEBUG: Call CheckAndExtendUserIdentity: OK')
                 ResourceType = FirstResourceMatching(xmlDoc, usageRecord, namespace, prefix, 'ResourceType')
                 DebugPrint(4, 'DEBUG: Read ResourceType as ' + str(ResourceType))
+                use_certinfo = True
+                # Storage (transfers on SEs) do not use certinfo files
+                if ResourceType and ResourceType == 'Storage':
+                    use_certinfo = False 
+                DebugPrint(4, 'DEBUG: Call CheckAndExtendUserIdentity')
+                id_info = CheckAndExtendUserIdentity(xmlDoc, userIdentityNodes[0], namespace, prefix, use_certinfo)
+                DebugPrint(4, 'DEBUG: Call CheckAndExtendUserIdentity: OK')
                 if Config.get_NoCertinfoBatchRecordsAreLocal() and ResourceType and ResourceType == 'Batch' \
                     and not (id_info.has_key('has_certinfo') and id_info['has_certinfo']):
 
@@ -306,12 +310,13 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
 XmlChecker.AddChecker(UsageCheckXmldoc)
 
 
-def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
+def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_certinfo=True):
     '''Check the contents of the UserIdentity block and extend if necessary
     - if Local user ID is not in the XML, then abort and return {}
     - if there are multiple (>1) VOName or ReportableVOName nodes then the XML is malformed,
       abort and return {}
-    - otherwise get VOName, ReportableVOName from existing XML (if FQAN), certinfo file, Condor-CE, 
+    - otherwise get VOName, ReportableVOName from existing XML (if FQAN), certinfo file 
+      (if use_certinfo=True), Condor-CE, 
       existing XML (also if not FQAN), reverse map file; update the values in XML and return them
     - result, dictionary w/ VOName, ReportableVOName and has_certinfo
     '''
@@ -399,39 +404,43 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     ReportableVOName = ReportableVONameNodes[0].firstChild.data
     DebugPrint(4, 'DEBUG: current ReportableVOName = ' + ReportableVONameNodes[0].firstChild.data)
 
-    # 2. Certinfo (if initial values are not OK)
-
     if VOName and VOName[0] == r'/':
         # Initial values are valid (1)
         # Information is available and is FQAN (starts with /)
-        # Must delete possible certinfo file also when all information is available
-        DebugPrint(4, 'DEBUG: Calling removeCertInfoFile')
-        certinfo.removeCertInfoFile(xmlDoc, userIdentityNode, namespace)
-        # Must set has_certinfo (to avoid to be considered local)
-        result['has_certinfo'] = 1
         no_initial_values = False
-    else:
-        # Use certinfo
-        DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
-        # look for vo_info and delete certinfo file
-        vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
-        DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
-        if vo_info:
-            result['has_certinfo'] = 1
-            if not (vo_info['VOName'] or vo_info['ReportableVOName']):
-                DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
-                vo_info = None  # Reset if no output.
+ 
+    # 2. Certinfo (if initial values are not OK)
+
+    if use_certinfo:
+        if no_initial_values==False:
+           # Initial values are valid (1)
+           # Must delete possible certinfo file also when all information is available
+           DebugPrint(4, 'DEBUG: Calling removeCertInfoFile')
+           certinfo.removeCertInfoFile(xmlDoc, userIdentityNode, namespace)
+           # Must set has_certinfo (to avoid to be considered local)
+           result['has_certinfo'] = 1
+        else:
+            # Use certinfo
+            DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo')
+            # look for vo_info and delete certinfo file
+            vo_info = certinfo.verifyFromCertInfo(xmlDoc, userIdentityNode, namespace)
+            DebugPrint(4, 'DEBUG: Calling verifyFromCertInfo: DONE')
+            if vo_info:
+                result['has_certinfo'] = 1
+                if not (vo_info['VOName'] or vo_info['ReportableVOName']):
+                    DebugPrint(4, 'DEBUG: No VOName data from verifyFromCertInfo')
+                    vo_info = None  # Reset if no output.
         
-        # need this because vo_info could have been reset above or may not have been set
-        if vo_info:
-            DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
-                       + str(vo_info['ReportableVOName']))
-            tmpVOName = vo_info['VOName']
-            if vo_info['ReportableVOName'] == None:
-                if tmpVOName[0] == r'/':
-                    vo_info['ReportableVOName'] = string.split(VOName, r'/')[1]
-                else:
-                    vo_info['ReportableVOName'] = tmpVOName
+            # need this because vo_info could have been reset above or may not have been set
+            if vo_info:
+                DebugPrint(4, 'DEBUG: Received values VOName: ' + str(vo_info['VOName']) + ' and ReportableVOName: '
+                           + str(vo_info['ReportableVOName']))
+                tmpVOName = vo_info['VOName']
+                if vo_info['ReportableVOName'] == None:
+                    if tmpVOName[0] == r'/':
+                        vo_info['ReportableVOName'] = string.split(VOName, r'/')[1]
+                    else:
+                        vo_info['ReportableVOName'] = tmpVOName
 
     # 3. Condor-CE query
 
