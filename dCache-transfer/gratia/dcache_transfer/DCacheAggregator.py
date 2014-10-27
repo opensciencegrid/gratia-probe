@@ -62,7 +62,6 @@ import TestContainer
 DCACHE_AGG_FIELDS = ['initiator', 'client', 'protocol', 'errorcode', 'isnew']
 DCACHE_SUM_FIELDS = ['njobs', 'transfersize', 'connectiontime']
 
-
 def sleep_check(length, stopFileName):
     """
     Sleep for the number of seconds specified by `length`.  Check to see if the
@@ -233,6 +232,8 @@ class DCacheAggregator:
             raise
 
         self._grid = configuration.get_Grid()
+	#user uids info
+	self.uinfo={}
 
     def _skipIntraSiteXfer(self, row):
         """
@@ -506,29 +507,34 @@ class DCacheAggregator:
         try:
             username = 'Unknown'
             if mappedUID != None and int(mappedUID) >= 0:
-                try:
-                    info = pwd.getpwuid(int(mappedUID))
-                    username = info[0]
-                except:
-		    #will try to get id from storage-authzdb
-		    try:
-			found=0
-			fd=open("/etc/gratia/dCache-transfer/unix.uid.list")
-			for line in fd.readlines():
-				uid,gid,fullname,uname=line[:-1].split(":")
-				if int(mappedUID)==int(uid) and int(gid)==int(mappedGID): 
-					username=uname
-					found=1
-					break
-			if not found:
-				self._log.warn("UID %s %s not found locally; make sure " \
-                                	"/etc/grid-security/unix.uid.list on this host and your dCache are using " \
-                                	"the same UIDs,GIDs!" % (str(int(mappedUID)),str(int(mappedGID))))
-			fd.close()
-		    except:
-                    	self._log.warn("UID %s not found locally; make sure " \
-                        	"/etc/passwd on this host and your dCache are using " \
-                        	"the same UIDs!" % str(int(mappedUID)))
+		if self.uinfo.has_key(mappedUID) and self.uinfo[mappedUID][0]==mappedGID:
+			username=self.uinfo[mappedUID][1]
+		else:
+                	try:
+                    		info = pwd.getpwuid(int(mappedUID))
+                    		username = info[0]
+				self.uinfo[mappedUID]=[mappedGID,username]
+                	except:
+		    		#will try to get id from unix.uid.list 
+		    		try:
+					found=0
+					fd=open("/etc/gratia/dCache-transfer/unix.uid.list")
+					for line in fd.readlines():
+						uid,gid,fullname,uname=line[:-1].split(":")
+						if int(mappedUID)==int(uid) and int(gid)==int(mappedGID): 
+							username=uname
+							self.uinfo[mappedUID]=[mappedGID,username]
+							found=1
+							break
+					if not found:
+						self._log.warn("UID %s %s not found locally; make sure " \
+                                		"/etc/grid-security/unix.uid.list on this host and your dCache are using " \
+                                		"the same UIDs,GIDs!" % (str(int(mappedUID)),str(int(mappedGID))))
+					fd.close()
+		    		except:
+                    			self._log.warn("UID %s not found locally; make sure " \
+                        			"/etc/passwd on this host and your dCache are using " \
+                        			"the same UIDs!" % str(int(mappedUID)))
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
