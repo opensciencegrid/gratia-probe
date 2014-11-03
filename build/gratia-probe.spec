@@ -816,6 +816,8 @@ The SLURM probe for the Gratia OSG accounting system.
 %changelog
 * Mon Nov 3 2014 Marco Mambelli <marcom@fnal.gov> - 1.13.31-1
 - Changed logic reporting VOName (GRATIA-156)
+- certinfo files not checked for transfer probes (GRATIA-159)
+- dCache transfer scalability improved (GRATIA-159)
 
 * Tue Jul 15 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.30-3
 - Fix syntax error in condor_meter
