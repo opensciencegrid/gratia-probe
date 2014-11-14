@@ -26,7 +26,7 @@ def DebugPrintLevel(level, *args):
         level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
     level_str = "%s - EnstoreStorage: " % level_str
     #DBMM
-    print "***MM calling DbP %s %s %s" % (level, level_str, args)
+    #print "***MM calling DbP %s %s %s" % (level, level_str, args)
     DebugPrint(level, level_str, *args)
 
 
@@ -108,9 +108,16 @@ class EnstoreStorageInput(PgInput):
     def _start_stub(self, static_info):
         """start replacement for testing: database connection errors are trapped"""
         try:
+            DebugPrintLevel(4, "Testing DB connection. The probe will not use it")
             PgInput.start(self, static_info)
+            if self.status_ok():
+                DebugPrintLevel(4, "Connection successful")
+            else:
+                DebugPrintLevel(4, "Connection failed")
+            DebugPrintLevel(4, "Closing the connection")
+            self.stop()
         except:
-            DebugPrint(1, "Database connection may fail and is OK since stubs are used")
+            DebugPrint(1, "Database connection failed. The test can continue since stubs are used.")
         DebugPrint(4, "ESI start stub, static info: %s" % static_info)
         if EnstoreStorageInput.VERSION_ATTRIBUTE in static_info:
             self._set_version_config(static_info[EnstoreStorageInput.VERSION_ATTRIBUTE])
@@ -210,7 +217,7 @@ class EnstoreStorageProbe(GratiaMeter):
     SE_MEASUREMENT_TYPE = 'logical'
 
     def __init__(self):
-        GratiaProbe.__init__(self, self.PROBE_NAME)
+        GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreStorageInput()
 
     def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
@@ -277,7 +284,7 @@ class EnstoreStorageProbe(GratiaMeter):
         DebugPrintLevel(4, "Enstore storage probe started")
 
         se = "MyTestName4Now"  # self.get_sitename()
-        # Undertand the meening of the name: name = self.get_probename()
+        # Understand the meaning of the name: name = self.get_probename()
         name = "parent"
         timestamp = time.time()
 

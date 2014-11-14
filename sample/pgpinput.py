@@ -58,6 +58,58 @@ class PgInput(DbInput):
             # Masking connection failure
             #self._connection = None
         return self._connection
+
+    def close_db_conn(self):
+        """Explicitly close the connection.
+        Connection is closed automatically at del
+        """
+        # NOTE: uncommitted operations are rolled back but inputs are read only
+        if self._connection is not None:
+            if self._cursor is not None:
+                try:
+                    self._cursor.close()
+                except psycopg2.InterfaceError:
+                    # was already closed
+                    pass
+                self._cursor = None
+            try:
+                self._connection.close()
+            except psycopg2.InterfaceError:
+                # was already closed
+                pass
+            self._connection = None
+
+    def status_ok(self):
+        """Return True if OK, False if the connection is closed"""
+        if self._connection is None or self._cursor is None:
+            return False
+        # TODO: do a select 1 test? The only way to really test
+        # try:
+        #    self._cursor.execute("SELECT 1")
+        #    return True
+        #except:
+        #    return False
+        return True
+
+    def status_string(self):
+        """Return a string describing the current status"""
+        if self._connection is None:
+            return "NOT CONNECTED"
+        if self._cursor is None:
+            return "NO CURSOR"
+        retv = "CONNECTED"
+        trans_status = self._cursor.get_transaction_status()
+        trans_string = ""
+        if trans_status == psycopg2.extensions.STATUS_READY:
+            trans_string = "STATUS_READY"
+        elif trans_status == psycopg2.extensions.STATUS_BEGIN:
+            trans_string = "STATUS_BEGIN"
+        elif trans_status == psycopg2.extensions.STATUS_IN_TRANSACTION:
+            trans_string = "STATUS_IN_TRANSACTION"
+        elif trans_status == psycopg2.extensions.STATUS_PREPARED:
+            trans_string = "STATUS_PREPARED"
+        if trans_status is not None:
+            retv = "%s (%s/%s)" % (retv, trans_status, trans_string)
         
     def query(self, sql):
         if not sql:

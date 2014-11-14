@@ -10,13 +10,14 @@
 # Standard libraries
 import sys, os, stat
 import time
+import calendar
 import random
 import pwd, grp
 import socket   # to get hostname
 import optparse
 #import re  # rpm parsing
 import signal  # is in the system library
-from Alarm import Alarm
+from alarm import Alarm
 
 # Python profiler
 import hotshot
@@ -27,6 +28,7 @@ import gratia.common.Gratia as Gratia
 #import gratia.services.ComputeElement as ComputeElement
 #import gratia.services.ComputeElementRecord as ComputeElementRecord
 
+#from gratia.common.debug import DebugPrint, LogFileName
 from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
@@ -80,8 +82,28 @@ class GratiaProbe(object):
         try:
             self._opts, self._args = self.parse_opts()
         except Exception, e:
-            print >> sys.stderr, str(e)
+            DebugPrint(1, "Error parsing the command line: %s" % e)
+            # print >> sys.stderr, str(e)
             sys.exit(1)
+
+        # Set to verbose from the beginning (if requested)
+        # will work only if Gratia.Config has been initialised
+        self.set_verbose()
+
+        DebugPrint(4, "Command line parsed.\nOptions: %s\nArguments: %s" % (self._opts, self._args))
+        # Place to handle special options (help, ...)
+
+    def set_verbose(self):
+        if self._opts.verbose:
+            # TODO: change also LogLevel?
+            # set/get_LogLevel
+            try:
+                # Config used by Gratia.Config can be None (instance)
+                current = Gratia.Config.get_DebugLevel()
+                if current < 5:
+                    Gratia.Config.set_DebugLevel(5)
+            except AttributeError:
+                return
 
     def start(self):
         """Initializes Gratia, does random sleep (if any),Must be invoked after options and parameters are parsed
@@ -89,13 +111,14 @@ class GratiaProbe(object):
 
         # Initialize Gratia
         if not self._opts or not self._opts.gratia_config or not os.path.exists(self._opts.gratia_config):
+            # TODO: print a message instead of an exception?
             raise Exception("Gratia config file (%s) does not exist." %
                             self._opts.gratia_config)
         # Initialization parses the config file. No debug print will work before this
         Gratia.Initialize(self._opts.gratia_config)
 
-        if self._opts.verbose:
-            Gratia.Config.set_DebugLevel(5)
+        # Set to verbose in case the config changed it
+        self.set_verbose()
 
         # Sanity checks for the probe's runtime environment.
         GratiaWrapper.CheckPreconditions()
@@ -128,12 +151,15 @@ class GratiaProbe(object):
 
         # Get static information form the config file
 
+        # Print options and initial conditions
+        DebugPrint(5, "Initial options: %s" % self._opts)
+
         # Initialize input
         # input must specify which parameters it requires form the config file
         if not self._probeinput:
             self._probeinput = ProbeInput()
         input_parameters = self._probeinput.get_init_params()
-        input_ini = self.get_config_params(input_parameters)
+        input_ini = self.get_config_att_list(input_parameters)
         #parameters passed in start: self._probeinput.add_static_info(input_ini)
         if 'input' in self._opts.test:
             DebugPrint(3, "Running input in test mode")
@@ -144,6 +170,7 @@ class GratiaProbe(object):
         # Set other attributes form config file
         #self.cluster = Gratia.Config.getConfigAttribute('SlurmCluster')
 
+    ####
     #### Alarm to notify user and signal handling
 
     def set_alarm(self):
@@ -167,24 +194,26 @@ class GratiaProbe(object):
         signal.signal(signal.SIGQUIT, warn_of_signal)
         signal.signal(signal.SIGTERM, warn_of_signal)
 
+    ####
     #### Convenience functions
 
-    def get_config_attribute(self, param, default=None, mandatory=False):
+    def get_config_attribute(self, attr, default=None, mandatory=False):
         """Return the value of the requested parameter
         - default is used if the value evaluates to False (None, empty string, ...)
         - raise exception if mandatory, and the value (or default) evaluates to False
         """
-        retv = Gratia.Config.getConfigAttribute(param)
+        retv = Gratia.Config.getConfigAttribute(attr)
         # using Element.getAttribute from xml.dom underneath
         # getConfigAttribute returns the value of the attribute named by name as a string.
         # If no such attribute exists, an empty string is returned, as if the attribute had no value
+        # TODO: disambiguate between False values and NULL values (set to None)
         if not retv and default is not None:
             retv = default
         if mandatory and not retv:
-                raise Exception("Attribute '%s' not found in config file %s" % (param, self._opts.gratia_config))
+                raise Exception("Attribute '%s' not found in config file %s" % (attr, self._opts.gratia_config))
         return retv
 
-    def get_config_params(self, param_list, mandatory=False):
+    def get_config_att_list(self, param_list, mandatory=False):
         """Return a dictionary containing the values of a list of parameters"""
         #TODO: would an array be much more efficient?
         #TODO: check what happens if the parameter is not in the config file. Ideally None is returned
@@ -224,24 +253,33 @@ class GratiaProbe(object):
         """Hook to parse command-line options"""
         return
 
-    def parse_date(self, date_string):
+    def parse_date(date_string):
         """
         Parse a date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
     
-        Returns None if string can't be parsed, otherwise returns time formatted
-        as the number of seconds since the Epoch
+        Returns None if string can't be parsed, otherwise returns parses
+        the formatted UTC time and returns the number of seconds since
+        the Epoch
         """    
-        #TODO: convert in static function?
         result = None
         try:
-            result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")        
-            return int(round(time.mktime(result)))
+            try:
+                # try first if it is a datetime obj (returned by DB api)
+                result = date_string.timetuple()
+            except AttributeError:
+                # try string format
+                result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+            # time.mktime() uses local time, not UTC
+            return int(round(calendar.timegm(result)))
         except ValueError:
+            # Wrong format
             pass
         except Exception, e:
+            # TODO: which other exception can happen?
             return None
     
         try:
+            # try second string format
             result = time.strptime(date_string, "%Y-%m-%d")
             return int(round(time.mktime(result)))
         except ValueError:
@@ -250,19 +288,29 @@ class GratiaProbe(object):
             return None
     
         return result
+    parse_date = staticmethod(parse_date)
 
-    def format_date(self, date_seconds):
-        """ Format the date as %Y-%m-%d %H:%M:%S
+    def format_date(date_in):
+        """ Format the date as %Y-%m-%d %H:%M:%S in UTC time
+        date_in is seconds from the Epoch (float) or a datetime struct,
+                if None, then time is now
         """
         result = None
         try:
-            result = time.strftime("%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            pass
+            try:
+                date_in = time.gmtime(date_in)
+            except TypeError:
+                try:
+                    date_in = date_in.timetuple()
+                except AttributeError:
+                    pass
+            result = time.strftime("%Y-%m-%d %H:%M:%S", date_in)
         except Exception, e:
+            DebugPrint(2, "Date conversion failed for %s: %s" % (date_in, e))
             return None
     
         return result
+    format_date = staticmethod(format_date)
 
 
     ## User functions (also in probeinput)
@@ -289,16 +337,32 @@ class GratiaProbe(object):
             # Set acct to info from NSS, or unknown
             r['acct'] = self._get_group(r['id_group'], GratiaProbe.UNKNOWN)
 
-    def get_password(self, pwfile):
+    def _isWrite2isNew(is_write):
+        """Return the correct isNew value 1/write(True) 0/read(False)"""
+        # https://github.com/dCache/dcap/blob/master/src/dcap_open.c
+        if is_write:
+            return 1
+        return 0
+    _isWrite2isNew = staticmethod(_isWrite2isNew)
+
+    def _normalize_hostname(self, inname):
+        """Add DefaultDomainName domain name if missing (i.e. no dots in the name)"""
+        if not '.' in inname:
+            domainname = self.get_config_attribute("DefaultDomainName")
+            if domainname:
+                return "%s.%s" % (inname, domainname)
+        return inname
+
+    def get_password(pwfile):
         """Read a password from a given file, checking permissions"""
         fp = open(pwfile)
         mode = os.fstat(fp.fileno()).st_mode
 
         if (stat.S_IMODE(mode) & (stat.S_IRGRP | stat.S_IROTH)) != 0:
-            raise IOError("Password file %s is readable by group or others" %
-                pwfile)
+            raise IOError("Password file %s is readable by group or others" % pwfile)
 
         return fp.readline().rstrip('\n')
+    get_password = staticmethod(get_password)
 
     def get_probe_version(self):
         #TODO: get probe version form file
@@ -319,7 +383,7 @@ class GratiaProbe(object):
         # raise Exception("No input defiled")
 
     def register_gratia(self):
-        Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" % \
+        Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" %
             (prog_revision, prog_version))
 
         try:
@@ -349,7 +413,7 @@ class GratiaMeter(GratiaProbe):
 
         # Filter and adjust command line options
         if self._opts and self._opts.test:
-            self._opts.test = self.check_test_values(self._opts.test)
+            self._opts.test = self._check_test_values(self._opts.test)
         #TODO: check here start and end time?
 
         # Enable profiling
@@ -368,9 +432,9 @@ class GratiaMeter(GratiaProbe):
         except AttributeError:
             # base class initializes the parser
             parser = optparse.OptionParser(usage="""%prog [options] [input1 [input2]]
-Example cron usage: $prog --sleep SECONDS
-Command line usage: $prog 
-                    $prog --recovery --start-time=STARTTIME --end-time-ENDTIME""")
+Example cron usage: %prog --sleep SECONDS
+Command line usage: %prog
+                    %prog --recovery --start-time=STARTTIME --end-time=ENDTIME""")
 
         # add (other) options
         parser.add_option("-f", "--gratia_config", 
@@ -386,7 +450,7 @@ Command line usage: $prog
         parser.add_option("--profile", help="Enable probe profiling ",
             dest="profile", default=False, action="store_true")
         parser.add_option("-v", "--verbose",
-            help="Enable verbose logging to stdout.",
+            help="Enable verbose logging to stderr.",
             dest="verbose", default=False, action="store_true")
         parser.add_option("-c", "--checkpoint", help="Only reports records past"
             " checkpoint; default is to report all records.",
@@ -413,7 +477,7 @@ Command line usage: $prog
 
         return parser
 
-    def check_test_values(self, test_string):
+    def _check_test_values(self, test_string):
         """Filter the test command line parameter
         """
         if test_string.strip() == 'all':
@@ -421,7 +485,7 @@ Command line usage: $prog
         test_list = [i.strip() for i in test_string.split(',')]
         return test_list
 
-    def check_start_end_times(self, start_time = None, end_time = None):
+    def _check_start_end_times(self, start_time=None, end_time=None):
         """Both or none of the times have to be present. Start time has to be in the past,
         end time is after start time
         """
@@ -430,7 +494,7 @@ Command line usage: $prog
             DebugPrint(-1, "Data Recovery " \
                        "from %s to %s" % (start_time, end_time))
             if start_time is None or end_time is None:
-                DebugPrint(-1, "Recovery mode ERROR: Either None or Both " \
+                DebugPrint(-1, "Recovery mode ERROR: Either None or Both "
                            "--start and --end args are required")
                 sys.exit(1)
             start_time = self.parse_date(start_time)
@@ -442,31 +506,41 @@ Command line usage: $prog
                 DebugPrint(-1, "Recovery mode ERROR: Can't parse end time") 
                 sys.exit(1)
             if start_time > end_time:
-                DebugPrint(-1, "Recovery mode ERROR: The end time is after " \
+                DebugPrint(-1, "Recovery mode ERROR: The end time is after "
                               "the start time")
                 sys.exit(1)
             if start_time > time.time():
-                DebugPrint(-1, "Recovery mode ERROR: The start time is in " \
+                DebugPrint(-1, "Recovery mode ERROR: The start time is in "
                                "the future")
                 sys.exit(1)
         else:  # using condor history for all dates
-            DebugPrint(-1 , "RUNNING the probe MANUALLY in recovery mode ")
+            DebugPrint(-1, "RUNNING the probe MANUALLY in recovery mode ")
 
         return start_time, end_time
 
     def parse_opts(self, options=None):
         parser = self.get_opts_parser()
         # Options are stored into opts/args class variables
+        # parser.print_help() if needs to invoke the help printout
+        # by default it is invoked only if --help is the first and only option
+        # TODO: Trigger error for unsupported options?
         return parser.parse_args()
 
     def do_profile(self):
         """Wrap the main method in profiler execution
         """
-        profiler = hotshot.Profile("profile.dat")
-        DebugPrint(4, "Enabled profiling")
+        # Interesting use: http://code.activestate.com/recipes/576656-quick-python-profiling-with-hotshot/
+        # http://blog.brianbeck.com/post/22199891/the-state-of-python-profilers-in-two-words
+        # http://nose.readthedocs.org/en/latest/plugins/prof.html
+        # pass name, use in profiler file name, return profiling function
+        # TODO: provide a standard probe profiling
+
+        fname = "gratiaprobe_%s.prof" % self.probe_name
+        profiler = hotshot.Profile(fname)
+        DebugPrint(4, "Enabled profiling to %s" % fname)
         retv = profiler.run("self._main()")
         profiler.close()
-        stats = hotshot.stats.load("profile.dat")
+        stats = hotshot.stats.load(fname)
         stats.sort_stats('time', 'calls')
         stats.print_stats()
         return retv

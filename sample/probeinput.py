@@ -49,7 +49,7 @@ class InputCheckpoint(object):
     def set_val(self, val):
         """Set checkpoint value"""
         self._val = long(val)
-        if (self._fp):
+        if self._fp:
             self._fp.seek(0)
             self._fp.write(str(self._val) + "\n")
             self._fp.truncate()
@@ -60,6 +60,32 @@ class InputCheckpoint(object):
 
     def transaction(self):
         return None
+
+class DBInputCheckpoint(InputCheckpoint):
+    """Read and write a checkpoint file
+    Checkpoint value is number of seconds from epoch
+    If class is instantiated without a filename, class works as expected but
+    data is not stored to disk
+    """
+    _dbval = []
+
+    def set_dbval(self, name, val, expression="%s > %s"):
+        dbval = { 'name': name,
+                  'value': val,
+                  'expression': expression
+        }
+        self._dbval.append(dbval)
+
+    def get_where(self):
+        try:
+            ret_list = [i['expression'] % (i['name'], i['value']) for i in self._dbval]
+            retval = " AND ".join(ret_list)
+        except:
+            return ""
+        return retval
+
+    def get_select(self):
+        return ""
 
 
 class ProbeInput(object):
@@ -76,19 +102,40 @@ class ProbeInput(object):
         # Filter static info if needed
         self._static_info = {'version': None}
 
-
     def add_checkpoint(self, fname=None):
         self.checkpoint = InputCheckpoint(fname)
 
     def do_test(self, static_info=None):
-        """Prepare the input for testing, e.g. replacing some methods with stubs.
-        Invoked after init (object has been created and initializes) and before start
+        """Prepare the input for testing, e.g. replacing some methods with stubs,
+        increasing verbosity, limiting actions, ...
+        Invoked after init (object has been created and initialized) and before start
         (static_info from config file not passed, final initialization not done) and get_records
         """
+        DebugPrint(4, "ProbeInput test invoked but not defined")
         pass
 
     def start(self, static_info):
+        """Initialize and start the input"""
         self.add_static_info(static_info)
+
+    def stop(self):
+        """Stop and cleanup the input:
+        - release memory (caches, ...)
+        - delete objects, invoke finalize
+        - close connections
+        - stop worker threads
+        - ...
+        Possibly these should happen automatically withous explicit invocation
+        """
+        pass
+
+    def status_ok(self):
+        """Return True if OK, False if the connection is closed"""
+        return False
+
+    def status_string(self):
+        """Return a string describing the current status"""
+        return ""
 
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
@@ -207,11 +254,6 @@ class ProbeInput(object):
     def get_name(self):
         return ProbeInput.UNKNOWN
 
-    def do_test(self):
-        """Function preparing the class for testing: substituting methods with stubs,
-        increasing verbosity, limiting actions, ...
-        """
-        DebugPrint(4, "ProbeInput test invoked but not defined")
 
 
 
@@ -240,8 +282,16 @@ class DbInput(ProbeInput):
         # Connect to DB
         self.open_db_conn()
 
+    def stop(self):
+        """stop: close the DB connection if any. It should be idempotent"""
+        self.close_db_conn()
+
     def open_db_conn(self):
         """Open the Database connection"""
+        pass
+
+    def close_db_conn(self):
+        """Close the Database connection"""
         pass
 
     def get_password(self, pwfile):

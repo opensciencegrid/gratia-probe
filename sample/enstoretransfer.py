@@ -27,7 +27,7 @@ def DebugPrintLevel(level, *args):
         level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
     level_str = "%s - EnstoreStorage: " % level_str
     #DBMM
-    print "***MM calling DbP %s %s %s" % (level, level_str, args)
+    #print "***MM calling DbP %s %s %s" % (level, level_str, args)
     DebugPrint(level, level_str, *args)
 
 
@@ -88,34 +88,26 @@ ggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-
              | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 101.175196171 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360435-11611-2
 | 111891277 |     107261667 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
 """
-    value_matrix = [['2014-08-26', 'ANM', 0, 115070377984, 0, 7377],
-                    ['2014-08-27', 'ANM', 11535362, 0, 3, 0],
-                    ['2014-08-28', 'ANM', 94470144, 0, 3, 0],
-                    ['2014-08-29', 'ALEX', 900096000, 0, 3, 0]
-                    ]
-    value_matrix2 = [['2014-08-26', 'ANM', 0, 115070377984, 0, 7377],
-                    ['2014-08-27', 'ANM', 11535362, 115070377984, 3, 7377],
-                    ['2014-08-28', 'ANM', 94470144, 0, 3, 0],
-                    ['2014-08-29', 'ALEX', 900096000, 0, 3, 0]
-                    ]
 
-    value_matrix3 = [['']
-                     [ '2014-10-01 12:41:55', 'enstore',  '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/test_files_for_enstore/0B_001', '/dev/null',     0, 'r',  'ANM' ],
-                     [ '2014-10-01 12:43:09', 'enstore',  '/tmp/encp_test/test_files_for_enstore/1B_001', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/1B_001',     1, 'w',  'ANM' ],
-                     [ '2014-10-01 12:44:05', 'enstore',  '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/1B_001', '/tmp/encp_test/encp_test_for_enstore/1B_001',     1, 'r',  'ANM' ],
-                     [ '2014-10-01 12:44:29', 'enstore',  '/tmp/encp_test/test_files_for_enstore/0B_001', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/0B_001',     0, 'w',  'ANM' ],
-                     [ '2014-10-01 12:44:56', 'enstore',  '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/0B_001', '/tmp/encp_test/encp_test_for_enstore/0B_001',     0, 'r',  'ANM' ],
-                     [ '2014-10-01 12:44:59', 'enstore',  '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/0B_001 ', '/tmp/encp_test/encp_test_for_enstore/0B_001',     0, 'r',  'ANM' ],
-                     [ '2014-10-01 12:45:27', 'enstore',  '/tmp/encp_test/test_files_for_enstore/1KB_002', '/pnfs/fs/.(access)(00002DB28146F4624708908011210EC4876B)',  1025, 'w',  'ANM' ],
-                     [ '2014-10-01 12:46:19', 'enstore',  '/pnfs/fs/.(access)(00002DB28146F4624708908011210EC4876B)', '/tmp/encp_test/encp_test_for_enstore/1KB_002',  1025, 'r',  'ANM' ],
-                     [ '2014-10-01 12:46:23', 'enstore',  '/pnfs/fs/.(access)(00002DB28146F4624708908011210EC4876B)', '/tmp/encp_test/encp_test_for_enstore/1KB_002',  1025, 'r',  'ANM' ],
-                     [ '2014-10-01 12:46:46', 'enstore',  '/tmp/encp_test/test_files_for_enstore/10KB_002', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/encp_test_for_enstore/10KB_002', 10241, 'w',  'ANM' ],
-                     [ '2014-10-02 09:21:17', 'root',  '/pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-10-01T13:17:55.694Z.tar', '/volumes/aggread/cache/tmp_stage/package-M1W-2014-10-01T13:17:55.694Z/package-M1W-2014-10-01T13:17:55.694Z.tar', 136396800, 'r',  'ANM' ],
-                     [ '2014-10-02 09:21:20', 'enstore',  '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/0/dmsen06_06e607e0499711e4912800304831518c.data', '/dev/null',  11534336, 'r', 'ANM']
+    value_matrix_summ = [['2014-08-26', 'ANM', 0, 115070377984, 0, 7377],
+                     ['2014-08-27', 'ANM', 11535362, 115070377984, 3, 7377],
+                     ['2014-08-28', 'ANM', 94470144, 0, 3, 0],
+                     ['2014-08-29', 'ALEX', 900096000, 0, 3, 0]
+                    ]
+    # date,node,username,src,dst,size,rw,overall_rate,mover_interface,storage_group,encp_id
+    value_matrix = [['2014-08-27 13:58:15', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1MB_002', '/dev/null', 1048577, 'r', 14636, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165822-7770-0'],
+                     ['2014-08-27 13:58:23', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/10MB_002', '/dev/null', 10485761, 'r', 1571134, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165895-7770-1'],
+                     ['2014-08-27 13:58:24', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1KB_001', '/dev/null', 1024, 'r', 783, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165903-7770-2'],
+                     ['2014-08-28 16:04:53', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-08-26T17:20:35.959Z.tar', '/volumes/aggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-26T17:20:35.959Z.tar', 74547200, 'r', 421630, 'enmvr021', 'ANM', 'dmsen03.fnal.gov-1409259405-8583-0'],
+                     ['2014-08-28 16:04:55', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/7/dmsen06_f2f6cda82d6e11e4af4700304831518c.data', '/dev/null', 10485760, 'r', 21336, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409259403-20374-0'],
+                     ['2014-08-28 16:07:06', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/4/dmsen06_e8ea85a22d6e11e4a6bc00304831518c.data', '/dev/null', 9437184, 'r', 41230225, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409260025-20733-0'],
+                     ['2014-08-29 19:59:27', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:21:25.77Z.tar', '/dev/null', 300032000, 'r', 2096428, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360223-11611-0'],
+                     ['2014-08-29 20:00:34', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:27:56.844Z.tar', '/dev/null', 300032000, 'r', 4526877, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360367-11611-1'],
+                     ['2014-08-29 20:02:16', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T18:58:22.864Z.tar', '/dev/null', 300032000, 'r', 2987800, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360435-11611-2']
     ]
 
     def get_records_summary():
-        for i in _EnstoreTransferInputStub.value_matrix:
+        for i in _EnstoreTransferInputStub.value_matrix_summ:
             retv = {'date': i[0],
                     'storage_group': i[1],
                     'read': i[2],
@@ -129,12 +121,16 @@ ggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-
     def get_records():
         for i in _EnstoreTransferInputStub.value_matrix:
             retv = {'date': i[0],
-                    'username': i[1],
-                    'src': i[2],
-                    'dst': i[3],
-                    'size': i[4],
-                    'rw': i[5],
-                    'storage_group': i[6]
+                    'node':i[1],
+                    'username': i[2],
+                    'src': i[3],
+                    'dst': i[4],
+                    'size': i[5],
+                    'rw': i[6],
+                    'overall_rate': i[7],
+                    'mover_interface': i[8],
+                    'storage_group': i[9],
+                    'encp_id': i[10]
                     }
             yield retv
     get_records = staticmethod(get_records)
@@ -153,17 +149,24 @@ class EnstoreTransferInput(PgInput):
     def start(self, static_info):
         """open DB connection and set version form config file"""
         PgInput.start(self, static_info)
-        DebugPrint(4, "ESI start, static info: %s" % static_info)
+        DebugPrint(4, "ETI start, static info: %s" % static_info)
         if EnstoreTransferInput.VERSION_ATTRIBUTE in static_info:
             self._set_version_config(static_info[EnstoreTransferInput.VERSION_ATTRIBUTE])
 
     def _start_stub(self, static_info):
         """start replacement for testing: database connection errors are trapped"""
         try:
+            DebugPrintLevel(4, "Testing DB connection. The probe will not use it")
             PgInput.start(self, static_info)
+            if self.status_ok():
+                DebugPrintLevel(4, "Connection successful")
+            else:
+                DebugPrintLevel(4, "Connection failed")
+            DebugPrintLevel(4, "Closing the connection")
+            self.stop()
         except:
-            DebugPrint(1, "Database connection may fail and is OK since stubs are used")
-        DebugPrint(4, "ESI start stub, static info: %s" % static_info)
+            DebugPrint(1, "Database connection failed. The test can continue since stubs are used.")
+        DebugPrint(4, "ETI start stub, static info: %s" % static_info)
         if EnstoreTransferInput.VERSION_ATTRIBUTE in static_info:
             self._set_version_config(static_info[EnstoreTransferInput.VERSION_ATTRIBUTE])
 
@@ -225,13 +228,15 @@ Indexes:
         if checkpoint:
             sql = '''SELECT
             date,
-            node, pid,
+            node,
             username,
             src, dst,
             size,
             rw,
             overall_rate,
-            storage_group
+            mover_interface,
+            storage_group,
+            encp_id
             FROM encp_xfer
             WHERE date >= '%s'
             ORDER BY date, storage_group
@@ -239,13 +244,15 @@ Indexes:
         else:
             sql = '''SELECT
             date,
-            node, pid,
+            node,
             username,
             src, dst,
             size,
             rw,
             overall_rate,
-            storage_group
+            mover_interface,
+            storage_group,
+            encp_id
             FROM encp_xfer
             ORDER BY date, storage_group
             '''
@@ -343,7 +350,7 @@ class EnstoreTransferProbe(GratiaMeter):
     SE_MEASUREMENT_TYPE = 'logical'
 
     def __init__(self):
-        GratiaProbe.__init__(self, self.PROBE_NAME)
+        GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreTransferInput()
 
     #def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
@@ -362,6 +369,9 @@ class EnstoreTransferProbe(GratiaMeter):
         r = Gratia.UsageRecord("Storage")
         r.AdditionalInfo("Protocol", "enstore")
         r.Grid("Local")
+        # Needs to be here, cannot be NULL
+        r.Status(0)
+        return r
 
     def URL2host(self, urltoparse):
         tmp = urlparse(urltoparse)
@@ -397,39 +407,59 @@ class EnstoreTransferProbe(GratiaMeter):
             src, dst,
             size,
             rw,
+            mover_interface,
             storage_group
+            encp_id
             """
-            isNew = srecord['rw'] == 'w'
-            if isNew:
+            DebugPrint(5, "Preparing transfer record for: %s" % srecord)
+            if srecord['rw'] == 'w':
+                # write
+                isNew = self._isWrite2isNew(True)
+                src = self._normalize_hostname(srecord['node'])
+                dst = self._normalize_hostname(srecord['mover_interface'])
                 filepath = srecord['dst']
             else:
+                # read
+                isNew = self._isWrite2isNew(False)
+                src = self._normalize_hostname(srecord['mover_interface'])
+                dst = self._normalize_hostname(srecord['node'])
                 filepath = srecord['src']
             r = self.get_usage_record()
             vo_name = srecord['storage_group']
             r.VOName(vo_name)
-            r.AdditionalInfo("Source", self.URL2host(srecord['src']))
-            r.AdditionalInfo("Destination", self.URL2host(srecord['dst']))
+            r.AdditionalInfo("Source", src)
+            r.AdditionalInfo("Destination", dst)
             r.AdditionalInfo("Protocol", "enstore")
             r.AdditionalInfo("IsNew", isNew)
             r.AdditionalInfo("File", filepath)
-            uniq_id = "%s.%s" % (srecord['node'], srecord['pid'])
+            # uniq_id = "%s.%s" % (srecord['node'], srecord['pid'])
+            uniq_id = srecord['encp_id']
             r.LocalJobId(uniq_id)
             r.Grid("Local")
-            r.StartTime(srecord['date'])
-            # TODO: double check unit conversion. Must be always bytes
+            # psycopg2 returns datetime obj, StartTime requires float or string
+            r.StartTime(self.format_date(srecord['date']))
+            # srecord['size'] is always in bytes
+            # Network(self, value, storageUnit=r'', phaseUnit=r'', metric='total', description=r'')
+            # Metric should be one of 'total','average','max','min'
+            # phaseUnit (duration) if numeric s considered to be in seconds and is converted in ISO timestamp
             size = srecord['size']
-            if size == 0:
-                duration = 0
+            rate = srecord['overall_rate']
+            if rate == 0:
+                if size == 0:
+                    duration = 0
+                    r.WallDuration(duration)
+                else:
+                    duration = ''
             else:
-                duration = int(size/srecord['overall_rate'])
+                duration = size/srecord['overall_rate']
+                r.WallDuration(duration)
             r.Network(size, 'b', duration, "transfer")
-            r.WallDuration(duration)
             r.LocalUserId(srecord['username'])
-            r.SubmitHost(srecord['node']) # TODO: node in the record or host running the probe?
+            r.SubmitHost(srecord['node'])
             #r.Status(0)
-            # TODO: can we ask to store DN of enstore transfers? Does it make sense?
+            # Future modifications of Enstore may include a DN
             r.DN("/OU=UnixUser/CN=%s" % srecord['username'])
-            DebugPrint(4, "Sending transfer record for VO %s" % vo_name)
+            DebugPrint(4, "Sending transfer record for VO %s: %s" % (vo_name, uniq_id))
             Gratia.Send(r)
 
 
