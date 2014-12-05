@@ -331,6 +331,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block does not have exactly ', 'one populated LocalUserId node in '
                     + jobIdType + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     LocalUserId = localUserIdNodes[0].firstChild.data
@@ -357,6 +358,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
     elif VONameNodes.length > 1:
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block has multiple VOName nodes in ' + jobIdType + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     # ReportableVOName
@@ -373,6 +375,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix,):
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block has multiple ', 'ReportableVOName nodes in ' + jobIdType
                    + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     # ###################################################################
