@@ -154,6 +154,14 @@ active_bytes and (active_bytes+deleted_bytes+unknown_bytes) as total_bytes
 active_files and (active_files+deleted_files+unknown_files) as total_files
         """
 
+        #TODO: double check what time format is returned:
+        # - float (timestamp without zone)
+        # - datetime (timestamp with time zone)
+        # it seems that some records return one, some the other
+        # checkpoint was complaining that was not a datetime
+        # StorageElement building is complaining that it is not a float/int
+        # GratiaProbe.format_date() will accept both, but would be nice to understand
+
         checkpoint = self.checkpoint
         if checkpoint:
             checkpoint_sql = "WHERE date >= '%s'" % GratiaProbe.format_date(checkpoint.date())
@@ -270,9 +278,10 @@ class EnstoreStorageProbe(GratiaMeter):
         # SE
         selement.VO(inrecord['storage_group'])
         selement.Name(inrecord['storage_group'])
-        selement.Timestamp(inrecord['date'])
+        timestamp = self.format_date(inrecord['date'])
+        selement.Timestamp(timestamp)
         # SER
-        serecord.Timestamp(inrecord['date'])
+        serecord.Timestamp(timestamp)
         used = inrecord['active_bytes']
         total = inrecord['total_bytes']
         # Values are in bytes
