@@ -9,83 +9,11 @@ import pwd, grp   # for user utility
 
 from gratia.common.Gratia import DebugPrint
 
+from checkpoint import SimpleCheckpoint, DateTransactionCheckpoint
 
 class IgnoreRecordException(Exception):
     """Allows to skip code when ignoring a record
     """
-
-
-class InputCheckpoint(object):
-    """Read and write a checkpoint file
-    Checkpoint value is number of seconds from epoch
-    If class is instantiated without a filename, class works as expected but
-    data is not stored to disk
-    """
-    #TODO: long int is OK for all?
-
-    _val = None
-    _fp  = None
-
-    def __init__(self, target=None):
-        """
-        Create a checkpoint file
-        target - checkpoint filename (optionally null)
-        """
-        if target:
-            try:
-                fd = os.open(target, os.O_RDWR | os.O_CREAT)
-                self._fp = os.fdopen(fd, 'r+')
-                self._val = long(self._fp.readline())
-                DebugPrint(3, "Resuming from checkpoint in %s" % target)
-            except IOError:
-                raise IOError("Could not open checkpoint file %s" % target)
-            except ValueError:
-                DebugPrint(1, "Failed to read checkpoint file %s" % target)
-
-    def get_val(self):
-        """Get checkpoint value"""
-        return self._val
-
-    def set_val(self, val):
-        """Set checkpoint value"""
-        self._val = long(val)
-        if self._fp:
-            self._fp.seek(0)
-            self._fp.write(str(self._val) + "\n")
-            self._fp.truncate()
-
-    val = property(get_val, set_val)
-
-    date = get_val
-
-    def transaction(self):
-        return None
-
-class DBInputCheckpoint(InputCheckpoint):
-    """Read and write a checkpoint file
-    Checkpoint value is number of seconds from epoch
-    If class is instantiated without a filename, class works as expected but
-    data is not stored to disk
-    """
-    _dbval = []
-
-    def set_dbval(self, name, val, expression="%s > %s"):
-        dbval = { 'name': name,
-                  'value': val,
-                  'expression': expression
-        }
-        self._dbval.append(dbval)
-
-    def get_where(self):
-        try:
-            ret_list = [i['expression'] % (i['name'], i['value']) for i in self._dbval]
-            retval = " AND ".join(ret_list)
-        except:
-            return ""
-        return retval
-
-    def get_select(self):
-        return ""
 
 
 class ProbeInput(object):
@@ -103,7 +31,7 @@ class ProbeInput(object):
         self._static_info = {'version': None}
 
     def add_checkpoint(self, fname=None):
-        self.checkpoint = InputCheckpoint(fname)
+        self.checkpoint = SimpleCheckpoint(fname)
 
     def do_test(self, static_info=None):
         """Prepare the input for testing, e.g. replacing some methods with stubs,
@@ -176,15 +104,19 @@ class ProbeInput(object):
             r['acct'] = self._get_group(r['id_group'], ProbeInput.UNKNOWN)
 
     # Main functions, implemented by the child class
-    def get_records(self):
-        """Return one iterators with all the records from the checkpoint on
+    def get_records(self, limit=None):
+        """Return one iterator with all the records from the checkpoint on.
+        limit - limits the maximum number of records (default: None)
+                may be useful when record retrieval is expensive
         """
         return None
         # fetch one record at the time
         # or fetch all records and use yield to return them one at the time
 
-    def recover_records(self, start_time=None, end_time=None):
+    def recover_records(self, start_time=None, end_time=None, limit=None):
         """Recover all records in the selected time interval. Ignore the checkpoint
+        limit - limits the maximum number of records (default: None)
+                may be useful when record retrieval is expensive
         """
         return None
 
@@ -252,9 +184,8 @@ class ProbeInput(object):
         return ProbeInput.UNKNOWN
 
     def get_name(self):
-        return ProbeInput.UNKNOWN
-
-
+        """Name of the Input. By default the class name"""
+        return type(self).__name__
 
 
 class DbInput(ProbeInput):
@@ -269,6 +200,24 @@ class DbInput(ProbeInput):
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
         return ['DbHost', 'DbPort', 'DbName', 'DbUser', 'DbPassword', 'DbPasswordFile']
+
+    def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
+        """Add a checkpoint, default file name is cfp-INPUT_NAME
+        fname - checkpoint file name (considered as prefix unless fullname=True)
+                file name is fname-INPUT_NAME
+        max_val - trim value for the checkpoint
+        default_value - value if no checkpoint is available
+        fullname - Default: False, if true, fname is considered the full name
+        """
+        if not fname:
+            fname = "cpf-%s" % self.get_name()
+        else:
+            if not fullname:
+                fname = "%s-%s" % (fname, self.get_name())
+        if max_val is not None or default_val is not None:
+            self.checkpoint = DateTransactionCheckpoint(fname, max_val, default_val)
+        else:
+            self.checkpoint = DateTransactionCheckpoint(fname)
 
     def start(self, static_info):
         """start: initialize adding values coming form the config file and connect to the database"""

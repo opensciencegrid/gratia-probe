@@ -2,6 +2,7 @@
 
 #import sys, os, stat
 import time
+import datetime  # Used for seconds->datetime conversion
 #import random
 #import pwd, grp
 import os
@@ -11,8 +12,6 @@ from urlparse import urlparse
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
-from gratia.services.StorageElement import StorageElement
-from gratia.services.StorageElementRecord import StorageElementRecord
 
 from meter import GratiaProbe, GratiaMeter
 
@@ -174,7 +173,7 @@ class EnstoreTransferInput(PgInput):
         # RPM package is 'enstore'
         return self._get_version('enstore')
 
-    def get_records(self):
+    def get_records(self, limit=None):
         """Select the transfer records from the transfer table
         accounting=> \d encp_xfer;
                 Table "public.encp_xfer"
@@ -224,25 +223,16 @@ Indexes:
     "xfr_wrapper_idx" btree (wrapper)
         """
         checkpoint = self.checkpoint
-
         if checkpoint:
-            sql = '''SELECT
-            date,
-            node,
-            username,
-            src, dst,
-            size,
-            rw,
-            overall_rate,
-            mover_interface,
-            storage_group,
-            encp_id
-            FROM encp_xfer
-            WHERE date >= '%s'
-            ORDER BY date, storage_group
-            ''' % GratiaProbe.format_date(checkpoint.val)
+            checkpoint_sql = "WHERE date >= '%s'" % GratiaProbe.format_date(checkpoint.date())
         else:
-            sql = '''SELECT
+            checkpoint_sql = ""
+        if limit:
+            limit_sql = "LIMIT %s" % limit
+        else:
+            limit_sql = ""
+
+        sql = '''SELECT
             date,
             node,
             username,
@@ -254,22 +244,25 @@ Indexes:
             storage_group,
             encp_id
             FROM encp_xfer
+            %s
             ORDER BY date, storage_group
-            '''
+            %s''' % (checkpoint_sql, limit_sql)
 
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
         new_checkpoint = None
         for r in self.query(sql):
             yield r
             if checkpoint:
+                # psycopg2 returns datetime obj (ok for checkpoint)
+                #  timestamp->datetime, timestamp without time zone -> float (seconds since Epoch)
                 new_date = GratiaProbe.parse_date(r['date'])
-                if new_date>new_checkpoint:
+                if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            checkpoint.val = new_checkpoint
+            print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
+            checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
 
-
-    def get_records_summary(self):
+    def get_records_summary(self, limit=None):
         """Select the transfer records from the daily summary table
         accounting=> \d xfer_by_day;
          Table "public.xfer_by_day"
@@ -291,37 +284,38 @@ We are interested in
         # TODO: is daily summary OK or detailed values are needed?
 
         checkpoint = self.checkpoint
-
         if checkpoint:
-            sql = '''SELECT
-            date,
-            storage_group,
-            read, write,
-            n_read, n_write
-            FROM xfer_by_day
-            WHERE date >= '%s'
-            ORDER BY date, storage_group
-            ''' % GratiaProbe.format_date(checkpoint.val)
+            checkpoint_sql = "WHERE date >= '%s'" % GratiaProbe.format_date(checkpoint.date())
         else:
-            sql = '''SELECT
+            checkpoint_sql = ""
+        if limit:
+            limit_sql = "LIMIT %s" % limit
+        else:
+            limit_sql = ""
+
+        sql = '''SELECT
             date,
             storage_group,
             read, write,
             n_read, n_write
             FROM xfer_by_day
+            %s
             ORDER BY date, storage_group
-            ''' 
+            %s ''' % (checkpoint_sql, limit_sql)
 
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
+
         new_checkpoint = None
         for r in self.query(sql):
             yield r
             if checkpoint:
+                # psycopg2 returns datetime obj (ok for checkpoint)
+                #  timestamp->datetime, timestamp without time zone -> float (seconds since Epoch)
                 new_date = GratiaProbe.parse_date(r['date'])
-                if new_date>new_checkpoint:
+                if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            checkpoint.val = new_checkpoint
+            checkpoint.set_date_transaction(new_checkpoint)
 
     def _get_records_stub(self):
         """get_records replacement for tests: records are from a pre-filled array"""
@@ -386,7 +380,7 @@ class EnstoreTransferProbe(GratiaMeter):
 
         se = self.get_sitename()
         name = self.get_probename()
-        timestamp = time.time()
+        #timestamp = time.time()
 
         # Parent storage element
         #DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s)" % (se, name))

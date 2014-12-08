@@ -4,6 +4,7 @@
 #import os  # for os.popen
 # , stat
 import time
+import datetime
 #import random
 #import pwd, grp
 
@@ -126,7 +127,7 @@ class EnstoreStorageInput(PgInput):
         # RPM package is 'enstore'
         return self._get_version('enstore')
 
-    def get_records(self):
+    def get_records(self, limit=None):
         """Select the usage records from the storage table
         enstoredb=> \d historic_tape_bytes;
           Table "public.historic_tape_bytes"
@@ -154,28 +155,26 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
         """
 
         checkpoint = self.checkpoint
-
         if checkpoint:
-            sql = '''SELECT
-            date,
-            storage_group, active_bytes,
-            (active_bytes+unknown_bytes+deleted_bytes) as total_bytes,
-            active_files,
-            (active_files+unknown_files+deleted_files) as total_files
-            FROM historic_tape_bytes
-            WHERE date >= '%s'
-            ORDER BY date, storage_group
-            ''' % GratiaProbe.format_date(checkpoint.val)
+            checkpoint_sql = "WHERE date >= '%s'" % GratiaProbe.format_date(checkpoint.date())
         else:
-            sql = '''SELECT
+            checkpoint_sql = ""
+        if limit:
+            limit_sql = "LIMIT %s" % limit
+        else:
+            limit_sql = ""
+
+        sql = '''SELECT
             date,
             storage_group, active_bytes,
             (active_bytes+unknown_bytes+deleted_bytes) as total_bytes,
             active_files,
             (active_files+unknown_files+deleted_files) as total_files
             FROM historic_tape_bytes
+            %s
             ORDER BY date, storage_group
-            ''' 
+            %s
+            ''' % (checkpoint_sql, limit_sql)
 
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
         new_checkpoint = None
@@ -185,11 +184,14 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
             #self._addUserInfoIfMissing(r)
             yield r
             if checkpoint:
+                # psycopg2 returns datetime obj (ok for checkpoint)
+                #  timestamp->datetime, timestamp without time zone -> float (seconds since Epoch)
                 new_date = GratiaProbe.parse_date(r['date'])
-                if new_date>new_checkpoint:
+                if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            checkpoint.val = new_checkpoint
+            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
+            checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
 
     def _get_records_stub(self):
         """get_records replacement for tests: records are from a pre-filled array"""
@@ -221,8 +223,8 @@ class EnstoreStorageProbe(GratiaMeter):
         self._probeinput = EnstoreStorageInput()
 
     def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
-        if not timestamp:
-            timestamp = time.time()
+        #if not timestamp:
+        #    timestamp = time.time()
         if not parent_id:
             parent_id = unique_id
         gse = StorageElement()
@@ -233,7 +235,8 @@ class EnstoreStorageProbe(GratiaMeter):
         # VO
         # OwnerDN
         gse.SpaceType("StorageGroup") # PoolGroup, StorageGroup in enstore terminology
-        gse.Timestamp(timestamp)
+        if timestamp:
+            gse.Timestamp(timestamp)
         gse.Implementation(self.SE_NAME)
         gse.Version(self.get_version())
         gse.Status(self.SE_STATUS)
@@ -244,14 +247,15 @@ class EnstoreStorageProbe(GratiaMeter):
         return gse
 
     def get_storage_element_record(self, unique_id, timestamp=None):
-        if not timestamp:
-            timestamp = time.time()
+        #if not timestamp:
+        #    timestamp = time.time()
         gser = StorageElementRecord()
         gser.UniqueID(unique_id)
         gser.MeasurementType(self.SE_MEASUREMENT_TYPE)
         gser.StorageType(self.SE_TYPE)
         # StorageType
-        gser.Timestamp(timestamp)
+        if timestamp:
+            gser.Timestamp(timestamp)
         # TotalSpace, Free, Used
         # FileCountLimit
         # FileCount
@@ -266,7 +270,9 @@ class EnstoreStorageProbe(GratiaMeter):
         # SE
         selement.VO(inrecord['storage_group'])
         selement.Name(inrecord['storage_group'])
+        selement.Timestamp(inrecord['date'])
         # SER
+        serecord.Timestamp(inrecord['date'])
         used = inrecord['active_bytes']
         total = inrecord['total_bytes']
         # Values are in bytes
@@ -302,8 +308,9 @@ class EnstoreStorageProbe(GratiaMeter):
             DebugPrint(4, "Sending SE/SER for VO %s" % vo_name)
             unique_id = "%s:StorageGroup:%s" % (se, vo_name)
             # the name of the se is the vo_name
-            gse = self.get_storage_element(unique_id, se, vo_name, parent_id, timestamp)
-            gser = self.get_storage_element_record(unique_id, timestamp)
+            # the timestamp is coming from the 'date' value in the record
+            gse = self.get_storage_element(unique_id, se, vo_name, parent_id)
+            gser = self.get_storage_element_record(unique_id)
 
             self.input_to_gsrs(srecord, gse, gser)
 

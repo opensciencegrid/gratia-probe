@@ -32,7 +32,8 @@ import gratia.common.Gratia as Gratia
 from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
-from probeinput import InputCheckpoint, ProbeInput
+from probeinput import ProbeInput
+from checkpoint import DateTransactionCheckpoint
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
@@ -133,21 +134,22 @@ class GratiaProbe(object):
 
         self.register_gratia()
 
+        # get_DataFileExpiration() returns the value in the config file or 31
+        # TODO: Do we want to always not consider values older than 31 days or only when checkpointing is
+        # enabled?
+        # data_expiration = Gratia.Config.get_DataFileExpiration()
+
         # Find the checkpoint filename (if enabled)
         if self._opts.checkpoint:
             checkpoint_file = os.path.join(
                 Gratia.Config.get_WorkingFolder(), "checkpoint")
-        else:
-            checkpoint_file = None
-
-        # Open the checkpoint file
-        self.checkpoint = InputCheckpoint(checkpoint_file)
-
-        # Only process DataFileExpiration days of history
-        # (unless we're resuming from a checkpoint file)
-        # TODO: is this a valid generic system?
-        if self.checkpoint.val is None:
-            self.checkpoint.val = int(time.time() - (Gratia.Config.get_DataFileExpiration() * 86400))
+            data_expiration = Gratia.Config.get_DataFileExpiration()
+            # Only process DataFileExpiration days of history
+            # (unless we're resuming from a checkpoint file)
+            # TODO: is datafileexpiration a maximum value or a default (if no checkpoint is specified)?
+            #       Do we want both?
+            # Open the checkpoint file
+            self._probeinput.add_checkpoint(checkpoint_file, default_val=data_expiration)
 
         # Get static information form the config file
 
@@ -270,7 +272,7 @@ class GratiaProbe(object):
                 # try string format
                 result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")
             # time.mktime() uses local time, not UTC
-            return int(round(calendar.timegm(result)))
+            return long(round(calendar.timegm(result)))
         except ValueError:
             # Wrong format
             pass
@@ -281,7 +283,7 @@ class GratiaProbe(object):
         try:
             # try second string format
             result = time.strptime(date_string, "%Y-%m-%d")
-            return int(round(time.mktime(result)))
+            return long(round(time.mktime(result)))
         except ValueError:
             pass
         except Exception, e:
@@ -292,7 +294,7 @@ class GratiaProbe(object):
 
     def format_date(date_in):
         """ Format the date as %Y-%m-%d %H:%M:%S in UTC time
-        date_in is seconds from the Epoch (float) or a datetime struct,
+        date_in is seconds from the Epoch (float) or a datetime struct (in UTC time),
                 if None, then time is now
         """
         result = None
