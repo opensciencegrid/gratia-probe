@@ -375,7 +375,8 @@ class UsageRecord(record.Record):
         metric='total',
         description=r'',
         ):
-        """ Metric should be one of 'total','average','max','min' """
+        """ Metric should be one of 'total','average','max','min' 
+        """
 
         if consumptionRate > 0:
             pstring = 'consumptionRate="' + str(consumptionRate) + '" '
@@ -397,9 +398,19 @@ class UsageRecord(record.Record):
                           str(value))
 
     def Resource(self, description, value):
+        """Adds arbitrary key-value pairs to the UR. It will be stored in the Resource table
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| dbid        | bigint(20)   | NO   | MUL | NULL    |       |
+| Value       | varchar(255) | YES  |     | NULL    |       |
+| Description | varchar(255) | YES  |     | NULL    |       |
+        description - key
+        value - value
+        """
         self.AppendToList(self.RecordData, 'Resource', self.Description(description), str(value))
 
     def AdditionalInfo(self, description, value):
+        """Same as Resource()"""
         self.Resource(description, value)
 
     # The following are not officially part of the Usage Record format
