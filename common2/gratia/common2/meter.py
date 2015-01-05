@@ -280,15 +280,18 @@ class GratiaProbe(object):
             pass
         except Exception, e:
             # TODO: which other exception can happen?
+            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
             return None
     
         try:
             # try second string format
             result = time.strptime(date_string, "%Y-%m-%d")
             return long(round(time.mktime(result)))
-        except ValueError:
+        except ValueError, e:
+            DebugPrint(2, "Wrong format, Date parsing failed for %s: %s" % (date_string, e))
             pass
         except Exception, e:
+            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
             return None
     
         return result
@@ -305,22 +308,23 @@ class GratiaProbe(object):
         try:
             result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")
         except ValueError:
-            # Wrong format
-            pass
+            # Wrong format, try the next
+            try:
+                # try second string format
+                result = time.strptime(date_string, "%Y-%m-%d")
+            except ValueError, e:
+                # No valid format
+                DebugPrint(2, "Wrong format, Date parsing failed for %s: %s" % (date_string, e))
+                return None
+            except Exception, e:
+                DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
+                return None
         except Exception, e:
             # TODO: which other exception can happen?
+            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
             return None
 
-        try:
-            # try second string format
-            result = time.strptime(date_string, "%Y-%m-%d")
-        except ValueError:
-            # No valid format
-            return None
-        except Exception, e:
-            return None
-
-        return datetime(*result[0:6])
+        return datetime.datetime(*result[0:6])
     parse_datetime = staticmethod(parse_datetime)
 
     def format_date(date_in):
