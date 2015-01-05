@@ -23,6 +23,7 @@ BuildRequires: gcc-c++
 %global osg_collector gratia-osg-prod.opensciencegrid.org
 %global osg_transfer_collector gratia-osg-transfer.opensciencegrid.org
 %global osg_metric_collector rsv.grid.iu.edu
+%global enstore_collector dmscollectorgpvm01.fnal.gov
 
 # Default ProbeName
 %{!?meter_name: %global meter_name `hostname -f`}
@@ -54,6 +55,11 @@ Source15: %{name}-xrootd-storage-%{version}.tar.bz2
 Source16: %{name}-bdii-status-%{version}.tar.bz2
 Source17: %{name}-onevm-%{version}.tar.bz2
 Source18: %{name}-slurm-%{version}.tar.bz2
+Source19: %{name}-common2-%{version}.tar.bz2
+Source20: %{name}-enstore-transfer-%{version}.tar.bz2
+Source21: %{name}-enstore-storage-%{version}.tar.bz2
+Source22: %{name}-enstore-tapedrive-%{version}.tar.bz2
+Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
 
 ########################################################################
 
@@ -85,6 +91,11 @@ Prefix: /etc
 %setup -q -D -T -a 16
 %setup -q -D -T -a 17
 %setup -q -D -T -a 18 
+%setup -q -D -T -a 19
+%setup -q -D -T -a 20
+%setup -q -D -T -a 21
+%setup -q -D -T -a 22
+%setup -q -D -T -a 23
 
 %build
 %ifnarch noarch
@@ -103,7 +114,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %ifarch noarch
   # Obtain files
 
-%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm
+%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup
 
   cp -pR %{noarch_packs}  $RPM_BUILD_ROOT%{_datadir}/gratia
 
@@ -126,26 +137,34 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
       rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/gratia
     fi
 
-    # Customize template for each probe
+    # Common template customizations (same for all probes)
     PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
-    if [ $probe == "*-transfer" -o $probe == "*-storage" ]; then
+    if [ $probe == "enstore-*" -o $probe == "dCache-storagegroup" ]; then
+      # must be first to catch enstrore-transfer/storage
+      endpoint=%{enstore_collector}:%{default_collector_port}
+      ssl_endpoint=%{enstore_collector}:%{ssl_port}
+    elif [ $probe == "*-transfer" -o $probe == "*-storage" ]; then
       endpoint=%{osg_transfer_collector}:%{default_collector_port}
+      ssl_endpoint=%{osg_transfer_collector}:%{ssl_port}
     elif [ $probe == metric ]; then
       endpoint=%{osg_metric_collector}:%{metric_port}
-    else 
+      ssl_endpoint=%{osg_metric_collector}:%{ssl_port}
+    else
       endpoint=%{osg_collector}:%{default_collector_port}
+      ssl_endpoint=%{osg_collector}:%{ssl_port}
     fi
     sed -i -e "s#@PROBE_NAME@#$probe#" \
            -e "s#@COLLECTOR_ENDPOINT@#$endpoint#" \
-           -e "s#@SSL_ENDPOINT@#%{osg_collector}:%{ssl_port}#" \
+           -e "s#@SSL_ENDPOINT@#$ssl_endpoint#" \
            -e "s#@SSL_REGISTRATION_ENDPOINT@#$endpoint#" \
         $PROBE_DIR/ProbeConfig
 
     # Probe-specific customizations
+    # TODO: probe template addon - in directory, cat
     if [ $probe == "psacct" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#PSACCTFileRepository="/var/lib/gratia/account/" \
     PSACCTBackupFileRepository="/var/lib/gratia/backup/" \
@@ -781,6 +800,7 @@ Gratia OSG accounting system probe for providing VM accounting.
 %post onevm
 %customize_probeconfig -d onevm
 
+
 %package slurm
 Summary: A SLURM probe
 Group: Application/System
@@ -809,9 +829,131 @@ The SLURM probe for the Gratia OSG accounting system.
 %post slurm
 %customize_probeconfig -d slurm
 
+
+# Enstore probes: enstore-transfer, enstore-storage, enstore-tapedrive
+
+%package enstore-transfer
+Summary: Enstore transfer probe
+Group: Application/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common2 >= %{version}-%{release}
+Requires: python-psycopg2
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description enstore-transfer
+The Enstore transfer probe for the Gratia OSG accounting system.
+
+%files enstore-transfer
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-transfer/README.html
+%dir %{default_prefix}/gratia/enstore-transfer
+%{default_prefix}/gratia/enstore-transfer/enstore-transfer
+
+%{default_prefix}/gratia/enstore-transfer/ProbeConfig
+%config(noreplace) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
+
+%post enstore-transfer
+%customize_probeconfig -d enstore-transfer
+
+%package enstore-storage
+Summary: Enstore storage probe
+Group: Application/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common2 >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: python-psycopg2
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description enstore-storage
+The Enstore storage probe for the Gratia OSG accounting system.
+
+%files enstore-storage
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-storage/README.html
+%dir %{default_prefix}/gratia/enstore-storage
+%{default_prefix}/gratia/enstore-storage/enstore-storage
+
+%{default_prefix}/gratia/enstore-storage/ProbeConfig
+%config(noreplace) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
+
+%post enstore-storage
+%customize_probeconfig -d enstore-storage
+
+%package enstore-tapedrive
+Summary: Enstore tapedrive probe
+Group: Application/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common2 >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: python-psycopg2
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description enstore-tapedrive
+The Enstore tape drive probe for the Gratia OSG accounting system.
+
+%files enstore-tapedrive
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-tapedrive/README.html
+%dir %{default_prefix}/gratia/enstore-tapedrive
+%{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
+
+%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
+%config(noreplace) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
+
+%post enstore-tapedrive
+%customize_probeconfig -d enstore-tapedrive
+
+# dCache storagegroup
+
+%package dCache-storagegroup
+Summary: dCache storagegroup probe
+Group: Application/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: python-psycopg2
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description dCache-storagegroup
+The dCache storagegroup probe for the Gratia OSG accounting system.
+
+%files dCache-storagegroup
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/dCache-storagegroup/README.html
+%dir %{default_prefix}/gratia/dCache-storagegroup
+%{default_prefix}/gratia/dCache-storagegroup/dCache_storage_group_probe
+
+%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
+%config(noreplace) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dCache-storagegroup.cron
+
+%post dCache-storagegroup
+%customize_probeconfig -d dCache-storagegroup
+
+
+
 %endif # noarch
 
 %changelog
+* Wed Dec 17 2014 Marco Mambelli <marcom@fnal.gov> - 1.14.0
+- new common files in common2 module
+- Adding dCache storage probe
+- Adding Enstore probes: transfer, storage, tape drive
+
 * Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1
 - Bugfix for hadoop storage probe (GRATIA-137)
 
