@@ -331,7 +331,7 @@ Probes for the Gratia OSG accounting system
 
 %package pbs-lsf
 Summary: Gratia OSG accounting system probe for PBS and LSF batch systems.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= 0.12f
 License: See LICENSE.
 
@@ -553,7 +553,7 @@ The metric probe for the Gratia OSG accounting system.
 
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires:  python-psycopg2
 License: See LICENSE.
@@ -583,7 +583,7 @@ Contributed by Greg Sharp and the dCache project.
 
 %package dcache-storage
 Summary: Gratia OSG accounting system probe for dCache storage.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services
 Requires: xalan-j2
@@ -614,7 +614,7 @@ Contributed by Andrei Baranovksi of the OSG Storage team.
 
 %package gridftp-transfer
 Summary: Gratia OSG accounting system probe for gridftp transfers.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: netlogger 
 License: See LICENSE.
@@ -637,7 +637,7 @@ Contributed by Andrei Baranovski of the OSG storage team.
 
 %package services
 Summary: Gratia OSG accounting system probe API for services.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 License: See LICENSE.
 
@@ -659,7 +659,7 @@ Contributed by University of Nebraska Lincoln.
 
 %package hadoop-storage
 Summary: HDFS Storage Probe for Gratia OSG accounting system.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services
 License: See LICENSE.
@@ -682,7 +682,7 @@ Contributed by University of Nebraska Lincoln.
 
 %package condor-events
 Summary: Probe that emits a record for each event in the Condor system.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 License: See LICENSE.
 
@@ -703,7 +703,7 @@ Contributed by University of Nebraska Lincoln.
 
 %package xrootd-transfer
 Summary: Probe that emits a record for each file transfer in Xrootd.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 License: See LICENSE.
 
@@ -725,7 +725,7 @@ Contributed by University of Nebraska Lincoln.
 
 %package xrootd-storage
 Summary: Gratia probe to monitor Xrootd storage usage.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services = %{version}-%{release}
 License: See LICENSE.
@@ -749,7 +749,7 @@ Contributed as effort from OSG-Storage.
 
 %package bdii-status
 Summary: Probes that emits records of BDII status
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: /usr/bin/ldapsearch
@@ -776,7 +776,7 @@ Contributed by University of Nebraska Lincoln.
 
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: ruby
 License: See LICENSE.
@@ -803,7 +803,7 @@ Gratia OSG accounting system probe for providing VM accounting.
 
 %package slurm
 Summary: A SLURM probe
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: slurm
 Requires: MySQL-python
@@ -834,7 +834,7 @@ The SLURM probe for the Gratia OSG accounting system.
 
 %package enstore-transfer
 Summary: Enstore transfer probe
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-common2 >= %{version}-%{release}
 Requires: python-psycopg2
@@ -861,7 +861,7 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 
 %package enstore-storage
 Summary: Enstore storage probe
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-common2 >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
@@ -889,7 +889,7 @@ The Enstore storage probe for the Gratia OSG accounting system.
 
 %package enstore-tapedrive
 Summary: Enstore tapedrive probe
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-common2 >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
@@ -919,7 +919,7 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 
 %package dCache-storagegroup
 Summary: dCache storagegroup probe
-Group: Application/System
+Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
