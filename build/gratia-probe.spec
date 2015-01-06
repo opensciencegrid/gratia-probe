@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.13.29
+Version:            1.14.rc0
 Release:            1%{?dist}
 
 License:            GPL
@@ -407,6 +407,37 @@ fi
 %{default_prefix}/gratia/common/ProbeConfigTemplate
 %{default_prefix}/gratia/common/cron_check
 
+%package common2
+Summary: Common files for Gratia OSG accounting system probes V2
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires(post): chkconfig
+Requires(preun): chkconfig
+
+%description common2
+Common files and examples for Gratia OSG accounting system probes. Version 2.
+
+# %pre common2
+# %post
+# %preun
+
+%files common2
+%defattr(-,root,root,-)
+%{_initrddir}/gratia-probes-cron
+%doc %{default_prefix}/gratia/common/README
+%{_localstatedir}/lib/gratia/
+%attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
+%dir %{_sysconfdir}/gratia
+%{_localstatedir}/lock/gratia/
+# this is in common: %{python_sitelib}/gratia/__init__.py*
+%{python_sitelib}/gratia/common2
+# executables:
+# %dir %{default_prefix}/gratia/common2
+# %{default_prefix}/gratia/common2/alarm.py
+# %{default_prefix}/gratia/common2/checkpoint.py
+# %{default_prefix}/gratia/common2/meter.py
+# %{default_prefix}/gratia/common2/pginput.py
+# %{default_prefix}/gratia/common2/probeinput.py
 
 %package gram
 Summary: GRAM extensions for Gratia OSG accounting system
