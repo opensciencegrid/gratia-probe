@@ -311,6 +311,9 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         r.LocalJobId(local_id)
         r.GlobalJobId(local_id)
 
+        # The record Must have LocalUserId
+        r.LocalUserId('enstore')
+
         # Other data
         r.VOName(mrecord['storage_group'])
         start = GratiaProbe.parse_date(mrecord['mount_start'])
