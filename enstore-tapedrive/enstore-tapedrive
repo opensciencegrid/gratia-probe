@@ -183,7 +183,7 @@ Indexes:
         new_checkpoint = None
         if checkpoint:
             checkpoint_sql = "WHERE start >= '%s'" % GratiaProbe.format_date(checkpoint.date())
-            new_checkpoint = time_to_epoch(checkpoint.date())
+            new_checkpoint = checkpoint.date()
         else:
             checkpoint_sql = ""
         if limit:
@@ -234,7 +234,7 @@ Indexes:
                 if i is not None and i < new_checkpoint:
                     new_checkpoint = i
             if new_checkpoint is not None:
-                DebugPrint(4, "Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint))
+                DebugPrint(4, "Saving New Checkpoint: %s (%s)" % (new_checkpoint, type(new_checkpoint)))
                 #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
                 # new_checkpoint should be None or datetime
                 checkpoint.set_date_transaction(new_checkpoint)
