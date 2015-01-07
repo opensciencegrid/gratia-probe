@@ -260,7 +260,10 @@ class GratiaProbe(object):
         """
         Parse a date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
         Accepts also datetime objects.
-    
+
+        :param date_string: date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
+        :return: time, number of seconds since the Epoch, None if errors occur
+
         Returns None if string can't be parsed, otherwise takes a datetime
         input or parses a formatted UTC time and
         returns the number of seconds since the Epoch
