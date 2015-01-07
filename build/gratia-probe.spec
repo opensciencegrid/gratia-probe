@@ -267,6 +267,10 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/metric/samplemetric.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
+  rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
+  # TODO: allow test directory, remove from RPM
 
   # Set up var area
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
