@@ -280,6 +280,11 @@ class EnstoreStorageProbe(GratiaMeter):
         timestamp = self.format_date(inrecord['date'])
         selement.Timestamp(timestamp)
         # SER
+        # TODO: investigate different DB structure
+        # Record is currently "abused"
+        # used - active bytes (valid files)
+        # total - active + deleted + unknown (total files on tape, not total space available)
+        # free - deleted + unknown (lost, ...) files
         serecord.Timestamp(timestamp)
         used = inrecord['active_bytes']
         total = inrecord['total_bytes']
@@ -297,9 +302,11 @@ class EnstoreStorageProbe(GratiaMeter):
         self.start()
         DebugPrintLevel(4, "Enstore storage probe started")
 
-        se = "MyTestName4Now"  # self.get_sitename()
+        # Must be in configuration, set initially to EnstoreStorage
+        se = self.get_sitename()
+
         # Understand the meaning of the name: name = self.get_probename()
-        name = "parent"
+        name = se  # "parent"
         timestamp = time.time()
 
         # Parent storage element
