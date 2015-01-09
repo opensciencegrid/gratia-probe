@@ -290,12 +290,16 @@ class EnstoreStorageProbe(GratiaMeter):
         total = inrecord['total_bytes']
         # Values are in bytes
         serecord.TotalSpace(total)
-        serecord.FreeSpace(total-used)
+        if total is None or used is None:
+            unavailable = None
+        else:
+            unavailable = total - used
+        serecord.FreeSpace(unavailable)
         serecord.UsedSpace(used)
         # Add file counts
         # different form total_files - serecord.FileCountLimit()
         serecord.FileCount(inrecord['active_files'])
-        return inrecord['storage_group'], total, total-used, used, 0, inrecord['active_files']
+        return inrecord['storage_group'], total, unavailable, used, 0, inrecord['active_files']
 
     def main(self):
         # Initialize the probe an the input
