@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
 #import sys, os, stat
-import time
-import datetime  # Used for seconds->datetime conversion
+#import time
+#import datetime  # Used for seconds->datetime conversion
 #import random
 #import pwd, grp
-import os
-import signal
+#import os
+#import signal
 from urlparse import urlparse
 
 from gratia.common.Gratia import DebugPrint
@@ -24,16 +24,14 @@ def DebugPrintLevel(level, *args):
         level_str = "DEBUG"
     else:
         level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
-    level_str = "%s - EnstoreStorage: " % level_str
-    #DBMM
-    #print "***MM calling DbP %s %s %s" % (level, level_str, args)
+    level_str = "%s - EnstoreTransfer: " % level_str
     DebugPrint(level, level_str, *args)
 
 
 class _EnstoreTransferInputStub:
     """Stub class, needs to be defined before the regular one, to avoid NameError
-    """
-    """ Query: accounting=> select * from xfer_by_day where date>'2014-08-25';
+
+    Query: accounting=> select * from xfer_by_day where date>'2014-08-25';
     date    | storage_group |   read    |    write     | n_read | n_write
 ------------+---------------+-----------+--------------+--------+---------
  2014-08-26 | ANM           |         0 | 115070377984 |      0 |    7377
@@ -86,23 +84,23 @@ ggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-
                                                                                                      | 300032000 | r  |      2987800 |    111891277 |  135991153 | TST083
              | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 101.175196171 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360435-11611-2
 | 111891277 |     107261667 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
-"""
+    """
 
     value_matrix_summ = [['2014-08-26', 'ANM', 0, 115070377984, 0, 7377],
-                     ['2014-08-27', 'ANM', 11535362, 115070377984, 3, 7377],
-                     ['2014-08-28', 'ANM', 94470144, 0, 3, 0],
-                     ['2014-08-29', 'ALEX', 900096000, 0, 3, 0]
-                    ]
+                         ['2014-08-27', 'ANM', 11535362, 115070377984, 3, 7377],
+                         ['2014-08-28', 'ANM', 94470144, 0, 3, 0],
+                         ['2014-08-29', 'ALEX', 900096000, 0, 3, 0]
+    ]
     # date,node,username,src,dst,size,rw,overall_rate,mover_interface,storage_group,encp_id
     value_matrix = [['2014-08-27 13:58:15', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1MB_002', '/dev/null', 1048577, 'r', 14636, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165822-7770-0'],
-                     ['2014-08-27 13:58:23', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/10MB_002', '/dev/null', 10485761, 'r', 1571134, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165895-7770-1'],
-                     ['2014-08-27 13:58:24', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1KB_001', '/dev/null', 1024, 'r', 783, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165903-7770-2'],
-                     ['2014-08-28 16:04:53', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-08-26T17:20:35.959Z.tar', '/volumes/aggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-26T17:20:35.959Z.tar', 74547200, 'r', 421630, 'enmvr021', 'ANM', 'dmsen03.fnal.gov-1409259405-8583-0'],
-                     ['2014-08-28 16:04:55', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/7/dmsen06_f2f6cda82d6e11e4af4700304831518c.data', '/dev/null', 10485760, 'r', 21336, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409259403-20374-0'],
-                     ['2014-08-28 16:07:06', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/4/dmsen06_e8ea85a22d6e11e4a6bc00304831518c.data', '/dev/null', 9437184, 'r', 41230225, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409260025-20733-0'],
-                     ['2014-08-29 19:59:27', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:21:25.77Z.tar', '/dev/null', 300032000, 'r', 2096428, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360223-11611-0'],
-                     ['2014-08-29 20:00:34', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:27:56.844Z.tar', '/dev/null', 300032000, 'r', 4526877, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360367-11611-1'],
-                     ['2014-08-29 20:02:16', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T18:58:22.864Z.tar', '/dev/null', 300032000, 'r', 2987800, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360435-11611-2']
+                    ['2014-08-27 13:58:23', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/10MB_002', '/dev/null', 10485761, 'r', 1571134, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165895-7770-1'],
+                    ['2014-08-27 13:58:24', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1KB_001', '/dev/null', 1024, 'r', 783, 'enmvr022', 'ANM', 'dmsen03.fnal.gov-1409165903-7770-2'],
+                    ['2014-08-28 16:04:53', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-08-26T17:20:35.959Z.tar', '/volumes/aggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-26T17:20:35.959Z.tar', 74547200, 'r', 421630, 'enmvr021', 'ANM', 'dmsen03.fnal.gov-1409259405-8583-0'],
+                    ['2014-08-28 16:04:55', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/7/dmsen06_f2f6cda82d6e11e4af4700304831518c.data', '/dev/null', 10485760, 'r', 21336, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409259403-20374-0'],
+                    ['2014-08-28 16:07:06', 'dmsen06.fnal.gov', 'enstore', '/pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/4/dmsen06_e8ea85a22d6e11e4a6bc00304831518c.data', '/dev/null', 9437184, 'r', 41230225, 'dmsen03', 'ANM', 'dmsen06.fnal.gov-1409260025-20733-0'],
+                    ['2014-08-29 19:59:27', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:21:25.77Z.tar', '/dev/null', 300032000, 'r', 2096428, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360223-11611-0'],
+                    ['2014-08-29 20:00:34', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:27:56.844Z.tar', '/dev/null', 300032000, 'r', 4526877, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360367-11611-1'],
+                    ['2014-08-29 20:02:16', 'dmsen03.fnal.gov', 'root', '/pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T18:58:22.864Z.tar', '/dev/null', 300032000, 'r', 2987800, 'enmvr021', 'ALEX', 'dmsen03.fnal.gov-1409360435-11611-2']
     ]
 
     def get_records_summary():
@@ -259,8 +257,9 @@ Indexes:
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
-            checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
+            #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            checkpoint.set_date_transaction(new_checkpoint)
 
     def get_records_summary(self, limit=None):
         """Select the transfer records from the daily summary table
@@ -374,23 +373,14 @@ class EnstoreTransferProbe(GratiaMeter):
         return self.get_hostname()
 
     def main(self):
-        # Initialize the probe an the input
+        # Initialize the probe and the input
         self.start()
         DebugPrintLevel(4, "Enstore transfer probe started")
 
-        se = self.get_sitename()
-        name = self.get_probename()
+        #se = self.get_sitename()
+        #name = self.get_probename()
         #timestamp = time.time()
-
-        # Parent storage element
-        #DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s)" % (se, name))
-        #unique_id = "%s:SE:%s" % (se, se)
-        #parent_id = unique_id
-        #gse = self.get_storage_element(unique_id, se, name, timestamp=timestamp)
-        #Gratia.Send(gse)
-        # TODO: is a SER with totals needed?
-
-        hostname = self.get_hostname()
+        #hostname = self.get_hostname()
 
         # Loop over storage records
         for srecord in self._probeinput.get_records():
@@ -470,18 +460,6 @@ class EnstoreTransferProbe(GratiaMeter):
                 r.AdditionalInfo("Protocol", "enstore")
                 r.AdditionalInfo("IsNew", isNew)
             """
-            #    # The query sorted the results by time_end, so our last value will
-            #    # be the greatest
-            #    time_end = job['time_end']
-            #    self.checkpoint.val = time_end
-
-            # If we found at least one record, but the time_end has not increased since
-            # the previous run, increase the checkpoint by one so we avoid continually
-            # reprocessing the last records.
-            # (This assumes the probe won't be run more than once per second.)
-            #if self.checkpoint.val == time_end:
-            #    self.checkpoint.val = time_end + 1
-
 
 
 if __name__ == "__main__":

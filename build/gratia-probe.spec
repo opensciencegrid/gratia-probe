@@ -984,9 +984,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Wed Dec 17 2014 Marco Mambelli <marcom@fnal.gov> - 1.14.0
+* Wed Jan 07 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.rc0
 - new common files in common2 module
-- Adding dCache storage probe
+- Adding dCache storagegroup probe
 - Adding Enstore probes: transfer, storage, tape drive
 
 * Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1

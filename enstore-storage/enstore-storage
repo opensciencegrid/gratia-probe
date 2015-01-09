@@ -4,7 +4,7 @@
 #import os  # for os.popen
 # , stat
 import time
-import datetime
+#import datetime
 #import random
 #import pwd, grp
 
@@ -26,8 +26,6 @@ def DebugPrintLevel(level, *args):
     else:
         level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
     level_str = "%s - EnstoreStorage: " % level_str
-    #DBMM
-    #print "***MM calling DbP %s %s %s" % (level, level_str, args)
     DebugPrint(level, level_str, *args)
 
 
@@ -199,7 +197,8 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
                     new_checkpoint = new_date
         if new_checkpoint:
             #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
-            checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            checkpoint.set_date_transaction(new_checkpoint)
 
     def _get_records_stub(self):
         """get_records replacement for tests: records are from a pre-filled array"""
@@ -329,23 +328,6 @@ class EnstoreStorageProbe(GratiaMeter):
 
             Gratia.Send(gse)
             Gratia.Send(gser)
-
-        #server_id = self.probeinput.get_db_server_id()
-        #for job in self.sacct.completed_jobs(self.checkpoint.val):
-        #    r = job_to_jur(job, server_id)
-        #    Gratia.Send(r)
-
-        #    # The query sorted the results by time_end, so our last value will
-        #    # be the greatest
-        #    time_end = job['time_end']
-        #    self.checkpoint.val = time_end
-
-        # If we found at least one record, but the time_end has not increased since
-        # the previous run, increase the checkpoint by one so we avoid continually
-        # reprocessing the last records.
-        # (This assumes the probe won't be run more than once per second.)
-        #if self.checkpoint.val == time_end:
-        #    self.checkpoint.val = time_end + 1
 
 
 if __name__ == "__main__":

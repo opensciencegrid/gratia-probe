@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 #import sys, os, stat
-import time
-import datetime  # Used for seconds->datetime conversion
+# import time
+# import datetime  # Used for seconds->datetime conversion
 #import random
 #import pwd, grp
-import os
-import signal
-from urlparse import urlparse
+#import os
+#import signal
+#from urlparse import urlparse
 
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
@@ -24,9 +24,7 @@ def DebugPrintLevel(level, *args):
         level_str = "DEBUG"
     else:
         level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
-    level_str = "%s - EnstoreStorage: " % level_str
-    #DBMM
-    #print "***MM calling DbP %s %s %s" % (level, level_str, args)
+    level_str = "%s - EnstoreTapeDrive: " % level_str
     DebugPrint(level, level_str, *args)
 
 
@@ -226,16 +224,12 @@ Indexes:
                 elif state == 'D':
                     mount_checkpoint[r['volume']] = None
 
-                #new_date = GratiaProbe.parse_date(r['start'])
-                #if new_checkpoint is None or new_date > new_checkpoint:
-                #    new_checkpoint = new_date
         if checkpoint:
             for i in mount_checkpoint.values():
                 if i is not None and i < new_checkpoint:
                     new_checkpoint = i
             if new_checkpoint is not None:
                 DebugPrint(4, "Saving New Checkpoint: %s (%s)" % (new_checkpoint, type(new_checkpoint)))
-                #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
                 # new_checkpoint should be None or datetime
                 checkpoint.set_date_transaction(new_checkpoint)
 
@@ -269,18 +263,6 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreTapeDriveInput()
 
-    #def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
-    #    return gse
-
-    #def get_storage_element_record(self, unique_id, timestamp=None):
-    #    return gser
-
-    #def input_to_gsrs(self, inrecord, selement, serecord):
-    #    """Add input values to storage element and storage element record
-    #    Return the tuple VO,tot,free,used,f_tot,f_used to allow cumulative counters
-    #    """
-    #    return inrecord['storage_group'], total, total-used, used, 0, inrecord['active_files']
-
     def mount_complete_and_send(mrecord, finish, reads=0, writes=0, estimated=False):
         """Record the mount operation (estimated if the mount record is missing)
 
@@ -307,11 +289,12 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         r.Grid("Local")
 
         # Adding ID
+        # TODO: is the ID OK? Unique enough?
         local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
         r.LocalJobId(local_id)
         r.GlobalJobId(local_id)
 
-        # The record Must have LocalUserId
+        # The record Must have LocalUserId otherwise is quarantined. Adding a fake one
         r.LocalUserId('enstore')
 
         # Other data
@@ -370,19 +353,9 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         self.start()
         DebugPrintLevel(4, "Enstore tape drive probe started")
 
-        se = self.get_sitename()
-        name = self.get_probename()
-        #timestamp = time.time()
-
-        # Parent storage element
-        #DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s)" % (se, name))
-        #unique_id = "%s:SE:%s" % (se, se)
-        #parent_id = unique_id
-        #gse = self.get_storage_element(unique_id, se, name, timestamp=timestamp)
-        #Gratia.Send(gse)
-        # TODO: is a SER with totals needed?
-
-        hostname = self.get_hostname()
+        #se = self.get_sitename()
+        #name = self.get_probename()
+        #hostname = self.get_hostname()
 
         mounts = {}
 
@@ -468,21 +441,6 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                     srecord['state'], t_volume,
                     srecord['storage_group'], srecord['start'])
                 )
-
-
-        # TODO: CHECKPOINT!
-            #    # The query sorted the results by time_end, so our last value will
-            #    # be the greatest
-            #    time_end = job['time_end']
-            #    self.checkpoint.val = time_end
-
-            # If we found at least one record, but the time_end has not increased since
-            # the previous run, increase the checkpoint by one so we avoid continually
-            # reprocessing the last records.
-            # (This assumes the probe won't be run more than once per second.)
-            #if self.checkpoint.val == time_end:
-            #    self.checkpoint.val = time_end + 1
-
 
 
 if __name__ == "__main__":
