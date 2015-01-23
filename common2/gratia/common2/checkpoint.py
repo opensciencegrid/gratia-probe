@@ -5,9 +5,9 @@ __author__ = 'marcom'
 #import time
 #import calendar
 
-import sys
+#import sys
 import os
-import logging
+#import logging
 import stat
 import tempfile
 from datetime import datetime, timedelta
@@ -85,8 +85,6 @@ class SimpleCheckpoint(Checkpoint):
     If class is instantiated without a filename, class works as expected but
     data is not stored to disk
     """
-    #TODO: long int is OK for all?
-    #TODO: extend to support multiple checkpoints on different files?
 
     _single = None
 
@@ -132,7 +130,7 @@ class SimpleCheckpoint(Checkpoint):
 
     def conditional_set(self, val):
         """Set only for greater values of val. Return True if setting a new value"""
-        if val<self._val:
+        if val < self._val:
             return False
         self.set_val(val)
         return True
@@ -195,8 +193,8 @@ class DateTransactionCheckpoint(Checkpoint):
                 default_day = min_day
 
         try:
-            pklFile = open(target, 'rb')
-            self._dateStamp, self._transaction = cPickle.load(pklFile)
+            pkl_file = open(target, 'rb')
+            self._dateStamp, self._transaction = cPickle.load(pkl_file)
             if max_age >= 0:
                 if self._dateStamp < min_day:
                     self._dateStamp = min_day
@@ -204,7 +202,7 @@ class DateTransactionCheckpoint(Checkpoint):
                 # restart from the beginning of the hour
                 ds = self._dateStamp
                 self._dateStamp = datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
-            pklFile.close()
+            pkl_file.close()
         except IOError, (errno, strerror):
             # This is not really an error, since it might be the first
             # time we try to make this checkpoint.
@@ -264,7 +262,7 @@ class DateTransactionCheckpoint(Checkpoint):
         if not type(datestamp) == datetime:
             # raise IOError("Checkpoint.createPending was passed invalid date (%s, %s)" % (type(datestamp), datestamp))
             # attempting to convert to datetime - interpreting as seconds form the Epoch (UTC)
-            datestamp = datetime.utcfromtimestamp(datetime)
+            datestamp = datetime.utcfromtimestamp(datestamp)
         self._pending_dateStamp = datestamp
         self._pending_transaction = txn
         # Get rid of extant pending file, if any.
@@ -294,9 +292,9 @@ class DateTransactionCheckpoint(Checkpoint):
         of accidental/stupid deletion by third parties.
         """
         if not self._pending:
-            # raise a warning?
+            # raise a warning or print and return?
             raise IOError("Checkpoint.commit called with no transaction")
-            return
+            #return
 
         try:
             # move the temp file
@@ -346,18 +344,14 @@ class DateTransactionCheckpoint(Checkpoint):
         return self._transaction
 
 
-
-
-
-
 get_checkpoint = SimpleCheckpoint.get_checkpoint
 
 
 def test():
     print "Checkpoint test"
     print "File list (in %s)" % os.curdir
-    print "%s" % [ i for i in os.listdir(os.curdir) if i.startswith('cptest')]
-    c1 = SimpleCheckpoint() #('checkpoint-file')
+    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    c1 = SimpleCheckpoint()  # ('checkpoint-file')
     c1.value = '55'
     c2 = SimpleCheckpoint('cptestfile-simplecheckpoint')
     c2.value = '66'
@@ -365,23 +359,23 @@ def test():
     c3.value = {'date': datetime.now(),
                 'transaction': 77}
     print "Before close"
-    print "%s" % [ i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
     c3.close()
     print "After close"
-    print "%s" % [ i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
     cc1 = SimpleCheckpoint()
     cc2 = SimpleCheckpoint('cptestfile-simplecheckpoint')
     cc3 = DateTransactionCheckpoint('cptestfile-dtcheckpoint')
     print "Checkpoint values: %s, %s, %s." % (cc1.value, cc2.value, cc3.value)
     print "Before final close"
-    print "%s" % [ i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
     cc3.close()
     print "At end"
-    print "%s" % [ i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
 
 if __name__ == "__main__":
     import sys
-    import time # needed for python < 2.5
+    import time  # needed for python < 2.5
     if sys.argv[1] == 'test':
         test()
         sys.exit(0)
@@ -410,7 +404,3 @@ if __name__ == "__main__":
         print "%s test - run a checksum test" % name
         print "%s read file_name - read a  DateTransactionCheckpoint" % name
         print "%s write file_name date [transaction] - write a DateTransactionCheckpoint" % name
-
-
-
-
