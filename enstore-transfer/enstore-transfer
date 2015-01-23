@@ -17,6 +17,7 @@ from gratia.common2.meter import GratiaProbe, GratiaMeter
 
 from gratia.common2.pgpinput import PgInput
 
+
 def DebugPrintLevel(level, *args):
     if level <= 0:
         level_str = "CRITICAL"
@@ -257,7 +258,8 @@ Indexes:
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
+            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
+            #  new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
             #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
             checkpoint.set_date_transaction(new_checkpoint)
 
@@ -316,8 +318,9 @@ We are interested in
         if new_checkpoint:
             checkpoint.set_date_transaction(new_checkpoint)
 
-    def _get_records_stub(self):
-        """get_records replacement for tests: records are from a pre-filled array"""
+    def _get_records_stub(self, limit=None):
+        """get_records replacement for tests: records are from a pre-filled array
+        limit is ignored"""
         for i in _EnstoreTransferInputStub.get_records():
             yield i
 
@@ -332,7 +335,7 @@ We are interested in
 
 class EnstoreTransferProbe(GratiaMeter):
 
-    PROBE_NAME = 'enstoretransfer'
+    PROBE_NAME = 'enstore-transfer'
     # dCache, xrootd, Enstore
     SE_NAME = 'Enstore'
     # Production
@@ -366,11 +369,11 @@ class EnstoreTransferProbe(GratiaMeter):
         r.Status(0)
         return r
 
-    def URL2host(self, urltoparse):
-        tmp = urlparse(urltoparse)
-        if tmp.hostname:
-            return tmp.hostname
-        return self.get_hostname()
+    #def url2host(self, urltoparse):
+    #    tmp = urlparse(urltoparse)
+    #    if tmp.hostname:
+    #        return tmp.hostname
+    #    return self.get_hostname()
 
     def main(self):
         # Initialize the probe and the input
@@ -446,7 +449,6 @@ class EnstoreTransferProbe(GratiaMeter):
             DebugPrint(4, "Sending transfer record for VO %s: %s" % (vo_name, uniq_id))
             Gratia.Send(r)
 
-
             """ Summary record
             #vo_name = srecord['storage_group']
             # Avoid empty records
@@ -465,6 +467,3 @@ class EnstoreTransferProbe(GratiaMeter):
 if __name__ == "__main__":
     # Do the work
     EnstoreTransferProbe().main()
-
-
-
