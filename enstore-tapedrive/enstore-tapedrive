@@ -17,6 +17,7 @@ from gratia.common2.meter import GratiaProbe, GratiaMeter
 
 from gratia.common2.pgpinput import PgInput
 
+
 def DebugPrintLevel(level, *args):
     if level <= 0:
         level_str = "CRITICAL"
@@ -233,8 +234,9 @@ Indexes:
                 # new_checkpoint should be None or datetime
                 checkpoint.set_date_transaction(new_checkpoint)
 
-    def _get_records_stub(self):
-        """get_records replacement for tests: records are from a pre-filled array"""
+    def _get_records_stub(self, limit=None):
+        """get_records replacement for tests: records are from a pre-filled array
+        limit is ignored"""
         for i in _EnstoreTapeDriveInputStub.get_records():
             yield i
 
@@ -249,7 +251,7 @@ Indexes:
 
 class EnstoreTapeDriveProbe(GratiaMeter):
 
-    PROBE_NAME = 'enstoretapedrive'
+    PROBE_NAME = 'enstore-tapedrive'
     # dCache, xrootd, Enstore
     SE_NAME = 'Enstore'
     # Production
@@ -266,7 +268,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
     def mount_complete_and_send(mrecord, finish, reads=0, writes=0, estimated=False):
         """Record the mount operation (estimated if the mount record is missing)
 
-        :param mount: mount or srecord object (dictionary) - only common keys are used -
+        :param mrecord: mount or srecord object (dictionary) - only common keys are used -
         :param finish: finish of the dismount operation (real or estimated), datetime
         :param estimated: 'estimated' if mount or dismount record were missing, 'ok' otherwise
         :return: Gratia record
@@ -333,7 +335,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         """Create a mount record copying the values form the input
 
         :param srecord: mount or dismount record (dictionary)
-        :param evaluated: 'estimated' if mount or dismount record were missing, 'ok' otherwise
+        :param estimated: 'estimated' if mount or dismount record were missing, 'ok' otherwise
         :return: mount record
         """
         retv = {
@@ -387,7 +389,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                 # mount of the tape
                 if t_volume in mounts:
                     # An already mounted tape is mounted. A dismount record may have been lost
-                    DebugPrint(3, "Tape %s already mounted by %s at %. Mount operation by %s reported at %s" % (
+                    DebugPrint(3, "Tape %s already mounted by %s at %s. Mount operation by %s reported at %s" % (
                         t_volume, mounts[t_volume]['storage_group'], mounts[t_volume]['mount_start'],
                         srecord['storage_group'], srecord['start'])
                     )
