@@ -3,7 +3,7 @@
 # inputs for probes
 
 import os
-import re  # re to parse rpm -q output
+import re  # re to parse rpm -q output and meminfo
 import stat
 import pwd, grp   # for user utility
 
@@ -103,6 +103,29 @@ class ProbeInput(object):
             # Set acct to info from NSS, or unknown
             r['acct'] = self._get_group(r['id_group'], ProbeInput.UNKNOWN)
 
+    ## Resources functions
+    # Amount of RAM available on the machine helps to size buffers
+    # (e.g. maximum number of rows to fetch in a query)
+    def _meminfo(self):
+        """Return dict of data from meminfo (str:int).
+        Values are in kilobytes.
+        See /proc/meminfo for the valid keys: MemTotal, MemFree, Buffers, SwapTotal ...
+        """
+        mem_re_parser = re.compile(r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB')
+        result = {}
+        try:
+            for line in open('/proc/meminfo'):
+                match = mem_re_parser.match(line)
+                if not match:
+                    continue  # skip lines that don't parse
+                key, value = match.groups(['key', 'value'])
+                result[key] = int(value)
+        except (IOError, ValueError):
+            # IOError - file not there
+            # ValueError - value is not integer (should not happen)
+            pass
+        return result
+
     # Main functions, implemented by the child class
     def get_records(self, limit=None):
         """Return one iterator with all the records from the checkpoint on.
@@ -132,8 +155,9 @@ class ProbeInput(object):
         3. the value in the config file (stored in self._static_info['version']
         This is a protected method
         """
-        DebugPrint(5, "Called get_version (%s, %s; %s, %s, %s)" % (self._version, self._static_info['version'], rpm_package_name,
-                                                               version_command, version_command_filter))
+        DebugPrint(5, "Called get_version (%s, %s; %s, %s, %s)" % (self._version, self._static_info['version'],
+                                                                   rpm_package_name, version_command,
+                                                                   version_command_filter))
         if self._version:
             return self._version
         if rpm_package_name:
@@ -220,7 +244,10 @@ class DbInput(ProbeInput):
             self.checkpoint = DateTransactionCheckpoint(fname)
 
     def start(self, static_info):
-        """start: initialize adding values coming form the config file and connect to the database"""
+        """start: initialize adding values coming form the config file and connect to the database
+        :param static_info: dictionary with configuration information
+        :return:
+        """
         # Protecting for missing optional parameters
         for i in ['DbPort', 'DbPassword', 'DbPasswordFile']:
             if not i in static_info:
@@ -251,17 +278,27 @@ class DbInput(ProbeInput):
         if (stat.S_IMODE(mode) & (stat.S_IRGRP | stat.S_IROTH)) != 0:
             # Exception if permissions are too loose
             raise IOError("Password file %s is readable by group or others" %
-                pwfile)
+                          pwfile)
 
         return fp.readline().rstrip('\n')
 
     def get_db_server_id(self):
         """Return database server ID: server/port/database"""
-        return "/".join([
-            self.static_info['DbHost'],
-            self.static_info['DbPort'],
-            self.static_info['DbName'], ])
+        return "%s/%s/%s" % (
+            self._static_info['DbHost'],
+            self._static_info['DbPort'],
+            self._static_info['DbName'])
 
-
-
-
+    def _max_select_mem(self, size=4):
+        """
+        Returns the maximum number of sql results so that the query does not use
+        more than half of the install RAM on the current machine.
+        """
+        try:
+            mem = self._meminfo()["MemTotal"]
+            if mem < 2048000:
+                mem = 2048000
+            # int() may be not necessary if size is always int
+            return int(mem / size)
+        except KeyError:
+            return 512000
