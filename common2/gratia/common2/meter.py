@@ -34,7 +34,7 @@ from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
 from probeinput import ProbeInput
-from checkpoint import DateTransactionCheckpoint
+#from checkpoint import DateTransactionCheckpoint
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
@@ -348,10 +348,8 @@ class GratiaProbe(object):
         except Exception, e:
             DebugPrint(2, "Date conversion failed for %s: %s" % (date_in, e))
             return None
-    
         return result
     format_date = staticmethod(format_date)
-
 
     ## User functions (also in probeinput)
     def _get_user(self, uid, err=None):
@@ -509,11 +507,11 @@ Command line usage: %prog
                  "option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS "
                  "is assumed to be 00:00:00 if omitted.",
             dest="recovery_start_time", default=None)
-        parser.add_option("--end-time", 
-            help="Last time to include when processing records using --recovery "
-                 "option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS "
-                 "is assumed to be 00:00:00 if omitted",
-            dest="recovery_end_time", default=None)
+        parser.add_option("--end-time",
+                          help="Last time to include when processing records using --recovery "
+                               "option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS "
+                               "is assumed to be 00:00:00 if omitted",
+                          dest="recovery_end_time", default=None)
 
         return parser
 
@@ -531,7 +529,7 @@ Command line usage: %prog
         """
         if start_time is not None or end_time is not None:
             # using a start and end date
-            DebugPrint(-1, "Data Recovery " \
+            DebugPrint(-1, "Data Recovery "
                        "from %s to %s" % (start_time, end_time))
             if start_time is None or end_time is None:
                 DebugPrint(-1, "Recovery mode ERROR: Either None or Both "
@@ -547,7 +545,7 @@ Command line usage: %prog
                 sys.exit(1)
             if start_time > end_time:
                 DebugPrint(-1, "Recovery mode ERROR: The end time is after "
-                              "the start time")
+                               "the start time")
                 sys.exit(1)
             if start_time > time.time():
                 DebugPrint(-1, "Recovery mode ERROR: The start time is in "
@@ -588,8 +586,8 @@ Command line usage: %prog
     def main(self):
         # Loop over completed jobs
         time_end = None
-        server_id = self.get_db_server_id()
-        DebugPrint(5 , "GratiaProbe main - running")
+        server_id = self.get_probename()
+        DebugPrint(5, "GratiaProbe main - running")
         # TODO: add a loop sending test records
         #for job in self.sacct.completed_jobs(self.checkpoint.val):
         #    r = job_to_jur(job, server_id)
