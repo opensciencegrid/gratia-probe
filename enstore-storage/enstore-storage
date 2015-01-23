@@ -18,6 +18,7 @@ from gratia.common2.meter import GratiaProbe, GratiaMeter
 
 from gratia.common2.pgpinput import PgInput
 
+
 def DebugPrintLevel(level, *args):
     if level <= 0:
         level_str = "CRITICAL"
@@ -196,14 +197,21 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint), new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
+            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
+            # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
             #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
             checkpoint.set_date_transaction(new_checkpoint)
 
-    def _get_records_stub(self):
+    def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array"""
+        if limit is None:
+            limit = 0
         for i in _EnstoreStorageInputStub.get_records():
             yield i
+            if limit > 0:
+                limit -= 1
+                if limit == 0:
+                    break
 
     def do_test(self):
         """Test with pre-arranged DB query results
@@ -215,7 +223,7 @@ active_files and (active_files+deleted_files+unknown_files) as total_files
 
 class EnstoreStorageProbe(GratiaMeter):
 
-    PROBE_NAME = 'enstorestorage'
+    PROBE_NAME = 'enstore-storage'
     # dCache, xrootd, Enstore
     SE_NAME = 'Enstore'
     # Production
@@ -241,7 +249,7 @@ class EnstoreStorageProbe(GratiaMeter):
         gse.ParentID(parent_id)
         # VO
         # OwnerDN
-        gse.SpaceType("StorageGroup") # PoolGroup, StorageGroup in enstore terminology
+        gse.SpaceType("StorageGroup")  # PoolGroup, StorageGroup in enstore terminology
         if timestamp:
             gse.Timestamp(timestamp)
         gse.Implementation(self.SE_NAME)
@@ -343,6 +351,4 @@ class EnstoreStorageProbe(GratiaMeter):
 
 if __name__ == "__main__":
     EnstoreStorageProbe().main()
-
-
 
