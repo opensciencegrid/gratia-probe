@@ -30,8 +30,17 @@ class ProbeInput(object):
         # Filter static info if needed
         self._static_info = {'version': None}
 
-    def add_checkpoint(self, fname=None):
-        self.checkpoint = SimpleCheckpoint(fname)
+    def add_checkpoint(self, fname=None, min_val=None, default_val=None):
+        """Add a simple checkpoint - subclasses may have more elaborate ones
+        :param fname: file name with checkpoint info (or target)
+        :param min_val: min value of the checkpoint
+        :param default_val: default value if none is provided (e.g.there is no target)
+        :return:
+        """
+        if min_val is not None or default_val is not None:
+            self.checkpoint = SimpleCheckpoint(fname, min_val, default_val)
+        else:
+            self.checkpoint = SimpleCheckpoint(fname)
 
     def do_test(self, static_info=None):
         """Prepare the input for testing, e.g. replacing some methods with stubs,
@@ -227,12 +236,14 @@ class DbInput(ProbeInput):
 
     def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
         """Add a checkpoint, default file name is cfp-INPUT_NAME
-        fname - checkpoint file name (considered as prefix unless fullname=True)
+        :param fname: checkpoint file name (considered as prefix unless fullname=True)
                 file name is fname-INPUT_NAME
-        max_val - trim value for the checkpoint
-        default_value - value if no checkpoint is available
-        fullname - Default: False, if true, fname is considered the full name
+        :param max_val: trim value for the checkpoint
+        :param default_val: value if no checkpoint is available
+        :param fullname: Default: False, if true, fname is considered the full file name
+        :return:
         """
+
         if not fname:
             fname = "cpf-%s" % self.get_name()
         else:
