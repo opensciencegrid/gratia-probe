@@ -137,7 +137,11 @@ BILLINGDB_SELECT_CMD = """
         b.protocol AS protocol,
         b.initiator AS doorlink,
         COALESCE(d.owner, split_part(b.storageclass,'.',1)) AS initiator,
-        COALESCE(d.client, 'Unknown') AS initiatorHost,
+        CASE WHEN d.client = 'unknown'  THEN
+                COALESCE(b.client,'Unknown')
+             ELSE
+                COALESCE(d.client, 'Unknown')
+        END AS initiatorHost,
         d.mappeduid as mappeduid,
         d.mappedgid as mappedgid
     FROM
@@ -499,6 +503,10 @@ class DCacheAggregator:
         # Gratia will make a best effort to map this to the VO name.
         mappedUID = row['mappeduid']
         mappedGID = row['mappedgid']
+        if row['protocol'] == 'NFS4-4.1':
+            username = row['initiator']
+            rec.LocalUserId(username)
+            return rec
         try:
             username = 'Unknown'
             if mappedUID != None and int(mappedUID) >= 0:
