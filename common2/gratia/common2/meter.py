@@ -52,10 +52,101 @@ def warn_of_signal_generator(alarm):
     return f
 
 
+### Auxiliary functions
+
+# TODO: how are fractional system/user times handled?
+def total_seconds(td, positive=True):
+    """
+    Returns the total number of seconds in a time interval
+    :param td: time interval (datetime.timedelta)
+    :param positive: if True return only positive values (or 0) - default: False
+    :return: number of seconds (int)
+    """
+    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    # Only int # of seconds is needed
+    retv = long(td.seconds + td.days * 24 * 3600)
+    if positive and retv < 0:
+        return 0
+    return retv
+
+
+def total_seconds_precise(td, positive=True):
+    """
+    Returns the total number of seconds in a time interval
+    :param td: time interval (datetime.timedelta)
+    :param positive: if True return only positive values (or 0) - default: False
+    :return: number of seconds (float)
+    """
+    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    # Only int # of seconds is needed
+    retv = long(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
+    if positive and retv < 0:
+        return 0
+    return retv
+
+try:
+    # string formatter is available from py 2.6
+    from string import Formatter
+
+    def strfdelta(tsec, format="P{D}DT{H}H{M}M{S}S", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
+        """Formatting the time duration
+        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
+        0 duration is PT0S
+
+        :param tsec: float, number of seconds (change to timeinterval?)
+        :param fmt: Format string,  ISO 8601
+        :return: Formatted time duration
+        """
+        if not tsec:
+            # 0 or None
+            return format_zero
+        if 0 < tsec < 86400:
+            format = format_no_day
+        f = Formatter()
+        d = {}
+        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
+        k = map(lambda x: x[1], list(f.parse(format)))
+        rem = long(tsec)  # py 2.7 tdelta.total_seconds())
+
+        for i in ('D', 'H', 'M', 'S'):
+            if i in k and i in l.keys():
+                d[i], rem = divmod(rem, l[i])
+
+        return f.format(format, **d)
+except ImportError:
+    # pre 2.6
+    def strfdelta(tsec, format="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_no_day="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
+        """Formatting the time duration
+        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
+        0 duration is PT0S
+
+        :param tsec: float, number of seconds
+        :param fmt: Format string,  ISO 8601
+        :return: Formatted time duration
+        """
+        if not tsec:
+            # 0 or None
+            return format_zero
+        d = {}
+        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
+        rem = long(tsec)
+
+        for i in ('D', 'H', 'M'):  # needed because keys are not sorted
+            d[i], rem = divmod(rem, l[i])
+        d['S'] = rem
+        if d['D'] == 0:
+            format = format_no_day
+
+        return format % d
+
+
 class GratiaProbe(object):
     """GratiaProbe base class
     """
     # TODO: consider merging with GratiaMeter
+    # TODO: consider using multiprocess.Pool to speed up
     # Constants (defined to avoid different spellings/cases)
     UNKNOWN = "unknown"
 
@@ -256,6 +347,7 @@ class GratiaProbe(object):
         """Hook to parse command-line options"""
         return
 
+    @staticmethod
     def parse_date(date_string):
         """
         Parse a date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
@@ -298,8 +390,8 @@ class GratiaProbe(object):
             return None
     
         return result
-    parse_date = staticmethod(parse_date)
 
+    @staticmethod
     def parse_datetime(date_string):
         """Parse date/time string and return datetime object
 
@@ -328,8 +420,8 @@ class GratiaProbe(object):
             return None
 
         return datetime.datetime(*result[0:6])
-    parse_datetime = staticmethod(parse_datetime)
 
+    @staticmethod
     def format_date(date_in):
         """ Format the date as %Y-%m-%d %H:%M:%S in UTC time
         date_in is seconds from the Epoch (float) or a datetime struct (in UTC time),
@@ -349,17 +441,48 @@ class GratiaProbe(object):
             DebugPrint(2, "Date conversion failed for %s: %s" % (date_in, e))
             return None
         return result
-    format_date = staticmethod(format_date)
+
+    @staticmethod
+    def format_interval(time_interval):
+        """
+        Format time interval as Duration ISO8601 (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+        :param time_interval: time interval
+        :return: formatted ISO8601 time interval
+        """
+        return strfdelta(time_interval)
+
+    @staticmethod
+    def datetime_to_unix_time(time_in):
+        """
+        Convert datetime to seconds from the epoch (keeping the provided precision)
+        http://en.wikipedia.org/wiki/Unix_time
+        dts.strftime("%s.%f")  # datetime to unix_time, not all OS have %s,%f
+
+        :param time_in: datetime to convert
+        :return: seconds form the epoch (float including milliseconds)
+        """
+        # time_in.strftime("%s.%f")  # not all OS have %s,%f
+        epoch = datetime.datetime.utcfromtimestamp(0)
+        delta = time_in - epoch
+        # only form py2.7: return delta.total_seconds()
+        return total_seconds_precise(delta)
+
+    @staticmethod
+    def datetime_interval_to_seconds(delta):
+        return total_seconds_precise(delta)
+
 
     ## User functions (also in probeinput)
-    def _get_user(self, uid, err=None):
+    @staticmethod
+    def _get_user(uid, err=None):
         """Convenience functions to resolve uid to user"""
         try:
             return pwd.getpwuid(uid)[0]
         except (KeyError, TypeError):
             return err
 
-    def _get_group(self, gid, err=None):
+    @staticmethod
+    def _get_group(gid, err=None):
         """Convenience function to resolve gid to group"""
         try:
             return grp.getgrgid(gid)[0]
@@ -375,13 +498,13 @@ class GratiaProbe(object):
             # Set acct to info from NSS, or unknown
             r['acct'] = self._get_group(r['id_group'], GratiaProbe.UNKNOWN)
 
+    @staticmethod
     def _isWrite2isNew(is_write):
         """Return the correct isNew value 1/write(True) 0/read(False)"""
         # https://github.com/dCache/dcap/blob/master/src/dcap_open.c
         if is_write:
             return 1
         return 0
-    _isWrite2isNew = staticmethod(_isWrite2isNew)
 
     def _normalize_hostname(self, inname):
         """Add DefaultDomainName domain name if missing (i.e. no dots in the name)"""
@@ -391,6 +514,7 @@ class GratiaProbe(object):
                 return "%s.%s" % (inname, domainname)
         return inname
 
+    @staticmethod
     def get_password(pwfile):
         """Read a password from a given file, checking permissions"""
         fp = open(pwfile)
@@ -400,11 +524,30 @@ class GratiaProbe(object):
             raise IOError("Password file %s is readable by group or others" % pwfile)
 
         return fp.readline().rstrip('\n')
-    get_password = staticmethod(get_password)
+
+    @staticmethod
+    def run_command(cmd, cmd_filter=None, timeout=None, get_stderr=False):
+        # TODO: better, more robust and with timeout
+        # timeout ignored for now
+        DebugPrint(5, "Invoking: %s" % cmd)
+        if get_stderr:
+            cmd = "%s 2>&1" % cmd
+        fd = os.popen(cmd)
+        res = fd.read()
+        if fd.close():
+            DebugPrint(4, "Unable to invoke '%s'" % cmd)
+            #raise Exception("Unable to invoke command")
+        else:
+            if cmd_filter:
+                res = cmd_filter(res.strip())
+            if not res:
+                DebugPrint(4, "Unable to parse the command output (filter %s): %s" % (cmd_filter, cmd))
+            return res
 
     def get_probe_version(self):
-        #TODO: get probe version form file
         #derived probes must override
+        # derived probes may need self
+        # using global prog_version . Is it there a better way to get probe version form file?
         return "%s" % prog_version
 
     def get_version(self):
@@ -421,8 +564,7 @@ class GratiaProbe(object):
         # raise Exception("No input defiled")
 
     def register_gratia(self):
-        Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" %
-            (prog_revision, prog_version))
+        Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" % (prog_revision, prog_version))
 
         try:
             input_version = self.get_version()

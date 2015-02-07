@@ -23,11 +23,48 @@ except ImportError:
         print ("DEBUG LEVEL %s: %s" % (val, msg))
 
 
+##### Auxiliary functions
+# TODO: also in meter.py - factor out in common module?
+def total_seconds_precise(td, positive=True):
+    """
+    Returns the total number of seconds in a time interval
+    :param td: time interval (datetime.timedelta)
+    :param positive: if True return only positive values (or 0) - default: False
+    :return: number of seconds (float)
+    """
+    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    # Only int # of seconds is needed
+    retv = long(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
+    if positive and retv < 0:
+        return 0
+    return retv
+
+# TODO: also in meter.py - factor out in common module?
+def datetime_to_unix_time(time_in):
+    """
+    Convert datetime to seconds from the epoch (keeping the provided precision)
+    http://en.wikipedia.org/wiki/Unix_time
+    dts.strftime("%s.%f")  # datetime to unix_time, not all OS have %s,%f
+
+    :param time_in: datetime to convert
+    :return: seconds form the epoch (float including milliseconds)
+    """
+    # time_in.strftime("%s.%f")  # not all OS have %s,%f
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    delta = time_in - epoch
+    # only form py2.7: return delta.total_seconds()
+    return total_seconds_precise(delta)
+
+
 class Checkpoint(object):
     """Checkpoint base class to enforce attributes
     """
     #def __init__(self):
     #    pass
+
+    def get_target(self):
+        # child classes must have _target element
+        return self._target
 
     def get_val(self):
         raise AttributeError
@@ -229,6 +266,11 @@ class DateTransactionCheckpoint(Checkpoint):
     def set_date_transaction(self, date, transaction=None):
         self.set_val({'date': date, 'transaction': transaction})
 
+    def set_date_seconds_transaction(self, date_epoch, transaction=None):
+        # convert epoch to datetime
+        date = datetime.datetime.utcfromtimestamp(date_epoch)
+        self.set_val({'date': date, 'transaction': transaction})
+
     def set_val(self, val):
         self.prepare(val)
         self.commit()
@@ -241,6 +283,16 @@ class DateTransactionCheckpoint(Checkpoint):
         if val['date'] < self._dateStamp:
             return False
         if self._pending and val['date'] < self._pending_dateStamp:
+            return False
+        self.set_val(val)
+        return True
+
+    def conditional_set_transaction(self, val):
+        """Set only for greater values of 'transaction'. Return True if setting a new value"""
+        # _transaction could be None or a valid transaction
+        if self._transaction is not None and val['transaction'] < self._transaction:
+            return False
+        if self._pending_transaction is not None and self._pending and val['transaction'] < self._pending_transaction:
             return False
         self.set_val(val)
         return True
@@ -329,6 +381,14 @@ class DateTransactionCheckpoint(Checkpoint):
             os.chmod(self._tmp_filename, stat.S_IWRITE)
             os.remove(self._tmp_filename)  # remove and unlink are the same
 
+    def date_seconds(self):
+        """
+        Returns last stored dateStamp in seconds from Epoch. It returns the epoch (datetime.min),
+        if there is no stored checkpoint.
+        """
+        # TODO: convert datetime to epoch
+        return self._dateStamp
+
     def date(self):
         """
         Returns last stored dateStamp. It returns the epoch, if there is no
@@ -344,7 +404,148 @@ class DateTransactionCheckpoint(Checkpoint):
         return self._transaction
 
 
+class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
+    """Checkpoint with date, transaction and auxiliary value
+
+    Must have a file to store the checkpoint, default is dtacheckpoint
+    Extension of @DateTransactionCheckpoint (see for more implementation info)
+
+    The checkpoint value is a dictionary {'date': date, 'transaction': txn, 'aux': aux}
+            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            txn - integer (can be None)
+            aux - arbitrary pickable object or dictionary (can be None)
+    """
+    def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
+        if not target:
+            target = 'dtacheckpoint'
+        DateTransactionCheckpoint.__init__(target, max_age, default_age, full_precision)
+        self._aux = None
+        self._pending_aux = None
+
+    def get_val(self):
+        return {'date': self._dateStamp,
+                'transaction': self._transaction,
+                'aux': self._aux}
+
+    def aux(self):
+        return self._aux
+
+    def prepare(self, val):
+        """
+        Saves the specified primary key string as the new checkpoint.
+        The Checkpoint value is a dictionary {'date': date, 'transaction': txn}
+            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            txn - integer (can be None)
+            aux - arbitrary pickable object (dictionary? can be None)
+        """
+        #TODO: see DateTransactionCheckpoint - maybe merge the 2 functions (factor out common part)
+        datestamp = val['date']
+        txn = val['transaction']
+        aux = val['aux']
+        # date must be defined, transaction can be None
+        if datestamp is None:
+            raise IOError("Checkpoint.createPending was passed null values for date")
+        # Check timestamp validity
+        if not type(datestamp) == datetime:
+            # raise IOError("Checkpoint.createPending was passed invalid date (%s, %s)" % (type(datestamp), datestamp))
+            # attempting to convert to datetime - interpreting as seconds form the Epoch (UTC)
+            datestamp = datetime.utcfromtimestamp(datestamp)
+        self._pending_dateStamp = datestamp
+        self._pending_transaction = txn
+        self._pending_aux = aux
+        # Get rid of extant pending file, if any.
+        # truncate and write should be faster and as safe as
+        # unlink and close
+        if not self._tmp_fp:
+            self._tmp_fp, self._tmp_filename = self.get_tempfile(self._target, '.pending')
+
+        if self._tmp_fp:
+            self._tmp_fp.seek(0)
+            cPickle.dump([datestamp, txn, aux], self._tmp_fp, -1)
+            self._tmp_fp.truncate()
+            self._tmp_fp.flush()
+            # make sure that the file is on disk
+            try:
+                os.fdatasync(self._tmp_fp)
+            except AttributeError:
+                # This is not available on MacOS
+                pass
+            self._pending = True
+
+    def commit(self):
+        """
+        We created the tmp file. Now make it the actual file with an atomic
+        rename.
+        We make the file read-only, in the hope it will reduce the risk
+        of accidental/stupid deletion by third parties.
+        """
+        if not self._pending:
+            # raise a warning or print and return?
+            raise IOError("Checkpoint.commit called with no transaction")
+            #return
+
+        try:
+            # move the temp file
+            if os.path.exists(self._target):
+                os.chmod(self._target, stat.S_IWRITE)
+            os.rename(self._tmp_filename, self._target)
+            os.chmod(self._target, stat.S_IREAD)
+            # opening the directory to make sure that the rename took effect
+            # could be removed since it is not too critical
+            # the old checkpoint value would mean only some extra work
+            dirname = os.path.dirname(self._target)
+            if not dirname:
+                dirname = "."
+            dirfd = os.open(dirname, os.O_DIRECTORY)
+            os.fsync(dirfd)
+            os.close(dirfd)
+
+            self._dateStamp = self._pending_dateStamp
+            self._transaction = self._pending_transaction
+            self._aux = self._pending_aux
+
+            # values committed
+            self._pending = False
+            self._tmp_filename = ''
+            self._tmp_fp = None  # will trigger the creation of a new temp file
+
+        except OSError, (errno, strerror):
+            raise IOError("Checkpoint.commit could not rename %s to %s: %s" %
+                          (self._tmp_filename, self._target, strerror))
+
+    def conditional_set_aux(self, val, aux_key=None, reverse=False):
+        """Set only for greater or equal values of 'aux' or aux[val_key]. Return True if setting a new value"""
+        # _aux may be None, if not the structure must be consistent
+        # TODO: fix! val is the full value, not aux!
+        smaller = False
+        if val_key:
+            if self._aux[val_key] is not None and val['aux'][val_key] < self._aux[val_key]:
+                smaller = True
+            if self._pending and val['aux'][val_key] < self._pending_aux[val_key]:
+                smaller = True
+        else:
+            if self._aux is not None and val['aux'] < self._aux:
+                smaller = True
+            if self._pending and val['aux'] < self._pending_aux:
+                smaller = True
+        if smaller == reverse:
+            return False
+        self.set_val(val)
+        return True
+
+    def set_date_transaction_aux(self, date, transaction=None, aux=None):
+        self.set_val({'date': date, 'transaction': transaction, 'aux': aux})
+
+
 get_checkpoint = SimpleCheckpoint.get_checkpoint
+
+CHECKPOINTS = {
+    'simple': SimpleCheckpoint,
+    'dt': DateTransactionCheckpoint,
+    'dta': DateTransactionAuxCheckpoint,
+    'DateTransactionCheckpoint': DateTransactionCheckpoint,
+    'DateTransactionAuxCheckpoint': DateTransactionAuxCheckpoint
+}
 
 
 def test():
@@ -373,34 +574,100 @@ def test():
     print "At end"
     print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
 
+
+def usage(name):
+    outstr = """%s [options] [test|read|write]
+%(name)s test - run a checksum test" % name
+%(name)s [options] read - read a  DateTransactionCheckpoint" % name
+%(name)s [options] write date [[transaction] aux] - write a checkpoint
+     default: DateTransactionCheckpoint
+Options:
+ -f FNAME - checkpoint file name (default depends from the checkpoint type)
+ -t CP_TYPE - checkpoint type [simple|dt(DateTransactionCheckpoint)|dta(DateTransactionAuxCheckpoint)]
+              default:dt
+    """
+    print outstr % ({'name': name})
+
 if __name__ == "__main__":
     import sys
+    import getopt
     import time  # needed for python < 2.5
-    if sys.argv[1] == 'test':
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hvf:t:", ["help"])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print str(err)
+        usage(sys.argv[0])
+        sys.exit(2)
+    cp_fname = None
+    cp_type = DateTransactionCheckpoint
+    verbose = False
+    for o, a in opts:
+        if o == "-v":
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage(sys.argv[0])
+            sys.exit()
+        elif o in ("-f"):
+            cp_fname = a
+        elif o in ("-t"):
+            try:
+                cp_type = CHECKPOINTS[a]
+            except KeyError:
+                print "Invalid checkpoint type: %s" % a
+                usage(sys.argv[0])
+                sys.exit(2)
+        else:
+            print "Invalid option %s" % o
+            usage(sys.argv[0])
+            sys.exit(2)
+    if not args:
+        print "Must have at least one argument (%s)" % args
+        usage(sys.argv[0])
+        sys.exit(2)
+
+    if args[0] == 'test':
         test()
         sys.exit(0)
-    if sys.argv[1] == 'read':
-        cp = DateTransactionCheckpoint(sys.argv[2])
-        print "Checkpoint value:\n%s\n%s" % (cp.date(), cp.transaction())
-    elif sys.argv[1] == 'write':
-        cp = DateTransactionCheckpoint(sys.argv[2])
-        tmp = None
-        if len(sys.argv) > 4:
-            tmp = sys.argv[4]
+    cp = cp_type(cp_fname)
+    if args[0] == 'read':
+        if isinstance(cp, DateTransactionCheckpoint):
+            print "Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction())
+        if isinstance(cp, DateTransactionAuxCheckpoint):
+            # print also this
+            print "%s" % (repr(cp.aux()),)
+        else:
+            print "Checkpoint (%s) value:\n%s" % (repr(cp.get_val()))
+    elif args[0] == 'write':
+        if len(args) < 2:
+            print "Must provide at least one value to write (%s)" % args[1:]
+            usage(sys.argv[0])
+            sys.exit(2)
+        for i in range(len(args), 4):
+            args[i] = None
         try:
-            # time.strptime()
-            # datetime.utcfromtimestamp()
-            # datetime.strptime -is like- datetime(*(time.strptime(date_string, format)[0:6]))
-            # python >= 2.5: tmp_date = datetime.strptime(sys.argv[3], "%Y-%m-%d %H:%M:%S")
-            tmp_date = datetime(*(time.strptime(sys.argv[3], "%Y-%m-%d %H:%M:%S")[0:6]))
+            try:
+                # time.strptime()
+                # datetime.utcfromtimestamp()
+                # datetime.strptime -is like- datetime(*(time.strptime(date_string, format)[0:6]))
+                # python >= 2.5: tmp_date = datetime.strptime(sys.argv[3], "%Y-%m-%d %H:%M:%S")
+                tmp_date = datetime(*(time.strptime(args[1], "%Y-%m-%d %H:%M:%S")[0:6]))
+            except ValueError:
+                # python >= 2.5: tmp_date = datetime.strptime(sys.argv[3], "%Y-%m-%d")
+                tmp_date = datetime(*(time.strptime(args[1], "%Y-%m-%d")[0:6]))
         except ValueError:
-            # python >= 2.5: tmp_date = datetime.strptime(sys.argv[3], "%Y-%m-%d")
-            tmp_date = datetime(*(time.strptime(sys.argv[3], "%Y-%m-%d")[0:6]))
-        cp.set_date_transaction(tmp_date, tmp)
+            print "Warning: %s is not a valid time" % args[1]
+            tmp_date = args[1]
+
+        if isinstance(cp, DateTransactionAuxCheckpoint):
+            cp.set_date_transaction_aux(tmp_date, args[2], args[3])
+        elif isinstance(cp, DateTransactionCheckpoint):
+            cp.set_date_transaction(tmp_date, args[2])
+        else:
+            cp.set_val(tmp_date)
         print "Checkpoint saved"
     else:
-        name = sys.argv[0]
-        print "Usage:"
-        print "%s test - run a checksum test" % name
-        print "%s read file_name - read a  DateTransactionCheckpoint" % name
-        print "%s write file_name date [transaction] - write a DateTransactionCheckpoint" % name
+        print "Invalid argument (%s)" % args
+        usage(sys.argv[0])
+        sys.exit(2)

@@ -88,15 +88,18 @@ class ProbeInput(object):
             self._static_info[k] = static_info[k]
 
     # Utility functions
-    ## User functions 
-    def _get_user(self, uid, err=None):
+    # some duplicate w/ GratiaProbe - these could be moved out
+    ## User functions
+    @staticmethod
+    def _get_user(uid, err=None):
         """Convenience functions to resolve uid to user"""
         try:
             return pwd.getpwuid(uid)[0]
         except (KeyError, TypeError):
             return err
 
-    def _get_group(self, gid, err=None):
+    @staticmethod
+    def _get_group(gid, err=None):
         """Convenience function to resolve gid to group"""
         try:
             return grp.getgrgid(gid)[0]
@@ -115,7 +118,8 @@ class ProbeInput(object):
     ## Resources functions
     # Amount of RAM available on the machine helps to size buffers
     # (e.g. maximum number of rows to fetch in a query)
-    def _meminfo(self):
+    @staticmethod
+    def _meminfo():
         """Return dict of data from meminfo (str:int).
         Values are in kilobytes.
         See /proc/meminfo for the valid keys: MemTotal, MemFree, Buffers, SwapTotal ...
@@ -160,7 +164,7 @@ class ProbeInput(object):
         """Get program version looking in order for:
         0. self._version (caching the value form previous executions)
         1. rpm -q
-        2. the output of version_command filtered by version_command_filter
+        2. the output (stdout only, not stderr) of version_command filtered by version_command_filter
         3. the value in the config file (stored in self._static_info['version']
         This is a protected method
         """

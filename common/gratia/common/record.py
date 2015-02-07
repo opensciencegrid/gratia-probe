@@ -115,7 +115,9 @@ class Record(object):
         self.GenericAddToList('Grid', self.__Grid, self.__GridDescription)
 
     def Duration(self, value):
-        ''' Helper Function to generate the xml (Do not call directly)'''
+        ''' Helper Function to generate the xml (Do not call directly)
+        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+        '''
 
         seconds = long(value * 100) % 6000 / 100.0
         value = long((value - seconds) / 60)
