@@ -515,16 +515,21 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
 
     def conditional_set_aux(self, val, aux_key=None, reverse=False):
         """Set only for greater or equal values of 'aux' or aux[val_key]. Return True if setting a new value"""
-        # _aux may be None, if not the structure must be consistent
-        # TODO: fix! val is the full value, not aux!
+        # initial value of _aux may be None, if not the structure must be consistent
+        # but then no need to check for None aux in pending because checkpoints are supposed to be
+        # consistent (The same checkpoint will either have aux or not)
         smaller = False
-        if val_key:
-            if self._aux[val_key] is not None and val['aux'][val_key] < self._aux[val_key]:
+        if aux_key:
+            if self._aux[aux_key] is None:
+                smaller = not reverse
+            elif val['aux'][aux_key] < self._aux[aux_key]:
                 smaller = True
-            if self._pending and val['aux'][val_key] < self._pending_aux[val_key]:
+            if self._pending and val['aux'][aux_key] < self._pending_aux[aux_key]:
                 smaller = True
         else:
-            if self._aux is not None and val['aux'] < self._aux:
+            if self._aux is None:
+                smaller = not reverse
+            elif val['aux'] < self._aux:
                 smaller = True
             if self._pending and val['aux'] < self._pending_aux:
                 smaller = True
