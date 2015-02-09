@@ -29,8 +29,9 @@ import gratia.common.Gratia as Gratia
 #import gratia.services.ComputeElement as ComputeElement
 #import gratia.services.ComputeElementRecord as ComputeElementRecord
 
-#from gratia.common.debug import DebugPrint, LogFileName
-from gratia.common.Gratia import DebugPrint, LogFileName
+# TODO: change once common.Gratia is modified
+from gratia.common.debug import DebugPrint, LogFileName
+#from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
 from probeinput import ProbeInput
