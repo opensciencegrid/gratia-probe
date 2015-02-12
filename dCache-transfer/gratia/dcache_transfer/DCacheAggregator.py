@@ -61,7 +61,7 @@ import TestContainer
 
 DCACHE_AGG_FIELDS = ['initiator', 'client', 'protocol', 'errorcode', 'isnew']
 DCACHE_SUM_FIELDS = ['njobs', 'transfersize', 'connectiontime']
-
+UNIX_ID_LIST_FILE_NAME="/etc/gratia/dCache-transfer/unix.uid.list"
 
 def sleep_check(length, stopFileName):
     """
@@ -180,7 +180,9 @@ class DCacheAggregator:
     def __init__( self, configuration, chkptdir=None ):
         # Pick up the logger
         self._log = logging.getLogger( 'DCacheAggregator' )
-
+        self.__user_map = {}
+        self.__uuid_file_mod_time = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+        self.__refresh_user_map()
 	# Neha - 03/17/2011
 	# Using psycopg2 instead of sqlalchemy
 	DBurl = 'dbname=%s user=%s ' % (configuration.get_DBName(), configuration.get_DBLoginName())
@@ -235,6 +237,24 @@ class DCacheAggregator:
             raise
 
         self._grid = configuration.get_Grid()
+
+    def __refresh_user_map(self) :
+        self.__user_map.clear()
+        try:
+            fd=open(UNIX_ID_LIST_FILE_NAME,'r')
+            for line in fd:
+                if not line : continue
+                try:
+                    uid,gid,fullname,uname=line.strip().split(":")
+                    self.__user_map[(uid,gid)] = uname
+                except:
+                    pass
+            fd.close()
+        except:
+            self._log.warn("Make sure " \
+                           "%s on this host" % (UNIX_ID_LIST_FILE_NAME))
+
+
 
     def _skipIntraSiteXfer(self, row):
         """
@@ -516,23 +536,18 @@ class DCacheAggregator:
                 except:
 		    #will try to get id from storage-authzdb
 		    try:
-			found=0
-			fd=open("/etc/gratia/dCache-transfer/unix.uid.list")
-			for line in fd.readlines():
-				uid,gid,fullname,uname=line[:-1].split(":")
-				if int(mappedUID)==int(uid) and int(gid)==int(mappedGID):
-					username=uname
-					found=1
-					break
-			if not found:
-				self._log.warn("UID %s %s not found locally; make sure " \
-                                	"/etc/grid-security/unix.uid.list on this host and your dCache are using " \
-                                	"the same UIDs,GIDs!" % (str(int(mappedUID)),str(int(mappedGID))))
-			fd.close()
-		    except:
-                    	self._log.warn("UID %s not found locally; make sure " \
-                        	"/etc/passwd on this host and your dCache are using " \
-                        	"the same UIDs!" % str(int(mappedUID)))
+                        mtime = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+                        if self.__uuid_file_mod_time != mtime:
+                            self.__uuid_file_mod_time = mtime
+                            self.__refresh_user_map()
+                        username=self.__user_map.get((str(mappedUID),str(mappedGID)))
+                        if not username :
+                            self._log.warn("UID %s %s not found locally; make sure " \
+                                           "/etc/passwd or %s on this host and your dCache are using " \
+                                           "the same UIDs,GIDs!" % (UNIX_ID_LIST_FILE_NAME,str(int(mappedUID)),str(int(mappedGID))))
+                    except:
+                    	self._log.warn("UID %s not found locally in /etc/passwed and %s does not exist or "\
+                        	"inaccessible " % (str(int(mappedUID)),UNIX_ID_LIST_FILE_NAME))
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
