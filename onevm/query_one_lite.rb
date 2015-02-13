@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-VERSION_STRING="0.3"
+VERSION_STRING="0.4"
 
 ##############################################################################
 # Environment Configuration
@@ -454,6 +454,23 @@ class OpenNebulaVirtualMachine
 end #OpenNebulaVirtualMachine
 
 
+class OpenNebulaVirtualMachinePool < VirtualMachinePool
+
+    # WE ONLY DERIVE THIS CLASS TO GET ACCESS TO THE info_filter
+    # member thats private in OpenNebula 3.2
+    def initialize(client, user_id=-1)
+        super(client, user_id)
+    end
+
+
+    def info_filter(xml_method, who, start_id, end_id, state)
+        return xmlrpc_info(xml_method, who, start_id, end_id, state)
+    end
+
+
+end #OpenNebulaVirtualMachinePool
+
+
 class OpenNebulaUserManager
     @@singleton__instance__ = nil
     @@singleton__mutex__ = Mutex.new
@@ -557,6 +574,40 @@ def get_queued_vm_ids(vms, etime)
     end
     ids.sort!
     return ids
+end
+
+
+def get_last_vmid(client, id)
+    last_vmid = id
+    start_vmid = id
+    if id > 0
+        start_vmid -= 1
+    end
+    
+    line_size = 80
+    vm_pool = OpenNebulaVirtualMachinePool.new(client)
+    # Get vms in all state starting from start_vmid.
+    # This is best way to get the last known vm id
+    rc = vm_pool.info_filter(
+             OpenNebulaVirtualMachinePool::VM_POOL_METHODS[:info],
+             OpenNebulaVirtualMachinePool::INFO_ALL,
+             start_vmid,
+             -1,
+             OpenNebulaVirtualMachinePool::INFO_ALL_VM)
+
+    if OpenNebula.is_error?(rc)
+        puts rc.message
+        exit -1
+    end
+
+    ids = Array.new
+    vm_pool.each do |vm|
+        ids.push(vm.id)
+    end
+    ids.sort!
+    last_vmid = ids[-1]
+
+    return last_vmid
 end
 
 
@@ -707,6 +758,7 @@ end
 #cachefile = File.join(options[:cachedir], "/cache")
 
 last_run_etime = 0
+# Starting id
 id = 1
 vms = {}
 
@@ -738,35 +790,43 @@ if not options[:all]
     end
 end
 
+# Starting from last known id, get the last vm id from OpenNebula
+id_last = get_last_vmid(client, id-1)
+
+#puts id
+#puts id_last
+
 # Check for any vms past last known vm id that may have state transitions
 # This is required so we consider any vms that may have been launched and
 # shutdown since last known run
+while id <= id_last
+    # Skip Bad VM ID
+    #if id == 14524
+    #    id += 1
+    #    next
+    #end
 
-#HACK STARTS
-#id = 47
-#HACK END
-
-while 1
     vm = OpenNebulaVirtualMachine.new(client, id)
-    if (vm.info.size() < 2) or vm.postdates_era(etime)
-        # We hit an empty vm_info (VM does not exist) or past the etime we care
-        # No need to look for more vms
-        break
-    end
-    #puts "While loop ids: #{id}"
-    #puts vm.info.inspect()
-    #puts vm.info.size()
 
-    if options[:all]
-        vms[id] = vm
-    else
-        # Consider the stime and etime. We only need vms that were running or
-        # had a state transition in the interval stime - etime
-        if not vm.predates_era(stime)
+    if (vm.info.size() >= 2)
+        # This is a valid vm record
+        if vm.postdates_era(etime)
+            # We are past the etime we care
+            break
+        end
+
+        if options[:all]
             vms[id] = vm
+        else
+            # Consider the stime and etime. We only need vms that were running
+            # or had a state transition in the interval stime - etime
+            if not vm.predates_era(stime)
+                vms[id] = vm
+            end
         end
     end
 
+    # Skip to next id until we have hit the id_last
     id += 1
 end
 
