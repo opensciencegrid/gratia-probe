@@ -181,8 +181,10 @@ class DCacheAggregator:
         # Pick up the logger
         self._log = logging.getLogger( 'DCacheAggregator' )
         self.__user_map = {}
-        self.__uuid_file_mod_time = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
-        self.__refresh_user_map()
+        self.__uuid_file_mod_time = int(time.time())
+        if os.path.exists(UNIX_ID_LIST_FILE_NAME) :
+            self.__uuid_file_mod_time = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+            self.__refresh_user_map()
 	# Neha - 03/17/2011
 	# Using psycopg2 instead of sqlalchemy
 	DBurl = 'dbname=%s user=%s ' % (configuration.get_DBName(), configuration.get_DBLoginName())
