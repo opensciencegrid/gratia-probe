@@ -56,7 +56,7 @@ from gratia.common.utils import ExtractCvsRevision, ExtractCvsRevisionFromFile, 
 
 class UsageRecord(record.Record):
 
-    '''Base class for the Gratia Usage Record'''
+    """Base class for the Gratia Usage Record"""
 
     JobId = []
     UserId = []

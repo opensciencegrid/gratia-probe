@@ -11,6 +11,7 @@ import gratia.common.vo as vo
 import gratia.common.utils as utils
 import gratia.common.config as config
 import gratia.common.certinfo as certinfo
+# there should be a flag not to use HTCondor-CE if not installed (probes run elsewhere)
 import gratia.common.condor_ce as condor_ce
 import gratia.common.sandbox_mgmt as sandbox_mgmt
 
