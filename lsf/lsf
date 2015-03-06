@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# This probe imitates the LSF behavior of the pbs-lsf probe: urCollector.pl
 
 #import sys, os, stat
 # import time
@@ -6,6 +7,8 @@
 #import random
 #import pwd, grp
 import os
+import sys, traceback  # for exceptions handling
+import re
 #import signal
 #from urlparse import urlparse
 
@@ -16,6 +19,7 @@ import gratia.common.Gratia as Gratia
 from gratia.common2.meter import GratiaProbe, GratiaMeter
 
 from gratia.common2.filepinput import FileInput
+import gratia.common2.timeutil as timeutil
 
 from gratia.lsf.accounting import AcctFile, JobFinishEvent
 
@@ -58,20 +62,25 @@ class LsfInput(FileInput):
     """
 
     VERSION_ATTRIBUTE = 'LsfVersion'
+    PROCESS_LAST_RECORD = 'ProcessLastRecord'
 
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
-        return FileInput.get_init_params(self) + [LsfInput.VERSION_ATTRIBUTE]
+        return FileInput.get_init_params(self) + [LsfInput.VERSION_ATTRIBUTE, LsfInput.PROCESS_LAST_RECORD]
 
     def start(self, static_info):
         """open DB connection and set version form config file"""
-        FileInput.start(self, static_info)
         DebugPrint(4, "Lsf start, static info: %s" % static_info)
-        if LsfInput.VERSION_ATTRIBUTE in static_info:
+        # static_info has always the attributes, None if not in the config file
+        if static_info[LsfInput.VERSION_ATTRIBUTE]:
             self._set_version_config(static_info[LsfInput.VERSION_ATTRIBUTE])
+        FileInput.start(self, static_info)
+        self._process_last_record = self.parse_config_boolean(static_info[LsfInput.PROCESS_LAST_RECORD])
 
     def _start_stub(self, static_info):
         """start replacement for testing: database connection errors are trapped"""
+        if LsfInput.VERSION_ATTRIBUTE in static_info:
+            self._set_version_config(static_info[LsfInput.VERSION_ATTRIBUTE])
         try:
             DebugPrintLevel(4, "Testing File existence. The probe will not use it")
             FileInput.start(self, static_info)
@@ -84,8 +93,6 @@ class LsfInput(FileInput):
         except:
             DebugPrint(1, "Unable to read file. The test can continue since stubs are used.")
         DebugPrint(4, "Lsf start stub, static info: %s" % static_info)
-        if LsfInput.VERSION_ATTRIBUTE in static_info:
-            self._set_version_config(static_info[LsfInput.VERSION_ATTRIBUTE])
 
     def get_version(self):
         # RPM package for lsf
@@ -121,14 +128,20 @@ class LsfInput(FileInput):
                 fh = open(acct_file)
                 more_records = True
                 while more_records:
+                    # loop used to skip over malformed records
+                    # the new invocation of the generator will continue from the following record
                     try:
                         for r in AcctFile(fh):
+                            if checkpoint is not None:
+                                if r.eventTime < checkpoint.date():
+                                    DebugPrint(6, "Skipping record before Checkpoint: %s" % r.jobID)
+                                    continue
                             # This allows to know if the record is the last or not
                             prev_r = this_r
                             if prev_r:
                                 yield prev_r
                             this_r = r
-                            if new_checkpoint is not None:
+                            if new_checkpoint is not None and prev_r is not None:
                                 if new_checkpoint[0] < prev_r.eventTime:
                                     new_checkpoint = (prev_r.eventTime, prev_r.fileLineNumber)
                         more_records = False
@@ -142,7 +155,7 @@ class LsfInput(FileInput):
                         DebugPrint(2, "Error parsing %s: %s" % (acct_file, e))
                 # The very last record may be incomplete or corrupted (written partially)
                 # If processing also the very last record
-                if self.process_last_record:
+                if self._process_last_record:
                     if this_r:
                         # Make sure that some events were processed
                         yield this_r
@@ -156,7 +169,10 @@ class LsfInput(FileInput):
             except IOError, e:
                 DebugPrint(2, "Unable to open LSF accounting file %s: %s" % (acct_file, e))
             except:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 DebugPrint(2, "Unknown error parsing the LSF accounting file: %s" % acct_file)
+                DebugPrint(4, "Exception details \n%s" %
+                           '\n'.join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array
@@ -167,7 +183,7 @@ class LsfInput(FileInput):
             yield r
             counter += 1
 
-    def do_test(self):
+    def do_test(self, static_info=None):
         """Test with pre-arranged value sets
         replacing: start, get_records
         """
@@ -176,81 +192,10 @@ class LsfInput(FileInput):
         self.get_records = self._get_records_stub
 
 
-####### Utility functions for LsfProbe
-
-# TODO: how are fractional system/user times handled?
-def total_seconds(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
-    :param td: time interval (datetime.timedelta)
-    :return: number of seconds (int)
-    """
-    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-    # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600)
-    if positive and retv < 0:
-        return 0
-    return retv
-
-try:
-    # string formatter is available from py 2.6
-    from string import Formatter
-
-    def strfdelta(tsec, format="P{D}DT{H}H{M}M{S}S", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
-        """Formatting the time duration
-        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
-        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
-        0 duration is PT0S
-
-        :param tsec: float, number of seconds (change to timeinterval?)
-        :param fmt: Format string,  ISO 8601
-        :return: Formatted time duration
-        """
-        if not tsec:
-            # 0 or None
-            return format_zero
-        if 0 < tsec < 86400:
-            format = format_no_day
-        f = Formatter()
-        d = {}
-        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        k = map(lambda x: x[1], list(f.parse(format)))
-        rem = long(tsec)  # py 2.7 tdelta.total_seconds())
-
-        for i in ('D', 'H', 'M', 'S'):
-            if i in k and i in l.keys():
-                d[i], rem = divmod(rem, l[i])
-
-        return f.format(format, **d)
-except ImportError:
-    # pre 2.6
-    def strfdelta(tsec, format="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_no_day="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
-        """Formatting the time duration
-        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
-        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
-        0 duration is PT0S
-
-        :param tsec: float, number of seconds
-        :param fmt: Format string,  ISO 8601
-        :return: Formatted time duration
-        """
-        if not tsec:
-            # 0 or None
-            return format_zero
-        d = {}
-        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        rem = long(tsec)
-
-        for i in ('D', 'H', 'M'):  # needed because keys are not sorted
-            d[i], rem = divmod(rem, l[i])
-        d['S'] = rem
-        if d['D'] == 0:
-            format = format_no_day
-
-        return format % d
-
-
 class LsfProbe(GratiaMeter):
+    """
+    LSF probe
+    """
 
     # Set pre-defined values
     PROBE_NAME = 'lsf'
@@ -258,101 +203,144 @@ class LsfProbe(GratiaMeter):
     CE_NAME = 'LsfCE'
     # Production
     CE_STATUS = 'Production'
+    # Exclusive node use (will account for all CPUs
+    RE_EXCLUSIVE_NODE = re.compile('#BSUB -x', re.IGNORECASE)
+    # Fixes for invalid records zeroing time out (see GRATIA-119)
+    MAX_JOB_TIME = 2000000000
 
     def __init__(self):
         GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = LsfInput()
         self._lsf_bindir = ""
+        self.job_env = {}
 
     # Functions to process and send
     def complete_and_send(self, jrecord):
+        """
+        Complete and send a Gratia record
+        :param jrecord: LSF accounting record
+        :return: None - numbers to do session accounting
+        """
+        # TODO: change return value to allow cumulative accounting (# of records sent)
+        # TODO: use exceptions to skip discarded records?
         r = self.lsf_to_user_record(jrecord)
+        if r is None:
+            DebugPrint(4, "Skipping LSF job: %s, %s" % (jrecord.jobID, jrecord.jobName))
+            return
         if jrecord.execHosts:
             lshost = "lshost"
             if self._lsf_bindir:
                 lshost = os.path.join(self._lsf_bindir, lshost)
             self.add_hostinfo(r, jrecord, lshost)
 
-        DebugPrint(4, "Sending LSF record for: %s" % jrecord.jobID)
-        print r
+        DebugPrint(4, "Sending record for LSF job: %s, %s" % (jrecord.jobID, jrecord.jobName))
+        DebugPrint(5, "Record being sent: %s" % r)
         Gratia.Send(r)
 
-
-    @staticmethod
-    def lsf_to_user_record(jrecord):
+    def lsf_to_user_record(self, jrecord):
+        """Preparing and sending a job record
+        Add here some notes about conventions/conversions:
+        - assuming that all time stamps in lsb.acct are UTC
+        :param jrecord: LsfInput, record coming from lsb.acct file
+        :return: values usable for cuulative statistics
         """
-        preparing and sending a job record
-        :param jrecord:
-        :return:
-        """
-        DebugPrint(5, "Processing job record: %s" % (jrecord))
+        DebugPrint(5, "Processing job record: %s" % jrecord)
 
         # Empty usage record
         resource_type = "Batch"
         # resource_type = "GridMonitor"
         # resource_type = 'BatchPilot'
         r = Gratia.UsageRecord(resource_type)
-        r.Grid("Local")
+        # get Grid type from configuration, default OSG
+        r.Grid(self.get_config_attribute("Grid", "OSG"))
 
         # Adding ID
         r.LocalJobId(str(jrecord.jobID))
         # TODO: global id?
         # TODO: is the ID OK? Unique enough? (jrecord.fromHost, jrecord.jobID,) get_hostname?
-        global_id = "%s-%s" % (jrecord.fromHost, jrecord.jobID )
+        #global_id = "%s-%s" % (jrecord.fromHost, jrecord.jobID )
+
+        global_id = None
+        if 'GRID_JOBID' in self.job_env:
+            global_id = self.job_env['GRID_JOBID']
+            DebugPrint(4, "Using grid job ID %s also as RecordIdentity!" % global_id)
+        elif jrecord.fromHost and jrecord.jobID and jrecord.startTimeEpoch:
+            #
+            global_id = "%s:%s_%d" % (self._normalize_hostname(jrecord.fromHost), jrecord.jobID, jrecord.submitTimeEpoch)
+            # ":".$urAcctlogInfo{lrmsId}."_".$urAcctlogInfo{start}
+            DebugPrint(4, "Composing global job ID %s for RecordIdentity" % global_id)
+        if not global_id:
+            DebugPrint(2, "ERROR: Cannot determine or construct a unique job ID ... skipping record!")
+            DebugPrint(4, "ERROR: One component is not defiled: host:%s, job:%s, time:%s)" %
+                       (jrecord.fromHost, jrecord.jobID, jrecord.submitTimeEpoch))
+            return None  # return 3
         r.GlobalJobId(global_id)
 
         # It is actually a user name
         r.LocalUserId(jrecord.userName)
 
-        """
-        # Other data
-        r.VOName(mrecord['storage_group'])
-        start = GratiaProbe.parse_date(mrecord['mount_start'])
-        if not finish:
-            finish = start
-            duration = 0
-        else:
-            finish = GratiaProbe.parse_date(finish)
-            duration = int(float(finish)-float(start))
-        r.WallDuration(duration)
-        r.StartTime(GratiaProbe.format_date(start))
-        """
         # r.VOName still missing
 
-
-        r.EndTime(GratiaProbe.format_date(jrecord.eventTime))
+        r.EndTime(timeutil.format_datetime(jrecord.eventTime))
         # jrecord.creationTime (submit/creation time)
-        # TODO: add domain to submit host (server) - self._normalize_hostname (using DefaultDomainName from config)
-        r.SubmitHost(jrecord.fromHost)
-        r.Queue(jrecord.queue)
+        # Previous probe setting machine name, not submit host r.SubmitHost()
+        r.MachineName(self._normalize_hostname(jrecord.fromHost), "Server")
+        # Previous probe was adding description: LRMS type: lsf
+        r.Queue(jrecord.queue, "LRMS type: lsf")
         # user above
         # jobID above
-        jrecord.numProcessors  #processors
+        r.Processors(jrecord.numProcessors)  # processors as from the acct record
         #if jrecord.startTimeEpoch:  # used as flag to see if the job ran
         #    walltime = int(jrecord.eventTimeEpoch - jrecord.startTimeEpoch)
         if jrecord.startTimeEpoch >= 1:
             # the job started (and ran)
-            r.WallDuration(strfdelta(total_seconds(jrecord.runTime)))  # python 2.7 jrecord.runTime.total_seconds
-            # previous probe was reporting total (user+system)
-            r.CpuDuration(total_seconds(jrecord.stime), "system", "Was entered in seconds")
-            r.CpuDuration(total_seconds(jrecord.utime), "user", "Was entered in seconds")
+            # python 2.7 jrecord.runTime.total_seconds
+            seconds_walltime = timeutil.datetime_timedelta_to_seconds(jrecord.runTime)
+            seconds_system = timeutil.datetime_timedelta_to_seconds(jrecord.stime)
+            seconds_user = timeutil.datetime_timedelta_to_seconds(jrecord.utime)
+
+            # Fixes for invalid records (see GRATIA-119), zero out time fields if they
+            # have really large numbers, threshold time based on bad values used in
+            # condor probe
+            if (seconds_system+seconds_user) > self.MAX_JOB_TIME:
+                DebugPrint(3, "WARNING: INVALID DATA: Record for %s has invalid cpu time (system: %s, user: %s), replacing values with 0" %(global_id, seconds_system, seconds_user))
+                seconds_system = 0
+                seconds_user = 0
+            if seconds_walltime > self.MAX_JOB_TIME:
+                DebugPrint(3, "WARNING: INVALID DATA: Record for %s has invalid walltime time %s, replacing value with 0" % (global_id, seconds_walltime))
+                seconds_walltime = 0
+
+            # Gratia durations accept either string or # of seconds
+            r.WallDuration(timeutil.format_interval(seconds_walltime))
+            # previous probe was reporting total (user+system) - was accounted as user and system was 0
+            r.CpuDuration(seconds_system, "system", "Was entered in seconds")
+            r.CpuDuration(seconds_user, "user", "Was entered in seconds")
+
             # mem jrecord.maxRMem
             # swap jrecord.maxRSwap
-            r.StartTime(GratiaProbe.format_date(jrecord.startTime))
+            r.StartTime(timeutil.format_datetime(jrecord.startTime))
         # end jrecord.eventTime(Epoch)
-        r.TimeInstant(GratiaProbe.format_date(jrecord.submitTime), 'SubmitTime')  # ctime
+        r.TimeInstant(timeutil.format_datetime(jrecord.submitTime), 'SubmitTime')  # ctime
         #if jrecord.execHosts:
         #    # last exec host
         #    r.Host(jrecord.execHosts[-1])
-        jrecord.jobName  #jobName
-        jrecord.command  # command
-        jrecord.exitStatus  # exitStatus
+        r.JobName(jrecord.jobName)  #jobName
+        # job_command = jrecord.command  # command (actual script?)
+        r.Status(jrecord.exitStatus, "exit status")  # exitStatus
         return r
 
-    def add_hostinfo(self, r, jrecord, lshost):
+    @staticmethod
+    def add_hostinfo(r, jrecord, lshost):
         if jrecord.execHosts:
             # last exec host
-            r.Host(jrecord.execHosts[-1])
+            r.Host(jrecord.execHosts[-1], description="executing host")
+            # Conditions from perl code:
+            # command =~ m/#BSUB -x/i
+            #  & ( exist execHost & execHost != "" )
+            #  & ( ! exist proc | proc ="" | proc = 1 )
+            if not LsfProbe.RE_EXCLUSIVE_NODE.match(jrecord.command):
+                return
+
             if not jrecord.numProcessors or jrecord.numProcessors == 1:
                 # Execute: lshosts $execHost   Host
                 # which returns
@@ -392,6 +380,15 @@ class LsfProbe(GratiaMeter):
     @staticmethod
     def _is_ok(jrecord):
         return True
+
+    def register_gratia(self):
+        super(self.__class__, self).register_gratia()
+        #These have been taken care in the parent registerGratia
+        #Gratia.RegisterReporter()
+        #Gratia.RegisterReporterLibrary()
+        #Gratia.RegisterService()
+        # This sets a global variable used by certinfo.py to guess the certinfo file name
+        Gratia.setProbeBatchManager('lsf')
 
     def main(self):
         # Initialize the probe an the input

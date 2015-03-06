@@ -1,0 +1,83 @@
+Attributes of Job Records
+
+eventType - JOB_FINISH
+version - LSF Version number as a string
+eventTimeEpoch - time generated (= end time) in seconds since epoch
+eventTime - time generated (= end time) as datetime
+userId - numeric user ID of the user who owned the job
+options - Bit flags for job processing
+submitTimeEpoch - job submitted (epoch)
+submitTime - job submitted (datetime)
+beginTimeEpoch - scheduled job start time
+beginTime
+termTimeEpoch - Job termination deadline
+termTime
+startTimeEpoch - start time
+startTime
+userName - user name of the submitter
+queue - job queue
+## Needs some more work...
+resReq
+dependCond
+preExecCmd
+fromHost
+cwd
+inFile
+outFile
+errFile
+jobFile
+numAskedHosts - Number of host names to which job dispatching will be limited
+askedHosts - List of host names to which job dispatching will be limited
+numExHosts - Number of processors used for execution (if LSF_HPC_EXTENSIONS="SHORT_EVENTFILE" in lsf.conf, number of .hosts listed in execHosts)
+execHosts - List of execution host names (allocation at job finish time)
+jStatus - Job status. 32=EXIT, 64=DONE
+hostFactor - CPU factor of the first execution host
+jobName - Job name (up to 4094 characters)
+command - Complete batch job command
+# -1=unavailable, units are sec or KB
+utime - User time used in seconds
+stime - System time used in seconds
+maxrss - Maximum shared text size in KB
+ixrss - Integral of the shared text size over time. (in KB Seconds)
+ismrss - Integral of the shared memory size over time. (valid only on Ultrix)
+idrss - Integral of the unshared data size over time.
+isrss - Integral of the unshared stack size over time
+minflt - Number of page reclaims
+majflt - Number of page faults
+nswap - Number of times the process was swapped out
+inblock - Number of block input operations
+oublock - Number of block output operations
+ioch - Number of characters read and written. (valid only on HP-UX)
+msgsnd - Number of System V IPC messages sent
+msgrcv - Number of messages received
+nsignals - Number of signals received
+nvcsw - Number of voluntary context switches
+nivcsw - Number of involuntary context switches
+exutime - Exact user time used
+mailUser - Name of the user to whom job related mail was sent
+projectName - LSF project name
+exitStatus - UNIX exit status of the job
+maxNumProcessors - Maximum number of processors specified for the job
+loginShell - Login shell used for the job
+timeEvent
+idx
+maxRMem
+maxRSwap
+inFileSpool
+commandSpool
+rsvId
+sla
+exceptMask
+additionalInfo
+termInfo - TermInfo object
+warningAction
+warningTimePeriod
+chargedSAAP - Share Attribute Account Path (SAAP) that was charged for the job
+licenseProject
+runTime - tun time (0 if never started, startTime-eventTime) datetime.timedelta
+# Job never started
+waitTime=eventTime-submitTime
+startTime=termTime
+# else:
+waitTime=startTime-submitTime
+pendTime=waitTime - The time the job was pending
