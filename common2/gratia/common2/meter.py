@@ -10,8 +10,8 @@
 # Standard libraries
 import sys, os, stat
 import time
-import datetime
-import calendar
+#import datetime
+#import calendar
 import random
 import pwd, grp
 import socket   # to get hostname
@@ -34,6 +34,8 @@ from gratia.common.debug import DebugPrint, LogFileName
 #from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
+from gratia.common2 import timeutil
+
 from probeinput import ProbeInput
 #from checkpoint import DateTransactionCheckpoint
 
@@ -53,96 +55,6 @@ def warn_of_signal_generator(alarm):
     return f
 
 
-### Auxiliary functions
-
-# TODO: how are fractional system/user times handled?
-def total_seconds(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
-    :param td: time interval (datetime.timedelta)
-    :param positive: if True return only positive values (or 0) - default: False
-    :return: number of seconds (int)
-    """
-    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-    # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600)
-    if positive and retv < 0:
-        return 0
-    return retv
-
-
-def total_seconds_precise(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
-    :param td: time interval (datetime.timedelta)
-    :param positive: if True return only positive values (or 0) - default: False
-    :return: number of seconds (float)
-    """
-    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-    # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
-    if positive and retv < 0:
-        return 0
-    return retv
-
-try:
-    # string formatter is available from py 2.6
-    from string import Formatter
-
-    def strfdelta(tsec, format="P{D}DT{H}H{M}M{S}S", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
-        """Formatting the time duration
-        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
-        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
-        0 duration is PT0S
-
-        :param tsec: float, number of seconds (change to timeinterval?)
-        :param fmt: Format string,  ISO 8601
-        :return: Formatted time duration
-        """
-        if not tsec:
-            # 0 or None
-            return format_zero
-        if 0 < tsec < 86400:
-            format = format_no_day
-        f = Formatter()
-        d = {}
-        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        k = map(lambda x: x[1], list(f.parse(format)))
-        rem = long(tsec)  # py 2.7 tdelta.total_seconds())
-
-        for i in ('D', 'H', 'M', 'S'):
-            if i in k and i in l.keys():
-                d[i], rem = divmod(rem, l[i])
-
-        return f.format(format, **d)
-except ImportError:
-    # pre 2.6
-    def strfdelta(tsec, format="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_no_day="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
-        """Formatting the time duration
-        Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
-        Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
-        0 duration is PT0S
-
-        :param tsec: float, number of seconds
-        :param fmt: Format string,  ISO 8601
-        :return: Formatted time duration
-        """
-        if not tsec:
-            # 0 or None
-            return format_zero
-        d = {}
-        l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        rem = long(tsec)
-
-        for i in ('D', 'H', 'M'):  # needed because keys are not sorted
-            d[i], rem = divmod(rem, l[i])
-        d['S'] = rem
-        if d['D'] == 0:
-            format = format_no_day
-
-        return format % d
-
-
 class GratiaProbe(object):
     """GratiaProbe base class
     """
@@ -153,7 +65,7 @@ class GratiaProbe(object):
 
     _opts = None
     _args = None
-    checkpoint = None
+    #checkpoint = None
     _conn = None
     cluster = None
     # probe name, e.g. slurm_meter
@@ -200,14 +112,19 @@ class GratiaProbe(object):
                 return
 
     def start(self):
-        """Initializes Gratia, does random sleep (if any),Must be invoked after options and parameters are parsed
+        """Initializes Gratia (to read the option file), does random sleep (if any), acquires the lock,
+        initializes the input and registers Gratia.
+        Must be invoked after options and parameters are parsed (option file name is needed)
         """
 
-        # Initialize Gratia
+        ### Initialize Gratia
         if not self._opts or not self._opts.gratia_config or not os.path.exists(self._opts.gratia_config):
             # TODO: print a message instead of an exception?
             raise Exception("Gratia config file (%s) does not exist." %
                             self._opts.gratia_config)
+        # Print options and initial conditions
+        DebugPrint(5, "Initial options: %s" % self._opts)
+
         # Initialization parses the config file. No debug print will work before this
         Gratia.Initialize(self._opts.gratia_config)
 
@@ -225,43 +142,45 @@ class GratiaProbe(object):
         # Make sure we have an exclusive lock for this probe.
         GratiaWrapper.ExclusiveLock()
 
-        self.register_gratia()
-
-        # get_DataFileExpiration() returns the value in the config file or 31
-        # TODO: Do we want to always not consider values older than 31 days or only when checkpointing is
-        # enabled?
-        # data_expiration = Gratia.Config.get_DataFileExpiration()
-
-        # Find the checkpoint filename (if enabled)
-        if self._opts.checkpoint:
-            checkpoint_file = os.path.join(
-                Gratia.Config.get_WorkingFolder(), "checkpoint")
-            data_expiration = Gratia.Config.get_DataFileExpiration()
-            # Only process DataFileExpiration days of history
-            # (unless we're resuming from a checkpoint file)
-            # TODO: is datafileexpiration a maximum value or a default (if no checkpoint is specified)?
-            #       Do we want both?
-            # Open the checkpoint file
-            self._probeinput.add_checkpoint(checkpoint_file, default_val=data_expiration)
-
-        # Get static information form the config file
-
-        # Print options and initial conditions
-        DebugPrint(5, "Initial options: %s" % self._opts)
-
-        # Initialize input
-        # input must specify which parameters it requires form the config file
+        ### Initialize input (config file must be available)
+        # Input must specify which parameters it requires form the config file
+        # The probe provides static information form the config file
         if not self._probeinput:
             self._probeinput = ProbeInput()
         input_parameters = self._probeinput.get_init_params()
         input_ini = self.get_config_att_list(input_parameters)
-        #parameters passed in start: self._probeinput.add_static_info(input_ini)
+        # Check for test mode: start and other methods may change
         if 'input' in self._opts.test:
             DebugPrint(3, "Running input in test mode")
             self._probeinput.do_test()
         # Finish input initialization, including DB connection (if used)
         self._probeinput.start(input_ini)
 
+        # get_DataFileExpiration() returns the value in the config file or 31
+        # TODO: Do we want to always not consider values older than 31 days or only when checkpointing is
+        # enabled?
+        # data_expiration = Gratia.Config.get_DataFileExpiration()
+
+        # Find the checkpoint filename (if enabled) - after initializing the input!
+        if self._opts.checkpoint:
+            checkpoint_file = self.get_config_attribute('CheckpointFile')
+            full_checkpoint_name = True
+            if not checkpoint_file:
+                full_checkpoint_name = False
+                checkpoint_file = os.path.join(Gratia.Config.get_WorkingFolder(), "checkpoint")
+            data_expiration = Gratia.Config.get_DataFileExpiration()
+            # Only process DataFileExpiration days of history
+            # (unless we're resuming from a checkpoint file)
+            # TODO: is datafileexpiration a maximum value or a default (if no checkpoint is specified)?
+            #       Do we want both?
+            # Open the checkpoint file
+            self._probeinput.add_checkpoint(checkpoint_file, default_val=data_expiration, fullname=full_checkpoint_name)
+
+        ### Complete Gratia initialization
+        # This uses the input version (after Input initialization)
+        self.register_gratia()
+
+        ###
         # Set other attributes form config file
         #self.cluster = Gratia.Config.getConfigAttribute('SlurmCluster')
 
@@ -292,7 +211,28 @@ class GratiaProbe(object):
     ####
     #### Convenience functions
 
+    @staticmethod
+    def parse_config_boolean(value):
+        """Evaluates to True if lowercase value matches "true", False otherwise
+        :param value: input string
+        :return: True/False
+        """
+        try:
+            if value.tolower() == "true":
+                return True
+        except:
+            pass
+        return False
+
     def get_config_attribute(self, attr, default=None, mandatory=False):
+        """Return the value of the requested parameter
+        Note that parameters are strings: use "True"/"False" and self.parse_config_boolean for booleans
+        :param attr: name of the parameter
+        :param default: if not None, default used if the value evaluates to False (None, empty string, ...)
+        :param mandatory: if mandatory is True ValueError is risen if the attribute is not in the configuration
+            (evaluates to false)
+        :return: the value of the parameter or None (if not available)
+        """
         """Return the value of the requested parameter
         - default is used if the value evaluates to False (None, empty string, ...)
         - raise exception if mandatory, and the value (or default) evaluates to False
@@ -305,18 +245,23 @@ class GratiaProbe(object):
         if not retv and default is not None:
             retv = default
         if mandatory and not retv:
-                raise Exception("Attribute '%s' not found in config file %s" % (attr, self._opts.gratia_config))
+                raise ValueError("Attribute '%s' not found in config file %s" % (attr, self._opts.gratia_config))
         return retv
 
     def get_config_att_list(self, param_list, mandatory=False):
-        """Return a dictionary containing the values of a list of parameters"""
+        """Return a dictionary containing the values of a list of parameters
+        :param param_list: list of parameter names
+        :param mandatory: if mandatory is True ValueError is risen if an attribute is not in the configuration
+            (evaluates to false)
+        :return: dictionary with all attributes: value is None if they are not in the configuration
+        """
         #TODO: would an array be much more efficient?
         #TODO: check what happens if the parameter is not in the config file. Ideally None is returned
         retv = {}
         for param in param_list:
             retv[param] = Gratia.Config.getConfigAttribute(param)
             if mandatory and not retv[param]:
-                raise Exception("Attribute '%s' not found in config file %s" % (param, self._opts.gratia_config))
+                raise ValueError("Attribute '%s' not found in config file %s" % (param, self._opts.gratia_config))
         return retv
 
     def get_hostname(self):
@@ -347,131 +292,6 @@ class GratiaProbe(object):
     def parse_opts(self, options=None):
         """Hook to parse command-line options"""
         return
-
-    @staticmethod
-    def parse_date(date_string):
-        """
-        Parse a date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
-        Accepts also datetime objects.
-
-        :param date_string: date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
-        :return: time, number of seconds since the Epoch, None if errors occur
-
-        Returns None if string can't be parsed, otherwise takes a datetime
-        input or parses a formatted UTC time and
-        returns the number of seconds since the Epoch
-        """    
-        result = None
-        try:
-            try:
-                # try first if it is a datetime obj (returned by DB api)
-                result = date_string.timetuple()
-            except AttributeError:
-                # try string format
-                result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-            # time.mktime() uses local time, not UTC
-            return long(round(calendar.timegm(result)))
-        except ValueError:
-            # Wrong format
-            pass
-        except Exception, e:
-            # TODO: which other exception can happen?
-            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
-            return None
-    
-        try:
-            # try second string format
-            result = time.strptime(date_string, "%Y-%m-%d")
-            return long(round(time.mktime(result)))
-        except ValueError, e:
-            DebugPrint(2, "Wrong format, Date parsing failed for %s: %s" % (date_string, e))
-            pass
-        except Exception, e:
-            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
-            return None
-    
-        return result
-
-    @staticmethod
-    def parse_datetime(date_string):
-        """Parse date/time string and return datetime object
-
-        :param date_string: date/time string in %Y-%m-%d or %Y-%m-%d %H:%M:%S format
-        :return: datetime, None if errors occur
-        """
-        # from python 2.5 datetime.strptime(date_string, format)
-        # previous: datetime(*(time.strptime(date_string, format)[0:6]))
-        try:
-            result = time.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            # Wrong format, try the next
-            try:
-                # try second string format
-                result = time.strptime(date_string, "%Y-%m-%d")
-            except ValueError, e:
-                # No valid format
-                DebugPrint(2, "Wrong format, Date parsing failed for %s: %s" % (date_string, e))
-                return None
-            except Exception, e:
-                DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
-                return None
-        except Exception, e:
-            # TODO: which other exception can happen?
-            DebugPrint(2, "Date parsing failed for %s: %s" % (date_string, e))
-            return None
-
-        return datetime.datetime(*result[0:6])
-
-    @staticmethod
-    def format_date(date_in):
-        """ Format the date as %Y-%m-%d %H:%M:%S in UTC time
-        date_in is seconds from the Epoch (float) or a datetime struct (in UTC time),
-                if None, then time is now
-        """
-        result = None
-        try:
-            try:
-                date_in = time.gmtime(date_in)
-            except TypeError:
-                try:
-                    date_in = date_in.timetuple()
-                except AttributeError:
-                    pass
-            result = time.strftime("%Y-%m-%d %H:%M:%S", date_in)
-        except Exception, e:
-            DebugPrint(2, "Date conversion failed for %s: %s" % (date_in, e))
-            return None
-        return result
-
-    @staticmethod
-    def format_interval(time_interval):
-        """
-        Format time interval as Duration ISO8601 (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
-        :param time_interval: time interval
-        :return: formatted ISO8601 time interval
-        """
-        return strfdelta(time_interval)
-
-    @staticmethod
-    def datetime_to_unix_time(time_in):
-        """
-        Convert datetime to seconds from the epoch (keeping the provided precision)
-        http://en.wikipedia.org/wiki/Unix_time
-        dts.strftime("%s.%f")  # datetime to unix_time, not all OS have %s,%f
-
-        :param time_in: datetime to convert
-        :return: seconds form the epoch (float including milliseconds)
-        """
-        # time_in.strftime("%s.%f")  # not all OS have %s,%f
-        epoch = datetime.datetime.utcfromtimestamp(0)
-        delta = time_in - epoch
-        # only form py2.7: return delta.total_seconds()
-        return total_seconds_precise(delta)
-
-    @staticmethod
-    def datetime_interval_to_seconds(delta):
-        return total_seconds_precise(delta)
-
 
     ## User functions (also in probeinput)
     @staticmethod
@@ -552,6 +372,8 @@ class GratiaProbe(object):
         return "%s" % prog_version
 
     def get_version(self):
+        """Return the version of the input used by the probe (UNKNOWN if there is no input)
+        """
         if self._probeinput:
             try:
                 input_version = self._probeinput.get_version()
@@ -564,7 +386,25 @@ class GratiaProbe(object):
         # DebugPrint(0, "Unable to get input version: no input defined.")
         # raise Exception("No input defiled")
 
+    def get_description(self):
+        """Describe the probe: name, cinfiguration
+        """
+        rets = "Probe: %s (v. %s)\n" % (self.get_probename(), self.get_probe_version())
+        rets += "Host: %s (def. domain %s)\n" % (self.get_hostname(), self._normalize_hostname("HOST"))
+        rets += "Site: %s\n" % self.get_sitename()
+        rets += "Config file: %s\n" % self._default_config
+        rets += "Log file directory (: %s\n" % self.get_config_attribute('LogFolder')
+        rets += "Lock file: %s\n" % self.get_config_attribute('Lockfile')
+        rets += "Working directory: %s\n" % self.get_config_attribute('WorkingFolder')
+        rets += "Data directory: %s\n" % self.get_config_attribute('DataFolder')
+        rets += "Input %s (v. %s)\n" % (self._probeinput, self.get_version())
+        return rets
+
     def register_gratia(self):
+        """Register in Gratia the Reporter (gratia probe), ReporterLibrary (Gratia library version)
+        and the Service (in
+        :return:
+        """
         Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" % (prog_revision, prog_version))
 
         try:
@@ -580,7 +420,7 @@ class GratiaProbe(object):
         # TODO: check the meaning of RegisterReporter vs RegisterService
         Gratia.RegisterService(self._probeinput.get_name(), input_version)
 
-        # TODO: check which attributes need to ne set here (and not init)
+        # TODO: check which attributes need to be set here (and not init)
         # and which attributes are mandatory vs optional
         #Gratia.setProbeBatchManager("slurm")
         #GratiaCore.setProbeBatchManager("condor")
@@ -603,12 +443,14 @@ class GratiaMeter(GratiaProbe):
             self.main = self.do_profile
 
     def get_opts_parser(self):
-        """Return an options parser. It must invoke the parent option parser
+        """Return an options parser. It must invoke the parent option parser.
+        All children will have the same structure to add options to the parent options parser.
         """
         # this is not needed but for clarity
         parser = None
         try:
             # child classes will use the parent parser instead:
+            # For GratiaMeter this will trigger an AttributeError because it is not defined in the parent
             parser = super.get_opts_parser()
         except AttributeError:
             # base class initializes the parser
@@ -666,9 +508,15 @@ Command line usage: %prog
         test_list = [i.strip() for i in test_string.split(',')]
         return test_list
 
-    def _check_start_end_times(self, start_time=None, end_time=None):
-        """Both or none of the times have to be present. Start time has to be in the past,
+    def _check_start_end_times(self, start_time=None, end_time=None, assume_local=False):
+        """Parse and verify the validity of the time interval parameters
+        Both or none of the times have to be present. Start time has to be in the past,
         end time is after start time
+        Time strings have to be in ISO8601 or other format compatible w/ timeutil.parse_datetime
+        :param start_time: Start time
+        :param end_time: End time
+        :param assume_local: if False (default) naive time values are assumed UTC, if True they are assumed local
+        :return: start and end time in second from the Epoch (UTC)
         """
         if start_time is not None or end_time is not None:
             # using a start and end date
@@ -678,21 +526,21 @@ Command line usage: %prog
                 DebugPrint(-1, "Recovery mode ERROR: Either None or Both "
                            "--start and --end args are required")
                 sys.exit(1)
-            start_time = self.parse_date(start_time)
-            if start_time is None:
+            try:
+                start_time = timeutil.parse_datetime(start_time, return_seconds=True, assume_local=assume_local)
+            except ValueError:
                 DebugPrint(-1, "Recovery mode ERROR: Can't parse start time")
                 sys.exit(1)
-            end_time = self.parse_date(end_time)
-            if end_time is None:
-                DebugPrint(-1, "Recovery mode ERROR: Can't parse end time") 
+            try:
+                end_time = timeutil.parse_datetime(end_time, return_seconds=True, assume_local=assume_local)
+            except:
+                DebugPrint(-1, "Recovery mode ERROR: Can't parse end time")
                 sys.exit(1)
             if start_time > end_time:
-                DebugPrint(-1, "Recovery mode ERROR: The end time is after "
-                               "the start time")
+                DebugPrint(-1, "Recovery mode ERROR: The end time is after the start time")
                 sys.exit(1)
             if start_time > time.time():
-                DebugPrint(-1, "Recovery mode ERROR: The start time is in "
-                               "the future")
+                DebugPrint(-1, "Recovery mode ERROR: The start time is in the future")
                 sys.exit(1)
         else:  # using condor history for all dates
             DebugPrint(-1, "RUNNING the probe MANUALLY in recovery mode ")
