@@ -30,11 +30,12 @@ class ProbeInput(object):
         # Filter static info if needed
         self._static_info = {'version': None}
 
-    def add_checkpoint(self, fname=None, min_val=None, default_val=None):
+    def add_checkpoint(self, fname=None, min_val=None, default_val=None, fullname=False):
         """Add a simple checkpoint - subclasses may have more elaborate ones
         :param fname: file name with checkpoint info (or target)
         :param min_val: min value of the checkpoint
         :param default_val: default value if none is provided (e.g.there is no target)
+        :param fullname: ignored, fname is always the full name
         :return:
         """
         if min_val is not None or default_val is not None:
@@ -67,7 +68,7 @@ class ProbeInput(object):
         pass
 
     def status_ok(self):
-        """Return True if OK, False if the connection is closed"""
+        """Return True if OK, False otherwise, e.g. if the connection is closed"""
         return False
 
     def status_string(self):
@@ -105,6 +106,19 @@ class ProbeInput(object):
             return grp.getgrgid(gid)[0]
         except (KeyError, TypeError):
             return err
+
+    @staticmethod
+    def parse_config_boolean(value):
+        """Evaluates to True if lowercase value matches "true", False otherwise
+        :param value: input string
+        :return: True/False
+        """
+        try:
+            if value.tolower() == "true":
+                return True
+        except:
+            pass
+        return False
 
     def _addUserInfoIfMissing(self, r):
         """Add user/acct if missing (resolving uid/gid)"""
