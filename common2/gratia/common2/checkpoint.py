@@ -17,47 +17,29 @@ except ImportError:
     import pickle as cPickle
 
 try:
-    from gratia.common.Gratia import DebugPrint
+    from gratia.common.debug import DebugPrint
 except ImportError:
     def DebugPrint(val, msg):
         print ("DEBUG LEVEL %s: %s" % (val, msg))
 
-
-##### Auxiliary functions
-# TODO: also in meter.py - factor out in common module?
-def total_seconds_precise(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
-    :param td: time interval (datetime.timedelta)
-    :param positive: if True return only positive values (or 0) - default: False
-    :return: number of seconds (float)
-    """
-    # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-    # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
-    if positive and retv < 0:
-        return 0
-    return retv
-
-# TODO: also in meter.py - factor out in common module?
-def datetime_to_unix_time(time_in):
-    """
-    Convert datetime to seconds from the epoch (keeping the provided precision)
-    http://en.wikipedia.org/wiki/Unix_time
-    dts.strftime("%s.%f")  # datetime to unix_time, not all OS have %s,%f
-
-    :param time_in: datetime to convert
-    :return: seconds form the epoch (float including milliseconds)
-    """
-    # time_in.strftime("%s.%f")  # not all OS have %s,%f
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    delta = time_in - epoch
-    # only form py2.7: return delta.total_seconds()
-    return total_seconds_precise(delta)
+import gratia.common2.timeutil as timeutil  # for datetime_to_unix_time
 
 
 class Checkpoint(object):
     """Checkpoint base class to enforce attributes
+    should never be instantiated
+    All sub-classes must have:
+    - self._target
+    - get_val()
+    - set_val(val)
+    - conditional_set(val)
+    And if different form set_val
+    - prepare(val)
+    And if different from NOOP
+    - commit()
+    - sync()
+    - close()
+
     """
     #def __init__(self):
     #    pass
@@ -67,20 +49,33 @@ class Checkpoint(object):
         return self._target
 
     def get_val(self):
+        """getter for the checkpoint value"""
         raise AttributeError
 
     def set_val(self, val):
+        """setter for the checkpoint value"""
         raise AttributeError
 
     value = property(get_val, set_val)
 
     def conditional_set(self, val):
+        """set only if a special condition is true, e.g. the value is more recent"""
         raise AttributeError
 
+    def prepare(self, val):
+        """If no two-stage commit is required this is the same as set_val"""
+        self.set_val(val)
+
+    def commit(self):
+        """Noop if no transaction is required"""
+        pass
+
     def sync(self):
+        """Make sure that the checkpoint is committed after this call"""
         pass
 
     def close(self):
+        """close the checkpoint if needed"""
         pass
 
     #@classmethod
@@ -111,8 +106,6 @@ class Checkpoint(object):
             return os.fdopen(fd, 'w'), fname
         except OSError:
             raise IOError("Could not open checkpoint file %sXXXX%s" % (os.path.join(dirname, prefix), suffix))
-        # should never get here
-        return None, None
 
 
 class SimpleCheckpoint(Checkpoint):
@@ -134,6 +127,7 @@ class SimpleCheckpoint(Checkpoint):
         """
         self._val = default_val
         self._fp = None
+        self._target = None
         if target:
             try:
                 fd = os.open(target, os.O_RDWR | os.O_CREAT)
@@ -187,11 +181,11 @@ class DateTransactionCheckpoint(Checkpoint):
     to improve atomicity and durability
 
     The checkpoint value is a dictionary {'date': date, 'transaction': txn}
-            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            date - datetime.datetime object (UTC or a timezone consistent within the use of the checkpoint)
             txn - integer (can be None)
     """
     #TODO: test and choose the following
-    # - add also checksum (for consistency)?
+    # - add also checksum to the checksum file (for consistency)?
     # - append multiple lines to the pending file and use the last one (better performance?)
     _single = None
 
@@ -264,14 +258,28 @@ class DateTransactionCheckpoint(Checkpoint):
                 'transaction': self._transaction}
 
     def set_date_transaction(self, date, transaction=None):
+        """
+        Save checkpoint using the provided date and transaction (if provided)
+        :param date: datetime object saved as provided. Can be UTC, some local time zone or naive
+            must be consistent across the use of the same checkpoint
+        :param transaction: long int or other transaction object
+        :return: no return (None)
+        """
         self.set_val({'date': date, 'transaction': transaction})
 
     def set_date_seconds_transaction(self, date_epoch, transaction=None):
-        # convert epoch to datetime
+        """ convert epoch to datetime, assume UTC """
         date = datetime.datetime.utcfromtimestamp(date_epoch)
         self.set_val({'date': date, 'transaction': transaction})
 
     def set_val(self, val):
+        """
+        Save checkpoint using the provided value with date and transaction.
+        :param val: checkpoint, i.e. dictionary with keys 'date' and 'transaction'. Date must be a datetime object.
+            Can be UTC, some local time zone or naive must be consistent across the use of the same checkpoint.
+            Transaction can be None or any object acting as transaction ID (e.g. long int)
+        :return: no return (None)
+        """
         self.prepare(val)
         self.commit()
 
@@ -301,7 +309,7 @@ class DateTransactionCheckpoint(Checkpoint):
         """
         Saves the specified primary key string as the new checkpoint.
         The Checkpoint value is a dictionary {'date': date, 'transaction': txn}
-            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            date - datetime.datetime object in UTC (or a consistent time zone)
             txn - integer (can be None)
         """
         #TODO: Verify best option. Be more strict and accept only datestamp values?
@@ -376,6 +384,12 @@ class DateTransactionCheckpoint(Checkpoint):
             raise IOError("Checkpoint.commit could not rename %s to %s: %s" %
                           (self._tmp_filename, self._target, strerror))
 
+    def sync(self):
+        """commit a checkpoint if needed
+        """
+        if self._pending:
+            self.commit()
+
     def close(self):
         if os.path.exists(self._tmp_filename):
             os.chmod(self._tmp_filename, stat.S_IWRITE)
@@ -386,8 +400,10 @@ class DateTransactionCheckpoint(Checkpoint):
         Returns last stored dateStamp in seconds from Epoch. It returns the epoch (datetime.min),
         if there is no stored checkpoint.
         """
-        # TODO: convert datetime to epoch
-        return self._dateStamp
+        retv = self._dateStamp
+        if not retv:
+            retv = datetime.min
+        return timeutil.datetime_to_unix_time(retv)
 
     def date(self):
         """
@@ -411,14 +427,14 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
     Extension of @DateTransactionCheckpoint (see for more implementation info)
 
     The checkpoint value is a dictionary {'date': date, 'transaction': txn, 'aux': aux}
-            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            date - datetime.datetime object in UTC (or a consistent time zone)
             txn - integer (can be None)
             aux - arbitrary pickable object or dictionary (can be None)
     """
     def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
         if not target:
             target = 'dtacheckpoint'
-        DateTransactionCheckpoint.__init__(target, max_age, default_age, full_precision)
+        DateTransactionCheckpoint.__init__(self, target, max_age, default_age, full_precision)
         self._aux = None
         self._pending_aux = None
 
@@ -434,7 +450,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
         """
         Saves the specified primary key string as the new checkpoint.
         The Checkpoint value is a dictionary {'date': date, 'transaction': txn}
-            date - datestamp in UTC  or  seconds from the Epoch in UTC
+            date - datetime.datetime object in UTC (or a consistent time zone)
             txn - integer (can be None)
             aux - arbitrary pickable object (dictionary? can be None)
         """
@@ -581,9 +597,9 @@ def test():
 
 
 def usage(name):
-    outstr = """%s [options] [test|read|write]
-%(name)s test - run a checksum test" % name
-%(name)s [options] read - read a  DateTransactionCheckpoint" % name
+    outstr = """%(name)s [options] [test|read|write]
+%(name)s test - run a checksum test
+%(name)s [options] read - read a  DateTransactionCheckpoint
 %(name)s [options] write date [[transaction] aux] - write a checkpoint
      default: DateTransactionCheckpoint
 Options:
@@ -639,18 +655,18 @@ if __name__ == "__main__":
     if args[0] == 'read':
         if isinstance(cp, DateTransactionCheckpoint):
             print "Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction())
-        if isinstance(cp, DateTransactionAuxCheckpoint):
-            # print also this
-            print "%s" % (repr(cp.aux()),)
+            if isinstance(cp, DateTransactionAuxCheckpoint):
+                # print also this
+                print "%s" % (repr(cp.aux()),)
         else:
-            print "Checkpoint (%s) value:\n%s" % (repr(cp.get_val()))
+            print "Checkpoint (%s/%s) value:\n%s" % (cp.get_target(), type(cp), repr(cp.get_val()))
     elif args[0] == 'write':
         if len(args) < 2:
             print "Must provide at least one value to write (%s)" % args[1:]
             usage(sys.argv[0])
             sys.exit(2)
         for i in range(len(args), 4):
-            args[i] = None
+            args.append(None)
         try:
             try:
                 # time.strptime()
