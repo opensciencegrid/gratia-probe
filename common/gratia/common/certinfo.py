@@ -245,6 +245,7 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
             DebugPrint(4, 'findCertInfoFile: could not find certinfo files matching localJobId ' + str(localJobId))
             static['glob_files'] = False
             DebugPrint(4, 'findCertInfoFile: could not find certinfo files, disabling globbing')
+            DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId + '. Globbing disabled.')
             return None  # No files
 
         if len(certinfo_files) == 1:
