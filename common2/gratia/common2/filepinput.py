@@ -8,17 +8,20 @@ import os
 import re
 import glob
 
-import sys
-import time
-import random
+#import sys
+#import time
+#import random
 import os.path
-import optparse
-import subprocess
+#import optparse
+#import subprocess
 
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaCore as GratiaCore
-import gratia.common.GratiaWrapper as GratiaWrapper
+#import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
+import gratia.common.file_utils as file_utils
+
+import gratia.common2.checkpoint as checkpoint
 
 # package inputs are ahead
 
@@ -278,6 +281,26 @@ class FileInput(ProbeInput):
         if static_info['DataFile']:
             self.data_file = static_info['DataFile']
 
+    def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
+        """Add a checkpoint, default file name is cfp-INPUT_NAME
+        :param fname: checkpoint file name (considered as prefix unless fullname=True)
+                file name is fname-INPUT_NAME
+        :param max_val: trim value for the checkpoint
+        :param default_val: value if no checkpoint is available
+        :param fullname: Default: False, if true, fname is considered the full file name
+        :return:
+        """
+
+        if not fname:
+            fname = "cpf-%s" % self.get_name()
+        else:
+            if not fullname:
+                fname = "%s-%s" % (fname, self.get_name())
+        if max_val is not None or default_val is not None:
+            self.checkpoint = checkpoint.DateTransactionCheckpoint(fname, max_val, default_val)
+        else:
+            self.checkpoint = checkpoint.DateTransactionCheckpoint(fname)
+
     def get_records(self, limit=None):
         """Return lines as records
         """
@@ -492,7 +515,7 @@ class OldFileInput(ProbeInput):
         if False:
             if 'gratia_logfile' in record:
                 DebugPrint(1, 'Deleting transient record file: '+record["gratia_logfile"])
-                Gratia.RemoveFile(record['gratia_logfile'])
+                file_utils.RemoveFile(record['gratia_logfile'])
             raise IgnoreRecordException("Ignoring record.")
 
         # Define the record
