@@ -13,9 +13,9 @@ from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
 
-from gratia.common2.meter import GratiaProbe, GratiaMeter
-
+from gratia.common2.meter import GratiaMeter
 from gratia.common2.pgpinput import PgInput
+import gratia.common2.timeutil as timeutil
 
 
 def DebugPrintLevel(level, *args):
@@ -104,8 +104,8 @@ class _EnstoreTapeDriveInputStub:
                     'volume': i[1],
                     'type': i[2],
                     'logname': i[3],
-                    'start': GratiaProbe.parse_datetime(i[4]),
-                    'finish': GratiaProbe.parse_datetime(i[5]),
+                    'start': timeutil.parse_datetime(i[4]),
+                    'finish': timeutil.parse_datetime(i[5]),
                     'state': i[6],
                     'storage_group': i[7],
                     'reads': int(i[8]),
@@ -177,11 +177,12 @@ Indexes:
     "tape_mnts_volume_idx" btree (volume)
     "tape_mounts_logname_idx" btree (logname)
     "tape_mounts_storage_group_idx" btree (storage_group)
+    The time zone of the timestamps is the local one
         """
         checkpoint = self.checkpoint
         new_checkpoint = None
         if checkpoint:
-            checkpoint_sql = "WHERE start >= '%s'" % GratiaProbe.format_date(checkpoint.date())
+            checkpoint_sql = "WHERE start >= '%s'" % timeutil.format_datetime(checkpoint.date(), iso8601=False)
             new_checkpoint = checkpoint.date()
         else:
             checkpoint_sql = ""
@@ -240,7 +241,7 @@ Indexes:
         for i in _EnstoreTapeDriveInputStub.get_records():
             yield i
 
-    def do_test(self):
+    def do_test(self, static_info=None):
         """Test with pre-arranged DB query results
         replacing: start, get_records
         """
@@ -301,23 +302,25 @@ class EnstoreTapeDriveProbe(GratiaMeter):
 
         # Other data
         r.VOName(mrecord['storage_group'])
-        start = GratiaProbe.parse_date(mrecord['mount_start'])
+        # Naive timestamps (datetime obj) with actual local time zone (assume_local=True is the default)
+        start = timeutil.datetime_to_utc(mrecord['mount_start'])
         if not finish:
             finish = start
             duration = 0
         else:
-            finish = GratiaProbe.parse_date(finish)
+            finish = timeutil.datetime_to_utc(finish)
             duration = int(float(finish)-float(start))
         r.WallDuration(duration)
-        r.StartTime(GratiaProbe.format_date(start))
-        r.EndTime(GratiaProbe.format_date(finish))
+        r.StartTime(timeutil.format_datetime(start))
+        r.EndTime(timeutil.format_datetime(finish))
         r.AdditionalInfo("reads", reads)
         r.AdditionalInfo("writes", writes)
-        # Status is 'evaluated' if either the mount or dismount record are missing, 'ok' otherwise
-        # evaluated status means that the duration is estimated
+        # Status is 'estimated' if either the mount or dismount record are missing, 'ok' otherwise
+        # estimated status means that the duration is estimated
         # Status in UR is varchar 255
         if estimated or mrecord['estimated']:
             r.Status('estimated')
+            # TODO: should add floor/ceiling limits for the duration whenever it is estimated?
         else:
             r.Status('ok')
 
