@@ -1,0 +1,20 @@
+An alternative LSF probe
+=======================
+
+
+Add a description of the configuration:
+DataFile
+DataFolder
+
+Example configuration:
+test/ProbeConfig.lsf
+
+
+gratia/
+- module used for the LSF records parsing
+
+test/
+- contains some test accouting files and an example configuration
+
+dev/
+- contains the library used to parse LSF records and a test for python file IO performance
