@@ -156,19 +156,51 @@ class ProbeInput(object):
     # Main functions, implemented by the child class
     def get_records(self, limit=None):
         """Return one iterator with all the records from the checkpoint on.
-        limit - limits the maximum number of records (default: None)
+        The implementation may fetch one record at the time
+        or fetch all records and use yield to return them one at the time.
+        :param limit: limits the maximum number of records (default: None, no limit)
                 may be useful when record retrieval is expensive
+        :return:
         """
         return None
-        # fetch one record at the time
-        # or fetch all records and use yield to return them one at the time
 
-    def recover_records(self, start_time=None, end_time=None, limit=None):
-        """Recover all records in the selected time interval. Ignore the checkpoint
-        limit - limits the maximum number of records (default: None)
+    def get_named_records(self, limit=None):
+        """Return one iterator with all the (record_id, record) tuples from the checkpoint on.
+        The implementation may fetch one record at the time
+        or fetch all records and use yield to return them one at the time.
+        Whenever a record is returned an unique ID associated with the record is provided.
+        The ID can be used to trigger at a later time actions connected with the record
+        (e.g. delete a file, update a DB record, ...).
+        :param limit: limits the maximum number of records (default: None, no limit)
                 may be useful when record retrieval is expensive
+        :return: record_id, record
         """
         return None
+
+    def get_selected_records(self, start=None, end=None, limit=None):
+        """Retrieve all records in the selected time interval. Ignore the checkpoint.
+        Similar to get_records but with the added constraint on the records returned.
+        The records must be sortable according to the attribute.
+        E.g. records may have a timestamp and start and end are datetime objects representing
+        the start and end time. Or they could be record IDs
+        The specific subclass will implement the criteria to select the records and the type of start and end.
+        :param start: start of the interval
+        :param end: end of the interval
+        :param limit: limits the maximum number of records (default: None, no limit)
+                may be useful when record retrieval is expensive
+        :return:
+        """
+        return None
+
+    def finalize_record(self, record_id):
+        """Callback connected with a specific record ID
+        Can be used in combination with get_named_record
+        E.g. can be used to remove files or update database records once the consumer (Gratia probe)
+        completed some asynchronous processing.
+        :param record_id: record ID as returned by get_named_record (first element of the tuple)
+        :return: True is the record was found and the action performed, False otherwise
+        """
+        return False
 
     def _set_version_config(self, value):
         """Set the version provided by the config file (used only as fallback)"""

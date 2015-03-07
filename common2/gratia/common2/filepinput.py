@@ -255,6 +255,7 @@ class FileInput(ProbeInput):
         # open('foo.xml', buffering=(2<<16) + 8)
         # TODO: auto expand compressed files (.gz)
         # TODO: use buffering
+        # NOTE that the position returned by f.tell may be inaccurate because the use of buffering (in the system)
         f = open(fname)
         pre = f.tell()
         for line, i in enumerate(f):
@@ -271,15 +272,15 @@ class FileInput(ProbeInput):
 
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
-        return ['DataDir', 'DataFile']
+        return ['InputDataDirectory', 'InputDataFile']
 
     def start(self, static_info):
         """start: initialize variables"""
         self._static_info = static_info
-        if static_info['DataDir']:
-            self.data_dir = static_info['DataDir']
-        if static_info['DataFile']:
-            self.data_file = static_info['DataFile']
+        if static_info['InputDataDirectory']:
+            self.data_dir = static_info['InputDataDirectory']
+        if static_info['InputDataFile']:
+            self.data_file = static_info['InputDataFile']
 
     def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
         """Add a checkpoint, default file name is cfp-INPUT_NAME
@@ -312,6 +313,34 @@ class FileInput(ProbeInput):
                 for line in self.iter_file(fname):
                     yield line
 
+    def get_named_records(self, limit=None):
+        """Return a generator yielding id, record tuples with
+        files content (whole file) as records and file name as ids
+        :param limit: return only the first limit records
+        :return:
+        """
+        if self.data_file:
+            f = open(self.data_file)
+            # should readall() be used instead?
+            retv = f.readlines()
+            yield self.data_file, retv
+        if self.data_dir:
+            for fname in self.iter_tree(self.data_dir):
+                f = open(fname)
+                # should readall() be used instead?
+                retv = f.readlines()
+                yield fname, retv
+
+    def finalize_record(self, record_id):
+        """Delete the file containing the record (the file name is passed as record_id)
+        :param record_id: file name of the record
+        :return: True if the record is found and the action performed
+        """
+        if os.path.isfile(record_id):
+            file_utils.RemoveFile(record_id)
+            return True
+        return False
+
 
 class TextFileInput(FileInput):
     """
@@ -343,8 +372,9 @@ class TextFileInput(FileInput):
                     yield line
 
 
-
-
+################################################################
+# TODO: remove in future releases
+# make sure that is not used anymore
 class OldFileInput(ProbeInput):
     """File input. Allows for both single file processing and directory processing
     """
@@ -369,13 +399,13 @@ class OldFileInput(ProbeInput):
 
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
-        return ['DataDir', 'DataFile']
+        return ['InputDataDirectory', 'InputDataFile']
 
     def start(self, static_info):
         """start: connect to the database"""
         self._static_info = static_info
-        if static_info['DataDir']:
-            self.data_dir = static_info['DataDir']
+        if static_info['InputDataDirectory']:
+            self.data_dir = static_info['InputDataDirectory']
 
     def logfiles_to_process(self, args):
         """List all the log files. args is a list of file names or directory names
@@ -533,6 +563,9 @@ class OldFileInput(ProbeInput):
             r.AddTransientInputFile(record['gratia_logfile'])
 
         return r
+
+# TODO: end of part to remove
+#############################################################
 
 
 # Some references
