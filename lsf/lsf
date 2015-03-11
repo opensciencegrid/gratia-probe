@@ -1,16 +1,9 @@
 #!/usr/bin/python
 # This probe imitates the LSF behavior of the pbs-lsf probe: urCollector.pl
 
-#import sys, os, stat
-# import time
-# import datetime  # Used for seconds->datetime conversion
-#import random
-#import pwd, grp
 import os
 import sys, traceback  # for exceptions handling
 import re
-#import signal
-#from urlparse import urlparse
 
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
