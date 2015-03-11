@@ -143,6 +143,16 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
+    # lines in ProbeConfig.add added before @PROBE_SPECIFIC_DATA@ tag
+    if [ -e $probe/ProbeConfig.add ]; then
+      sed "/@PROBE_SPECIFIC_DATA@/ {
+          h
+          r $probe/ProbeConfig.add
+          g
+          N
+          }" $PROBE_DIR/ProbeConfig
+      rm $probe/ProbeConfig.add
+
     if [ $probe == "enstore-*" -o $probe == "dCache-storagegroup" ]; then
       # must be first to catch enstrore-transfer/storage
       endpoint=%{enstore_collector}:%{default_collector_port}
@@ -428,7 +438,8 @@ Common files and examples for Gratia OSG accounting system probes. Version 2.
 %files common2
 %defattr(-,root,root,-)
 %{_initrddir}/gratia-probes-cron
-%doc %{default_prefix}/gratia/common2/README
+#%doc common2/README
+#%doc %{default_prefix}/gratia/common2/README
 %{_localstatedir}/lib/gratia/
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
@@ -436,7 +447,7 @@ Common files and examples for Gratia OSG accounting system probes. Version 2.
 # this is in common: %{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
-# %dir %{default_prefix}/gratia/common2
+%dir %{default_prefix}/gratia/common2
 # %{default_prefix}/gratia/common2/alarm.py
 # %{default_prefix}/gratia/common2/checkpoint.py
 # %{default_prefix}/gratia/common2/uuid_replacement.py
@@ -865,6 +876,35 @@ The SLURM probe for the Gratia OSG accounting system.
 %post slurm
 %customize_probeconfig -d slurm
 
+# lsf probe, following the new format
+
+%package lsf
+Summary: A LSF probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common2 >= %{version}-%{release}
+# Requires: lsf (can get the version form the configuration)
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description lsf
+The alternative LSF probe for the Gratia OSG accounting system.
+
+%files lsf
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/lsf/README
+%dir %{default_prefix}/gratia/lsf
+%{python_sitelib}/gratia/lsf
+%{default_prefix}/gratia/lsf/lsf
+%{default_prefix}/gratia/lsf/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/gratia/lsf/ProbeConfig
+%verify(not md5 size mtime) %{_sysconfdir}/gratia/lsf/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-lsf.cron
+
+%post lsf
+%customize_probeconfig -d lsf
+
 
 # Enstore probes: enstore-transfer, enstore-storage, enstore-tapedrive
 
@@ -985,10 +1025,11 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Wed Jan 07 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.rc0
+* Fri Mar 06 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.rc0
 - new common files in common2 module
 - Adding dCache storagegroup probe
 - Adding Enstore probes: transfer, storage, tape drive
+- Adding LSF python probe
 
 * Tue Jun 03 2014 Carl Edquist <edquist@cs.wisc.edu> - 1.13.29-1
 - Bugfix for hadoop storage probe (GRATIA-137)
