@@ -134,7 +134,8 @@ build/package-probe "${version}" common condor pbs-lsf psacct sge glexec \
                                  bdii-status onevm slurm \
                                  common2 \
                                  dCache-storagegroup \
-                                 enstore-storage enstore-tapedrive enstore-transfer
+                                 enstore-storage enstore-tapedrive enstore-transfer \
+                                 lsf
 status=$?
 
 if (( $status == 0 )); then
