@@ -290,7 +290,7 @@ class EnstoreStorageProbe(GratiaMeter):
         # SE
         selement.VO(inrecord['storage_group'])
         selement.Name(inrecord['storage_group'])
-        timestamp = timeutil.format_datetime(timeutil.datetime_to_utc(['date']))
+        timestamp = timeutil.format_datetime(timeutil.datetime_to_utc(inrecord['date']))
         selement.Timestamp(timestamp)
         # SER
         # TODO: investigate different DB structure

@@ -236,12 +236,12 @@ def datetime_to_utc(dt_in, assume_local=True, naive=False):
     if dt_in.tzinfo is None:
         if not assume_local:
             if not naive:
-                dt_in.replace(tzinfo=UTC)
+                dt_in = dt_in.replace(tzinfo=UTC)
             return dt_in
     #  get_utc_from_local both if timezone is set or time is naive and assumed local
     dt_in = _get_utc_from_local(dt_in)
     if naive:
-        dt_in.replace(tzinfo=None)
+        dt_in = dt_in.replace(tzinfo=None)
     return dt_in
 
 

@@ -303,12 +303,12 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         # Other data
         r.VOName(mrecord['storage_group'])
         # Naive timestamps (datetime obj) with actual local time zone (assume_local=True is the default)
-        start = timeutil.datetime_to_utc(mrecord['mount_start'])
+        start = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(mrecord['mount_start'], naive=True))
         if not finish:
             finish = start
             duration = 0
         else:
-            finish = timeutil.datetime_to_utc(finish)
+            finish = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(finish, naive=True))
             duration = int(float(finish)-float(start))
         r.WallDuration(duration)
         r.StartTime(timeutil.format_datetime(start))
