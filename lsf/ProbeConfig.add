@@ -1,11 +1,11 @@
 
-    Title10="LSF specific probe parameters"
+    Title9="LSF specific probe parameters"
 
     LsfVersion="LSF version"
-      Comments21="This can be used if the lsf rpm commands fail to identify the version, leave empty otherwise"
+      Comments91="This can be used if the lsf rpm commands fail to identify the version, leave empty otherwise"
     InputDataFile="/opt/workdir/lsb.acct.all"
     InputDataFolder=""
-      Comments22="You can specify the LSF accounting file or the directory where multiple accounting files are located"
+      Comments92="You can specify the LSF accounting file or the directory where multiple accounting files are located"
     DefaultDomainName="my.domain"
-      Comments23="Used when hostname is not returning the domain"
+      Comments93="Used when hostname is not returning the domain"
 
