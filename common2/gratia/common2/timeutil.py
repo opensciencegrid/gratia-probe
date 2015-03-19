@@ -58,14 +58,15 @@ try:
     # string formatter is available from py 2.6
     from string import Formatter
 
-    def strfdelta(tsec, format_str="P{D}DT{H}H{M}M{S}S", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
+    def strfdelta(tsec, format_str="P", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
         """Formatting the time duration
         Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
         Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
         0 duration is PT0S
 
         :param tsec: float, number of seconds
-        :param format_str: Format string, default is ISO 8601 "P{D}DT{H}H{M}M{S}S"
+        :param format_str: Format string, ISO 8601 is "P{D}DT{H}H{M}M{S}S". Default is a format string "P": will
+            use ISO 8601 but skip elements that have 0 value, e.g. P1H7S instead of P1H0M7S
         :param format_no_day: Format string,  ISO 8601, default "PT{H}H{M}M{S}S"
         :param format_zero: format for when tsec is 0 or None, default "PT0S"
         :return: Formatted time duration
@@ -73,22 +74,35 @@ try:
         if not tsec:
             # 0 or None
             return format_zero
-        if 0 < tsec < 86400:
-            format_str = format_no_day
+
         f = Formatter()
         d = {}
         l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        k = map(lambda x: x[1], list(f.parse(format_str)))
         rem = long(tsec)
 
-        for i in ('D', 'H', 'M', 'S'):
-            if i in k and i in l.keys():
-                d[i], rem = divmod(rem, l[i])
+        if format_str == "P":
+            # variable format
+            if 0 < tsec < 86400:
+                format_str = "PT"
+            for i in ('D', 'H', 'M', 'S'):
+                if i in l.keys():
+                    d[i], rem = divmod(rem, l[i])
+                    if d[i] != 0:
+                        format_str = "%s{%s}%s" % (format_str, i, i)
+        else:
+            if 0 < tsec < 86400:
+                format_str = format_no_day
+            k = map(lambda x: x[1], list(f.parse(format_str)))
+
+            for i in ('D', 'H', 'M', 'S'):
+                if i in k and i in l.keys():
+                    d[i], rem = divmod(rem, l[i])
 
         return f.format(format_str, **d)
+
 except ImportError:
     # pre 2.6
-    def strfdelta(tsec, format_str="P%(D)dDT%(H)dH%(M)dM%(S)dS", format_no_day="PT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
+    def strfdelta(tsec, format_str="P", format_no_day="PT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
         """Formatting the time duration
         Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
         Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
