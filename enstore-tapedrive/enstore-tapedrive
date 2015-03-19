@@ -291,17 +291,11 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         r = Gratia.UsageRecord("TapeDrive")
         r.Grid("Local")
 
-        # Adding ID
-        # TODO: is the ID OK? Unique enough?
-        local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
-        r.LocalJobId(local_id)
-        r.GlobalJobId(local_id)
-
         # The record Must have LocalUserId otherwise is quarantined. Adding a fake one
         r.LocalUserId('enstore')
 
-        # Other data
         r.VOName(mrecord['storage_group'])
+
         # Naive timestamps (datetime obj) with actual local time zone (assume_local=True is the default)
         start = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(mrecord['mount_start'], naive=True))
         if not finish:
@@ -313,6 +307,13 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         r.WallDuration(duration)
         r.StartTime(timeutil.format_datetime(start))
         r.EndTime(timeutil.format_datetime(finish))
+
+        # Adding ID. Here, so finish is defined and is the # of seconds from epoch
+        # TODO: is the ID OK? Unique enough?
+        local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
+        r.LocalJobId(local_id)
+        r.GlobalJobId(local_id)
+
         r.AdditionalInfo("reads", reads)
         r.AdditionalInfo("writes", writes)
         # Status is 'estimated' if either the mount or dismount record are missing, 'ok' otherwise
