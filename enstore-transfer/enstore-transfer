@@ -1,14 +1,5 @@
 #!/usr/bin/python
 
-#import sys, os, stat
-#import time
-#import datetime  # Used for seconds->datetime conversion
-#import random
-#import pwd, grp
-#import os
-#import signal
-#from urlparse import urlparse
-
 from gratia.common.Gratia import DebugPrint
 import gratia.common.Gratia as Gratia
 #import gratia.common.GratiaWrapper as GratiaWrapper
