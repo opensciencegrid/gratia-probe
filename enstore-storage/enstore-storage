@@ -200,10 +200,14 @@ NOTE The time in date is stored as local time! (Dmitry 2/1/2015)
             #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
             # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
             #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            DebugPrint(4, "Saving new Enstore checkpoint %s" % new_checkpoint)
             checkpoint.set_date_transaction(new_checkpoint)
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array"""
+        checkpoint = self.checkpoint
+        if checkpoint:
+            DebugPrint(4, "Ignoring checkpoint in stub function: %s" % checkpoint.date())
         if limit is None:
             limit = 0
         for i in _EnstoreStorageInputStub.get_records():
@@ -212,6 +216,9 @@ NOTE The time in date is stored as local time! (Dmitry 2/1/2015)
                 limit -= 1
                 if limit == 0:
                     break
+        if checkpoint:
+            DebugPrint(4, "Stub function, saving checkpoint with same date: %s" % checkpoint.date())
+            checkpoint.set_date_transaction(checkpoint.date())
 
     def do_test(self, static_info=None):
         """Test with pre-arranged DB query results
