@@ -213,23 +213,32 @@ class DateTransactionCheckpoint(Checkpoint):
         self._pending_dateStamp = datetime.min
         self._pending_transaction = None
 
-        if max_age is None or max_age < 0:
-            min_day = datetime.min  # down of time: datetime(1, 1, 1, 0, 0)
-            if default_age is None:
-                default_day = min_day
-        else:
+        # None checking can be removed in py2 (None < any int), but None gives TypeError in py3 when compared to int
+        if max_age is None:
+            max_age = -1
+        if default_age is None:
+            default_age = -1
+        min_day = datetime.min
+        # Checkpoint date cannot be None (checkpoint has to be None)
+        default_day = min_day
+
+        if max_age >= 0 or default_age >= 0:
             # datetime.utcnow() is unbound
             # datetime.now(utc) , with utc=UTC(), a subclass of tzinfo would be better
             # https://docs.python.org/2/library/datetime.html
             now = datetime.utcnow()
             now = datetime(now.year, now.month, now.day, 0, 0, 0)
-            min_day = now - timedelta(max_age, 0)
-            if default_age is None or default_age > max_age:
-                default_age = max_age
+
+            if max_age >= 0:
+                min_day = now - timedelta(max_age, 0)
                 default_day = min_day
-            else:
-                # postponing default_day calculation (when default_age < max age) to the checks
-                default_day = None
+
+            if default_age >= 0:
+                if default_age > max_age >= 0:
+                    default_age = max_age
+                else:
+                    default_day = now - timedelta(default_age, 0)
+
         # setting the default values
         self._dateStamp = default_day
         self._transaction = None
@@ -256,12 +265,7 @@ class DateTransactionCheckpoint(Checkpoint):
         if max_age >= 0:
             if self._dateStamp < min_day:
                 self._dateStamp = min_day
-        else:
-            if self._dateStamp is None:
-                # default is from the beginning of the day)
-                now = datetime.utcnow()
-                now = datetime(now.year, now.month, now.day, 0, 0, 0)
-                self._dateStamp = now - timedelta(default_age, 0)
+
         if not full_precision:
             # restart from the beginning of the hour
             ds = self._dateStamp
