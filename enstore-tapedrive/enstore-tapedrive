@@ -1,14 +1,5 @@
 #!/usr/bin/python
 
-#import sys, os, stat
-# import time
-# import datetime  # Used for seconds->datetime conversion
-#import random
-#import pwd, grp
-#import os
-#import signal
-#from urlparse import urlparse
-
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
@@ -238,8 +229,14 @@ Indexes:
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array
         limit is ignored"""
+        DebugPrint(4, "Stub function: ignoring checkpoint and limit")
         for i in _EnstoreTapeDriveInputStub.get_records():
             yield i
+        # To test checkpoint saving
+        checkpoint = self.checkpoint
+        if checkpoint:
+            DebugPrint(4, "Stub function, saving checkpoint with same date: %s" % checkpoint.date())
+            checkpoint.set_date_transaction(checkpoint.date())
 
     def do_test(self, static_info=None):
         """Test with pre-arranged DB query results
@@ -266,7 +263,8 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreTapeDriveInput()
 
-    def mount_complete_and_send(mrecord, finish, reads=0, writes=0, estimated=False):
+    @staticmethod
+    def mount_complete_and_send(mrecord, finish, reads=0, writes=0, estimated=False, max_duration=0, min_duration=0):
         """Record the mount operation (estimated if the mount record is missing)
 
         :param mrecord: mount or srecord object (dictionary) - only common keys are used -
@@ -304,6 +302,20 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         else:
             finish = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(finish, naive=True))
             duration = int(float(finish)-float(start))
+        # Status is 'estimated' if either the mount or dismount record are missing, 'ok' otherwise
+        # estimated status means that the duration is estimated
+        # Status in UR is varchar 255
+        if estimated or mrecord['estimated']:
+            r.Status('estimated')
+            # calculating floor/ceiling limits for the estimated duration
+            if max_duration > 0 and duration > max_duration:
+                duration = max_duration
+                finish = start + duration
+            elif duration < min_duration:
+                duration = min_duration
+                start = finish - duration
+        else:
+            r.Status('ok')
         r.WallDuration(duration)
         r.StartTime(timeutil.format_datetime(start))
         r.EndTime(timeutil.format_datetime(finish))
@@ -316,14 +328,6 @@ class EnstoreTapeDriveProbe(GratiaMeter):
 
         r.AdditionalInfo("reads", reads)
         r.AdditionalInfo("writes", writes)
-        # Status is 'estimated' if either the mount or dismount record are missing, 'ok' otherwise
-        # estimated status means that the duration is estimated
-        # Status in UR is varchar 255
-        if estimated or mrecord['estimated']:
-            r.Status('estimated')
-            # TODO: should add floor/ceiling limits for the duration whenever it is estimated?
-        else:
-            r.Status('ok')
 
         r.SubmitHost(mrecord['node'])
         r.Queue(mrecord['volume'])
@@ -331,9 +335,8 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         # Future modifications of Enstore may include a DN
         # r.DN("/OU=UnixUser/CN=%s" % srecord['username'])
 
-        DebugPrint(4, "Sending transfer record for VO %s: %s" % (mrecord['storage_group'], local_id))
+        DebugPrint(4, "Sending tape drive record for VO %s: %s" % (mrecord['storage_group'], local_id))
         Gratia.Send(r)
-    mount_complete_and_send = staticmethod(mount_complete_and_send)
 
     def mount_init(srecord, estimated=False):
         """Create a mount record copying the values form the input
@@ -363,10 +366,22 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         #name = self.get_probename()
         #hostname = self.get_hostname()
 
+        try:
+            limit = int(self.get_config_attribute('DataLenMax'))
+            if limit == 0:
+                limit = None
+        except:
+            limit = None
+
+        # max and min estimated mount time. The limits are not used in case of real mount time.
+        max_mount_time = int(self.get_config_attribute('EnstoreMaxMountTime', 0))
+        min_mount_time = int(self.get_config_attribute('EnstoreMinMountTime', 0))
+
+
         mounts = {}
 
         # Loop over storage records
-        for srecord in self._probeinput.get_records():
+        for srecord in self._probeinput.get_records(limit):
             """
             node,
             volume, - label
@@ -400,7 +415,8 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                     # Send the old record (end at the end of mount OR at start of new mount) and remove the mount
                     # if you loose the ticket you pay all OR get by
                     EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['start'],
-                                                                  estimated=True)
+                                                                  estimated=True, max_duration=max_mount_time,
+                                                                  min_duration=min_mount_time)
                     #del mounts[t_volume]
                     #
                 # update the record
@@ -415,7 +431,8 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                         )
                         # close, dismount at finish, send the record, and remove the mount
                         EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['start'],
-                                                                      estimated=True)
+                                                                      estimated=True, max_duration=max_mount_time,
+                                                                      min_duration=min_mount_time)
                         #del mounts[t_volume]
                 except KeyError:
                     pass
@@ -439,7 +456,8 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                 except (ValueError, TypeError):
                     mount_writes = 0
                 EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['finish'],
-                                                              mount_reads, mount_writes)
+                                                              mount_reads, mount_writes,
+                                                              max_duration=max_mount_time, min_duration=min_mount_time)
                 #del mounts[t_volume]
             else:
                 # Invalid state!
