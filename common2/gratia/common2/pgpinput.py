@@ -191,11 +191,14 @@ class PgInput(DbInput):
                 return
         cursor = self._cursor
         DebugPrint(4, "Executing SQL: %s" % sql)
-        cursor.execute(sql)
+        try:
+            cursor.execute(sql)
+        except psycopg2.ProgrammingError, er:
+            DebugPrint(2, "ERROR, error running the query: %s" % er)
         if cursor.rowcount is None:
             DebugPrint(2, "WARNING, problems running the query: %s" % sql)
-        elif cursor.rowcount<=0:
-            DebugPrint(2, "WARNING, no rows returned by the query: %s" % sql)
+        elif cursor.rowcount <= 0:
+            DebugPrint(2, "WARNING, no rows returned by the query (rc: %s): %s" % (cursor.rowcount, sql))
         # resultset = self._cur.fetchall()
         if self.support_itersize:
             for r in cursor:

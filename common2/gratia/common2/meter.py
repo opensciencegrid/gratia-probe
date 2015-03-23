@@ -233,10 +233,6 @@ class GratiaProbe(object):
             (evaluates to false)
         :return: the value of the parameter or None (if not available)
         """
-        """Return the value of the requested parameter
-        - default is used if the value evaluates to False (None, empty string, ...)
-        - raise exception if mandatory, and the value (or default) evaluates to False
-        """
         retv = Gratia.Config.getConfigAttribute(attr)
         # using Element.getAttribute from xml.dom underneath
         # getConfigAttribute returns the value of the attribute named by name as a string.
