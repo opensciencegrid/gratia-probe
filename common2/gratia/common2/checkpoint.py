@@ -137,7 +137,10 @@ class SimpleCheckpoint(Checkpoint):
                     self._val = min_val
                 DebugPrint(3, "Resuming from checkpoint in %s" % target)
             except IOError:
-                raise IOError("Could not open checkpoint file %s" % target)
+                #raise IOError("Could not open checkpoint file %s" % target)
+                DebugPrint(1, "Could not open checkpoint file %s" % target)
+            except EOFError:
+                DebugPrint(1, "Empty or truncated checkpoint file %s" % target)
             except ValueError:
                 DebugPrint(1, "Failed to read checkpoint file %s" % target)
         if self._val < min_val:
@@ -190,14 +193,16 @@ class DateTransactionCheckpoint(Checkpoint):
     _single = None
 
     def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
-        """
-        target - can be the name of the table in the DB for which we are keeping
+        """Initialize a checkpoint reading the value from the file (if it exists)
+
+        :param target: can be the name of the table in the DB for which we are keeping
         a checkpoint. It is used to locate the file with the pickled record
         of the last checkpoint. Default: dtcheckpoint
-        max_age - maximum age for records. -1, no limit. Default: -1
-        default_age - default age in days, used if no checkpoint is provided. Default: 30
-        full_precision - if True, checkpoints read from file are not truncated to the beginning
+        :param max_age: maximum age for records in days. -1, meas no limit. Default: -1
+        :param default_age: default age in days, used if no checkpoint is provided. Default: 30
+        :param full_precision: if True, checkpoints read from file are not truncated to the beginning
                          of the hour. Default: False
+        :return:
         """
         if not target:
             target = 'dtcheckpoint'
@@ -208,10 +213,10 @@ class DateTransactionCheckpoint(Checkpoint):
         self._pending_dateStamp = datetime.min
         self._pending_transaction = None
 
-        default_day = None
-
         if max_age is None or max_age < 0:
             min_day = datetime.min  # down of time: datetime(1, 1, 1, 0, 0)
+            if default_age is None:
+                default_day = min_day
         else:
             # datetime.utcnow() is unbound
             # datetime.now(utc) , with utc=UTC(), a subclass of tzinfo would be better
@@ -222,18 +227,16 @@ class DateTransactionCheckpoint(Checkpoint):
             if default_age is None or default_age > max_age:
                 default_age = max_age
                 default_day = min_day
+            else:
+                # postponing default_day calculation (when default_age < max age) to the checks
+                default_day = None
+        # setting the default values
+        self._dateStamp = default_day
+        self._transaction = None
 
+        # loading from file
         try:
-            pkl_file = open(target, 'rb')
-            self._dateStamp, self._transaction = cPickle.load(pkl_file)
-            if max_age >= 0:
-                if self._dateStamp < min_day:
-                    self._dateStamp = min_day
-            if not full_precision:
-                # restart from the beginning of the hour
-                ds = self._dateStamp
-                self._dateStamp = datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
-            pkl_file.close()
+            self._load(target)
         except IOError, (errno, strerror):
             # This is not really an error, since it might be the first
             # time we try to make this checkpoint.
@@ -245,13 +248,29 @@ class DateTransactionCheckpoint(Checkpoint):
             msg += "\nThis is okay the first time you run the probe."
             #log.warn(msg)
             DebugPrint(3, msg)
-            if default_day is None:
-                # delayed to evaluate only if needed
+        except EOFError:
+            msg = "Checkpoint: the checkpoint file %s is empty or has wrong data (EOFError)." % \
+                  (target,)
+            DebugPrint(3, msg)
+        # checking constraints
+        if max_age >= 0:
+            if self._dateStamp < min_day:
+                self._dateStamp = min_day
+        else:
+            if self._dateStamp is None:
+                # default is from the beginning of the day)
                 now = datetime.utcnow()
                 now = datetime(now.year, now.month, now.day, 0, 0, 0)
-                default_day = now - timedelta(default_age, 0)
-            self._dateStamp = default_day
-            self._transaction = None
+                self._dateStamp = now - timedelta(default_age, 0)
+        if not full_precision:
+            # restart from the beginning of the hour
+            ds = self._dateStamp
+            self._dateStamp = datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
+
+    def _load(self, target):
+        pkl_file = open(target, 'rb')
+        self._dateStamp, self._transaction = cPickle.load(pkl_file)
+        pkl_file.close()
 
     def get_val(self):
         return {'date': self._dateStamp,
@@ -434,9 +453,16 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
     def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
         if not target:
             target = 'dtacheckpoint'
-        DateTransactionCheckpoint.__init__(self, target, max_age, default_age, full_precision)
+        # set the default (the ones not set in DateTransactionCheckpoint)
         self._aux = None
+        # __init__ invokes _load() to load the value from file
+        DateTransactionCheckpoint.__init__(self, target, max_age, default_age, full_precision)
         self._pending_aux = None
+
+    def _load(self, target):
+        pkl_file = open(target, 'rb')
+        self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
+        pkl_file.close()
 
     def get_val(self):
         return {'date': self._dateStamp,
