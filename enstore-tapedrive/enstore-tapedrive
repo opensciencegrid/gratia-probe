@@ -302,6 +302,12 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         else:
             finish = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(finish, naive=True))
             duration = int(float(finish)-float(start))
+
+
+        # Adding ID. Here, so finish is defined and is the # of seconds from epoch
+        # TODO: is the ID OK? Unique enough?
+        local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
+
         # Status is 'estimated' if either the mount or dismount record are missing, 'ok' otherwise
         # estimated status means that the duration is estimated
         # Status in UR is varchar 255
@@ -309,9 +315,14 @@ class EnstoreTapeDriveProbe(GratiaMeter):
             r.Status('estimated')
             # calculating floor/ceiling limits for the estimated duration
             if max_duration > 0 and duration > max_duration:
+                DebugPrint(3, "Capping mount record (%s) from %s to %s" % (local_id, duration, max_duration))
                 duration = max_duration
                 finish = start + duration
+                # finish changed, updating the ID
+                local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
             elif duration < min_duration:
+                DebugPrint(3, "Increasing min length of mount record (%s) from %s to %s" %
+                           (local_id, duration, max_duration))
                 duration = min_duration
                 start = finish - duration
         else:
@@ -320,9 +331,6 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         r.StartTime(timeutil.format_datetime(start))
         r.EndTime(timeutil.format_datetime(finish))
 
-        # Adding ID. Here, so finish is defined and is the # of seconds from epoch
-        # TODO: is the ID OK? Unique enough?
-        local_id = "%s-%s-%s-%s" % (mrecord['node'], mrecord['type'], mrecord['volume'], finish)
         r.LocalJobId(local_id)
         r.GlobalJobId(local_id)
 
