@@ -198,7 +198,8 @@ class PgInput(DbInput):
         if cursor.rowcount is None:
             DebugPrint(2, "WARNING, problems running the query: %s" % sql)
         elif cursor.rowcount <= 0:
-            DebugPrint(2, "WARNING, no rows returned by the query (rc: %s): %s" % (cursor.rowcount, sql))
+            DebugPrint(3, "WARNING, no rows returned by the query (rowcount: %s). OK for iterators." %
+                       cursor.rowcount)
         # resultset = self._cur.fetchall()
         if self.support_itersize:
             for r in cursor:
