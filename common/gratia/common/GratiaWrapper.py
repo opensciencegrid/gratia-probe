@@ -138,7 +138,7 @@ def ExclusiveLock(given_lock_location = None, timeout=3600):
             "seconds and try %i more times." % (tries, tries, max_tries-tries))
         time.sleep(tries)
 
-    raise Exception("Unable to acquire lock")
+    raise Exception("Unable to acquire lock (%s)" % lock_location)
 
 def check_lock(my_fd, timeout):
     """
