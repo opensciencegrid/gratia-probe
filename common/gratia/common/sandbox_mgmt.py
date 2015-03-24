@@ -107,8 +107,8 @@ def RemoveOldFiles(nDays=31, globexp=None, req_maxsize=0):
 
     date_file_list = []
     for oldfile in files:
-	if not os.path.isfile(oldfile):
-		continue
+        if not os.path.isfile(oldfile):
+            continue
         lastmod_date = os.path.getmtime(oldfile)
         if lastmod_date < cutoff:
             DebugPrint(2, 'Will remove: ' + oldfile)
@@ -230,21 +230,23 @@ def RemoveOldQuarantine(nDays=31, maxSize=200):
     # Default to 31 days or 200Mb whichever is lower.
     quarantine=os.path.join(os.path.join(Config.get_DataFolder(),"quarantine"))
     if os.path.exists(quarantine):
-            DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
-            RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
-	    #quarantine files are under subdirectory 
-	    subpath=os.listdir(quarantine)
-	    for dir_quar in subpath:
-            	DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', os.path.join(quarantine,dir_quar))
-            	RemoveOldFiles(nDays, os.path.join(quarantine,dir_quar, '*'), maxSize)
+        DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
+        RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
+        #quarantine files are under subdirectory 
+        subpath=os.listdir(quarantine)
+        for dir_quar in subpath:
+            if not os.path.isdir(os.path.join(quarantine,dir_quar)):
+                continue
+            DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', os.path.join(quarantine,dir_quar))
+            RemoveOldFiles(nDays, os.path.join(quarantine,dir_quar, '*'), maxSize)
     fragment = Config.getFilenameFragment()
     for current_dir in backupDirList:
         gratiapath = os.path.join(current_dir, 'gratiafiles')
         subpath = os.path.join(gratiapath, 'subdir.' + fragment)
         quarantine = os.path.join(subpath, 'quarantine')
         if os.path.exists(quarantine):
-            	DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
-            	RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
+            DebugPrint(1, 'Removing quarantines data files older than ', nDays, ' days from ', quarantine)
+            RemoveOldFiles(nDays, os.path.join(quarantine, '*'), maxSize)
 
 
 def DirListAdd(value):

@@ -98,7 +98,6 @@ def __InitializeDictionary_internal(mapfile):
     """
 
     magicCommentLine_re = re.compile("\s*#(voi|VOc)\s")
-    whitespaceSplit_re = re.compile("\s*")
     commentLine_re = re.compile("\s*#")
     userVOLine_re = re.compile("\s*(?P<User>\S+)\s*(?P<voi>\S+)")
 
@@ -111,7 +110,7 @@ def __InitializeDictionary_internal(mapfile):
         # of the VO names.
         mapMatch = magicCommentLine_re.match(line)
         if mapMatch:
-            info = whitespaceSplit_re.split(line[mapMatch.end(0):])
+            info = line[mapMatch.end(0):].split()
             if mapMatch.group(1) == 'voi':
                 voi_info = info
             else:

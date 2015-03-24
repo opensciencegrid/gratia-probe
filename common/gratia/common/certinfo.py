@@ -70,11 +70,7 @@ def removeCertInfoFile(xmlDoc, userIdentityNode, namespace):
     return certinfo_fname
 
 
-def verifyFromCertInfo(
-    xmlDoc,
-    userIdentityNode,
-    namespace,
-    ):
+def verifyFromCertInfo(xmlDoc, userIdentityNode, namespace):
     ''' Use localJobID and probeName to find cert info file and insert info into XML record'''
 
     # Collect data needed by certinfo reader
@@ -105,6 +101,7 @@ def verifyFromCertInfo(
 
 def populateFromCertInfo(certInfo, xmlDoc, userIdentityNode, namespace):
     # If DN is missing, return quickly.
+    # If returning something not empty it must contain both VOName and ReportableVOName keys
     if 'DN' not in certInfo or not certInfo['DN']:
         DebugPrint(4, 'Certinfo with no DN: %s' % str(certInfo))
         if 'FQAN' in certInfo and 'VO' in certInfo:
