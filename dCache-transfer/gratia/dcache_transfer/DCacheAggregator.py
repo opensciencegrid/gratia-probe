@@ -531,6 +531,8 @@ class DCacheAggregator:
             return rec
         try:
             username = 'Unknown'
+            if row['initiator'] != 'unknown':
+                username = row['initiator']
             if mappedUID != None and int(mappedUID) >= 0:
                 try:
                     info = pwd.getpwuid(int(mappedUID))
