@@ -277,7 +277,7 @@ class GratiaProbe(object):
     def get_input_max_length(self):
         """Return the max number of input records. 0 (or anything different form a positive integer) for no limit.
         Uses the DataLengthMax attribute in the configuration.
-        E.g. this is used for the LIMIT caluse in inputs with SQL queries.
+        E.g. this is used for the LIMIT clause in inputs with SQL queries.
         :return: the value of DataLengthMax, None if it is missing or not a positive integer
         """
         try:
