@@ -38,7 +38,7 @@
     DebugLevel="0" 
        Comments33="Controls debug messages printed to screen."
     LogRotate="31"
-    DataLenMax="0"
+    DataLengthMax="0"
        Comments34="The maximum number of records processed in a single invocation, 0 = all records, no max"
     DataFileExpiration="31"
        Comments35="The number of days quarantined and unusable data files are kept"

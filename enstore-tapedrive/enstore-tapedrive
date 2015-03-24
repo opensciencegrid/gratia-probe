@@ -374,13 +374,6 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         #name = self.get_probename()
         #hostname = self.get_hostname()
 
-        try:
-            limit = int(self.get_config_attribute('DataLenMax'))
-            if limit == 0:
-                limit = None
-        except:
-            limit = None
-
         # max and min estimated mount time. The limits are not used in case of real mount time.
         max_mount_time = int(self.get_config_attribute('EnstoreMaxMountTime', 0))
         min_mount_time = int(self.get_config_attribute('EnstoreMinMountTime', 0))
@@ -389,7 +382,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         mounts = {}
 
         # Loop over storage records
-        for srecord in self._probeinput.get_records(limit):
+        for srecord in self._probeinput.get_records(self.get_input_max_length()):
             """
             node,
             volume, - label
