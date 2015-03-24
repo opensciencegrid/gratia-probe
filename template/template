@@ -1,0 +1,136 @@
+#!/usr/bin/python
+# Executable (this is an example python script but could be anything else) sending records to the collector
+# This example (test) reads values from a file (DataFile in the configuration) and sends the content
+# as Usage Record to Gratia
+
+
+from gratia.common.Gratia import DebugPrint
+import gratia.common.Gratia as Gratia
+
+from gratia.common2.meter import GratiaMeter
+from gratia.common2.filepinput import FileInput
+import gratia.common2.timeutil as timeutil
+
+
+class TemplateInput(FileInput):
+    """Get records from a file
+    """
+
+    VERSION_ATTRIBUTE = 'TemplateVersion'
+
+    def get_init_params(self):
+        """Return list of parameters to read form the config file"""
+        return FileInput.get_init_params(self) + [TemplateInput.VERSION_ATTRIBUTE]
+
+    def start(self, static_info):
+        """Initialize and set version form config file"""
+        DebugPrint(4, "Test start, static info: %s" % static_info)
+        # static_info has always the attributes, None if not in the config file
+        if static_info[TemplateInput.VERSION_ATTRIBUTE]:
+            self._set_version_config(static_info[TemplateInput.VERSION_ATTRIBUTE])
+        FileInput.start(self, static_info)
+
+    def get_version(self):
+        return self._get_version()
+
+    def get_records(self, limit=None):
+        """Extract the records
+        """
+        for line in super(self.__class__, self).get_records(limit):
+            # Each line is space separated: id, start, end, val1
+            l = line.split()
+            r = {'id': l[0].strip(),
+                 'start': l[1].strip(),
+                 'end': l[2].strip(),
+                 'val1': l[3].strip()
+                }
+            yield r
+
+    def _get_records_stub(self, limit=None):
+        """get_records replacement for tests"""
+        for i in range(3):
+            r = {'id': "record-%s" % i,
+                 'start': "2015-03-17 12:00",
+                 'end': "2015-03-17 12:10",
+                 'val1': "52"
+                }
+            yield r
+
+    def do_test(self, static_info=None):
+        """Test with pre-arranged value sets
+        replacing: start, get_records
+        """
+        #self.start = self._start_stub
+        self.get_records = self._get_records_stub
+
+
+class TemplateProbe(GratiaMeter):
+    """
+    Test probe
+    """
+
+    # Set pre-defined values
+    PROBE_NAME = 'test'
+
+    def __init__(self):
+        GratiaMeter.__init__(self, self.PROBE_NAME)
+        self._probeinput = TemplateInput()
+        self.job_env = {}
+
+    @staticmethod
+    def complete_and_send(irecord):
+        """Send the record to Gratia as Usage Record (Storage records are also possible)
+
+        :param irecord: record form the file
+
+        record description:
+            'id':
+            'start':
+            'end':
+            'val1':
+        """
+
+        DebugPrint(5, "Processing record: %s" % (irecord['id']))
+
+        # Empty usage record, valid values: Batch, BatchPilot, Storage (transfer), TapeDrive
+        r = Gratia.UsageRecord("Test")
+        r.Grid("Local")
+
+        # The record Must have LocalUserId otherwise is quarantined. Adding a fake one
+        r.LocalUserId('test')
+
+        # fill with all the values
+        r.VOName(irecord['val1'])
+
+        # Naive timestamps (datetime obj) with actual local time zone (assume_local=True is the default)
+        start = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(irecord['start'], naive=True))
+        finish = timeutil.datetime_to_unix_time(timeutil.datetime_to_utc(irecord['end'], naive=True))
+        duration = int(float(finish)-float(start))
+        r.WallDuration(duration)
+        r.StartTime(timeutil.format_datetime(start))
+        r.EndTime(timeutil.format_datetime(finish))
+
+        # Adding ID
+        local_id = "template-%s-%s" % (irecord['id'], finish)
+        r.LocalJobId(local_id)
+        r.GlobalJobId(local_id)
+
+        DebugPrint(4, "Sending test record for VO %s: %s" % (irecord['val1'], local_id))
+        Gratia.Send(r)
+
+    def main(self):
+        # Initialize the probe an the input
+        self.start()
+        DebugPrint(4, "Template probe started")
+
+        # Loop over records
+        for irecord in self._probeinput.get_records():
+            if False:
+                # skip bad values
+                continue
+            TemplateProbe.complete_and_send(irecord)
+
+
+if __name__ == "__main__":
+    # Do the work
+    TemplateProbe().main()

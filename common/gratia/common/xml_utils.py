@@ -11,6 +11,7 @@ import gratia.common.vo as vo
 import gratia.common.utils as utils
 import gratia.common.config as config
 import gratia.common.certinfo as certinfo
+# there should be a flag not to use HTCondor-CE if not installed (probes run elsewhere)
 import gratia.common.condor_ce as condor_ce
 import gratia.common.sandbox_mgmt as sandbox_mgmt
 
@@ -331,6 +332,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block does not have exactly ', 'one populated LocalUserId node in '
                     + jobIdType + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     LocalUserId = localUserIdNodes[0].firstChild.data
@@ -357,6 +359,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_
     elif VONameNodes.length > 1:
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block has multiple VOName nodes in ' + jobIdType + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     # ReportableVOName
@@ -373,6 +376,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_
         [jobIdType, jobId] = FindBestJobId(userIdentityNode.parentNode, namespace)
         DebugPrint(0, 'Warning: UserIdentity block has multiple ', 'ReportableVOName nodes in ' + jobIdType
                    + ' ' + jobId)
+        # Invalid condition, returning empty result
         return result
 
     # ###################################################################

@@ -61,7 +61,8 @@ class ProbeConfiguration:
 
     def __getConfigAttribute(self, attributeName):
         """
-        Return the value of a configuration attribute name 'attributeName'
+        Return the value of a configuration attribute name 'attributeName' as a string.
+        If no such attribute exists, an empty string is returned, as if the attribute had no value
         """
         if self.__doc == None:
             try:

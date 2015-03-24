@@ -11,6 +11,14 @@ from gratia.common.file_utils import Mkdir
 __logFileIsWriteable__ = True
 __quiet__ = 0
 
+
+# TODO: Why this is not using the ConfigProxy like other modules?
+# getGratiaConfig seems complex and unnecessary
+# And GratiaCore seems not involved, it is config
+# The lines below and returning Config should be a better solution
+#from gratia.common.config import ConfigProxy
+#Config = ConfigProxy()
+
 # There's a circular dependency between core and debug;
 # this function breaks it.
 def getGratiaConfig():
@@ -32,6 +40,16 @@ def Error(*arg):
         LogToFile(time.strftime(r'%H:%M:%S %Z', time.localtime()) + ' ' + out)
 
 def DebugPrint(level, *arg):
+    """Print debug messages if the level is smaller than the debug level set in the configuration file
+    Here some suggestion on how to choose the level (the names are the same used by logging, but the numeric 
+    values are different, in logging higher numbers are more critical)
+    0 - CRITICAL
+    1 - ERROR 
+    2 - WARNING
+    3 - INFO
+    4 - DEBUG
+    5 or bigger (more verbose debug messages)
+    """
     if __quiet__:
         return
     try:
@@ -75,8 +93,7 @@ def LogToFile(message):
         if os.path.exists(getGratiaConfig().get_LogFolder()) == 0:
             Mkdir(getGratiaConfig().get_LogFolder())
 
-        filename = time.strftime('%Y-%m-%d') + '.log'
-        filename = os.path.join(getGratiaConfig().get_LogFolder(), filename)
+        filename = LogFileName()
 
         if os.path.exists(filename) and not os.access(filename, os.W_OK):
             os.chown(filename, os.getuid(), os.getgid())

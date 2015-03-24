@@ -1,0 +1,1 @@
+0,30 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-tapedrive/ProbeConfig && /usr/share/gratia/enstore-tapedrive/enstore-tapedrive -c -s 1800

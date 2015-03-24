@@ -61,6 +61,7 @@ import TestContainer
 
 DCACHE_AGG_FIELDS = ['initiator', 'client', 'protocol', 'errorcode', 'isnew']
 DCACHE_SUM_FIELDS = ['njobs', 'transfersize', 'connectiontime']
+UNIX_ID_LIST_FILE_NAME="/etc/gratia/dCache-transfer/unix.uid.list"
 
 def sleep_check(length, stopFileName):
     """
@@ -123,7 +124,7 @@ else:
     MIN_RANGE = 1
 
 BILLINGDB_SELECT_CMD = """
-    SELECT
+ SELECT
         b.datestamp AS datestamp,
         b.transaction AS transaction,
         b.cellname AS cellname,
@@ -135,19 +136,21 @@ BILLINGDB_SELECT_CMD = """
         b.errorcode AS errorcode,
         b.protocol AS protocol,
         b.initiator AS doorlink,
-        COALESCE(d.owner, 'unknown') AS initiator,
-        COALESCE(d.client, 'Unknown') AS initiatorHost,
+        COALESCE(d.owner, split_part(b.storageclass,'.',1)) AS initiator,
+        CASE WHEN d.client = 'unknown'  THEN
+                COALESCE(b.client,'Unknown')
+             ELSE
+                COALESCE(d.client, 'Unknown')
+        END AS initiatorHost,
         d.mappeduid as mappeduid,
         d.mappedgid as mappedgid
     FROM
-        (
-            SELECT *
-            FROM billinginfo b
-            WHERE b.datestamp >= '%s' AND b.datestamp < '%s'
-            ORDER BY datestamp
-            LIMIT %i
-        ) as b
-    LEFT JOIN doorinfo d ON b.initiator = d.transaction;
+        billinginfo b INNER JOIN  doorinfo d ON b.initiator = d.transaction
+	WHERE b.datestamp >= '%s' AND b.datestamp < '%s'
+        AND b.p2p='f'
+	AND d.datestamp >= '%s' AND d.datestamp < '%s'
+        ORDER BY datestamp
+        LIMIT %i
 """
 
 import warnings
@@ -170,21 +173,25 @@ class DCacheAggregator:
     _connection = None
     _maxSelect = STARTING_MAX_SELECT
     _range = STARTING_RANGE
-    
+
     # Do not send in records older than 30 days
     _maxAge = 30
 
     def __init__( self, configuration, chkptdir=None ):
         # Pick up the logger
         self._log = logging.getLogger( 'DCacheAggregator' )
-	
+        self.__user_map = {}
+        self.__uuid_file_mod_time = int(time.time())
+        if os.path.exists(UNIX_ID_LIST_FILE_NAME) :
+            self.__uuid_file_mod_time = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+            self.__refresh_user_map()
 	# Neha - 03/17/2011
 	# Using psycopg2 instead of sqlalchemy
 	DBurl = 'dbname=%s user=%s ' % (configuration.get_DBName(), configuration.get_DBLoginName())
 	DBurl += 'password=%s ' % (configuration.get_DBPassword())
 	DBurl += 'host=%s' % (configuration.get_DBHostName())
 
-	# Neha - 03/17/2011 
+	# Neha - 03/17/2011
 	# Commenting out as not using sqlalchemy anymore
         #DBurl = 'postgres://%s:%s@%s:5432/%s' % \ (configuration.get_DBLoginName(), configuration.get_DBPassword(), configuration.get_DBHostName(), configuration.get_DBName())
         self._skipIntraSite = configuration.get_OnlySendInterSiteTransfers()
@@ -232,8 +239,24 @@ class DCacheAggregator:
             raise
 
         self._grid = configuration.get_Grid()
-	#user uids info
-	self.uinfo={}
+
+    def __refresh_user_map(self) :
+        self.__user_map.clear()
+        try:
+            fd=open(UNIX_ID_LIST_FILE_NAME,'r')
+            for line in fd:
+                if not line : continue
+                try:
+                    uid,gid,fullname,uname=line.strip().split(":")
+                    self.__user_map[(uid,gid)] = uname
+                except:
+                    pass
+            fd.close()
+        except:
+            self._log.warn("Make sure " \
+                           "%s on this host" % (UNIX_ID_LIST_FILE_NAME))
+
+
 
     def _skipIntraSiteXfer(self, row):
         """
@@ -250,7 +273,7 @@ class DCacheAggregator:
 
         It is guaranteed this function will return an endtime greater than the
         starttime, but not guaranteed by how much.
-        
+
         Note on the time returned as the first part of the tuple:
         We guarantee two things:
            a) returned time is strictly greater than starttime
@@ -258,14 +281,14 @@ class DCacheAggregator:
         We do not guarantee that return time == parameter endtime.
         Thus it is suitable to use as the start time of the next select query.
         To do this, we reduce the range until it reaches 1 second or the
-        query returns less than maxSelect results.   If the interval is one 
-        second and it still returns maxSelect results then we extend the limit 
+        query returns less than maxSelect results.   If the interval is one
+        second and it still returns maxSelect results then we extend the limit
         of the query until all records fit.
 
         @param starttime: Datetime object for the start of the query interval.
         @param endtime: Datetime object for the end of the query interval.
         @param maxSelect: The maximum number of rows to select
-        @return: Tuple containing the a time that is greater than all the 
+        @return: Tuple containing the a time that is greater than all the
            records and the results
         """
         assert starttime < endtime
@@ -275,19 +298,17 @@ class DCacheAggregator:
                 " second(s)." % (MAX_SELECT,(endtime-starttime).seconds))
         datestr = str(starttime)
         datestr_end = str(endtime)
-       
+
         # Query the database.  If it takes more than MAX_QUERY_TIME_SECS, then
         # have the probe self-destruct.
-        self._log.debug('_sendToGratia: will execute ' + BILLINGDB_SELECT_CMD \
-            % (datestr, datestr_end, maxSelect))
+        query=BILLINGDB_SELECT_CMD% ((datestr, datestr_end, datestr, datestr_end, maxSelect))
+        self._log.debug('_sendToGratia: will execute ' + query)
         select_time = -time.time()
         if not TestContainer.isTest():
-	    #print BILLINGDB_SELECT_CMD % (datestr,datestr_end, maxSelect)
-            self._cur.execute(BILLINGDB_SELECT_CMD % (datestr,datestr_end, maxSelect))
+            self._cur.execute(query)
 	    result = self._cur.fetchall()
 	else:
-            result = BillingRecSimulator.execute(BILLINGDB_SELECT_CMD % \
-                (datestr, datestr_end, maxSelect))
+            result = BillingRecSimulator.execute(query)
         select_time += time.time()
         if select_time > MAX_QUERY_TIME_SECS:
             raise Exception("Postgres query took %i seconds, more than " \
@@ -305,13 +326,13 @@ class DCacheAggregator:
         filtered_result = []
         for row in result:
             row = dict(row)
-      	    #print row  	
+      	    #print row
 	    if row['transfersize'] < 0:
                 row['transfersize'] = 0
                 row['connectiontime'] = 0
             filtered_result.append(row)
         result = filtered_result
-        
+
 	# If we hit our limit, there's no telling how many identical records
         # there are on the final millisecond; we must re-query with a smaller
         # interval or a higher limit on the select.
@@ -319,7 +340,7 @@ class DCacheAggregator:
             diff = endtime - starttime
             interval = diff.days*86400 + diff.seconds
             # Ensure that self._range is such that we always end up on a minute boundary (eventually).
-            # Whenever we decrease the interval size it is guaranteed to be a multiple of what's left 
+            # Whenever we decrease the interval size it is guaranteed to be a multiple of what's left
             # of the interval to the  next minute.  I.e the transitions are:
             #   60s ->  30s
             #   30s ->  15s (which can only happen at :30s)
@@ -347,7 +368,7 @@ class DCacheAggregator:
             else:
                 self._log.warning("Limit hit; decreasing time interval from %i" \
                    " to %i." % (interval, new_interval))
-                self._range = new_interval 
+                self._range = new_interval
                 endtime, result = self._execute(starttime, new_endtime,
                     maxSelect)
                 assert endtime > starttime
@@ -380,7 +401,7 @@ class DCacheAggregator:
 
     def _processDBRow(self, row):
         """
-        Completely process a single DB row.  Take the row, convert it to a 
+        Completely process a single DB row.  Take the row, convert it to a
         UsageRecord, and send it up to Gratia.  Process any recoverable errors
         which occurred during the process.
 
@@ -504,37 +525,33 @@ class DCacheAggregator:
         # Gratia will make a best effort to map this to the VO name.
         mappedUID = row['mappeduid']
         mappedGID = row['mappedgid']
+        if row['protocol'] == 'NFS4-4.1':
+            username = row['initiator']
+            rec.LocalUserId(username)
+            return rec
         try:
             username = 'Unknown'
+            if row['initiator'] != 'unknown':
+                username = row['initiator']
             if mappedUID != None and int(mappedUID) >= 0:
-		if self.uinfo.has_key(mappedUID) and self.uinfo[mappedUID][0]==mappedGID:
-			username=self.uinfo[mappedUID][1]
-		else:
-                	try:
-                    		info = pwd.getpwuid(int(mappedUID))
-                    		username = info[0]
-				self.uinfo[mappedUID]=[mappedGID,username]
-                	except:
-		    		#will try to get id from unix.uid.list 
-		    		try:
-					found=0
-					fd=open("/etc/gratia/dCache-transfer/unix.uid.list")
-					for line in fd.readlines():
-						uid,gid,fullname,uname=line[:-1].split(":")
-						if int(mappedUID)==int(uid) and int(gid)==int(mappedGID): 
-							username=uname
-							self.uinfo[mappedUID]=[mappedGID,username]
-							found=1
-							break
-					if not found:
-						self._log.warn("UID %s %s not found locally; make sure " \
-                                		"/etc/grid-security/unix.uid.list on this host and your dCache are using " \
-                                		"the same UIDs,GIDs!" % (str(int(mappedUID)),str(int(mappedGID))))
-					fd.close()
-		    		except:
-                    			self._log.warn("UID %s not found locally; make sure " \
-                        			"/etc/passwd on this host and your dCache are using " \
-                        			"the same UIDs!" % str(int(mappedUID)))
+                try:
+                    info = pwd.getpwuid(int(mappedUID))
+                    username = info[0]
+                except:
+		    #will try to get id from storage-authzdb
+		    try:
+                        mtime = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+                        if self.__uuid_file_mod_time != mtime:
+                            self.__uuid_file_mod_time = mtime
+                            self.__refresh_user_map()
+                        username=self.__user_map.get((str(mappedUID),str(mappedGID)))
+                        if not username :
+                            self._log.warn("UID %s %s not found locally; make sure " \
+                                           "/etc/passwd or %s on this host and your dCache are using " \
+                                           "the same UIDs,GIDs!" % (UNIX_ID_LIST_FILE_NAME,str(int(mappedUID)),str(int(mappedGID))))
+                    except:
+                    	self._log.warn("UID %s not found locally in /etc/passwed and %s does not exist or "\
+                        	"inaccessible " % (str(int(mappedUID)),UNIX_ID_LIST_FILE_NAME))
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -673,7 +690,7 @@ class DCacheAggregator:
             endtime += datetime.timedelta(0, 3600)
         else:
             if ( self._range < 60 ) :
-                endtime = starttime + datetime.timedelta(0, self._range)            
+                endtime = starttime + datetime.timedelta(0, self._range)
             else:
                 endtime = datetime.datetime(starttime.year, starttime.month,
                     starttime.day, starttime.hour, starttime.minute, 0)

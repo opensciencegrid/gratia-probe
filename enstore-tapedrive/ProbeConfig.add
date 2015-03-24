@@ -1,0 +1,22 @@
+
+    Title9="Enstore specific probe parameters"
+
+    DataLenMax="0"
+       Comments934="The maximum number of records processed in a single invocation, 0 = all records, no max. Under Title 3"
+
+    EnstoreVersion="Enstore version"
+      Comments91="This can be used if the enstore rpm commands fail to identify the version, leave empty otherwise"
+    DbPort=""
+    DbHost="localhost"
+    DbName=""
+    DbUser=""
+      Comments92="Database connection information. You must enter it"
+    DbPasswordFile=""
+    DbPassword=""
+      Comments93="If there is a password you can enter it here or for added security in the DbPasswordFile that can have more strict permissions"
+    DefaultDomainName="my.domain"
+      Comments94="Used when hostname is not returning the domain"
+    EnstoreMaxMountTime="0"
+      Comments95="Limit to the max calculated mount time in seconds. Ignored when 0 or negative. When no dismount record is found, the tape is assumed mounted until the next operation on that tape. This value caps that time."
+    EnstoreMinMountTime="0"
+      Comments96="Limit to the min calculated mount time in seconds. By default 0, e.g. when a dismount record with missing mount record is found."

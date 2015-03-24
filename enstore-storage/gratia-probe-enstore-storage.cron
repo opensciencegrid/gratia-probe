@@ -1,0 +1,1 @@
+0,30 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-storage/ProbeConfig && /usr/share/gratia/enstore-storage/enstore-storage -c -s 1800

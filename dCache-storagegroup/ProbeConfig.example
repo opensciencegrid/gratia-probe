@@ -2,9 +2,9 @@
 
     Title1="Collector Information"
 
-    CollectorHost="gratia-osg-itb.opensciencegrid.org:80"
-    SSLHost="gratia-osg-itb.opensciencegrid.org:443" 
-    SSLRegistrationHost="gratia-osg-itb.opensciencegrid.org:80"
+    CollectorHost="fermicloud049.fnal.gov:80"
+    SSLHost="fermicloud049.fnal.gov:443"
+    SSLRegistrationHost="fermicloud049.fnal.gov:80"
 
     CollectorService="/gratia-servlets/rmi" 
     SSLCollectorService="/gratia-servlets/rmi"
@@ -12,38 +12,31 @@
 
     Title2="Probe information and functional configuration"
 
-    ProbeName="generic" 
-       Comments20="ProbeName used to be spelled 'MeterName'"
-    SiteName="Generic Site"
+    ProbeName="dCache-storagegroup:fndca2a.fnal.gov" 
+    SiteName="Fermilab Public dCache"
     Grid="OSG"
     SuppressUnknownVORecords="0"
     SuppressNoDNRecords="0"
     SuppressGridLocalRecords="0"
-    QuarantineUnknownVORecords="1"
-    EnableProbe="0"
+    EnableProbe="1"
 
     Title3="Tuning parameter"
 
     BundleSize="100"
-       Comments28="Number of records to be sent per envelope. Consider setting higher (up to 200)."
     MaxPendingFiles="100000"
     MaxStagedArchives="400"
-       Comments30="The maximum of backload files is MaxPendingFiles * MaxStagedArchives per probe"
     UseSyslog="0"
     ConnectionTimeout="900"
-       Comments31="Number of second GratiaCore will wait before timing out an attempt to connect or post to the Collector"
 
     LogLevel="2"
        Comments32="Controls debug messages printed to log file."
-    DebugLevel="0" 
+    DebugLevel="10" 
        Comments33="Controls debug messages printed to screen."
     LogRotate="31"
-    DataLengthMax="0"
-       Comments34="The maximum number of records processed in a single invocation, 0 = all records, no max"
     DataFileExpiration="31"
-       Comments35="The number of days quarantined and unusable data files are kept"
+       Comments34="The number of days quarantined and unusable data files are kept"
     QuarantineSize="200"
-       Comments36="The maximum size in Mb allowed to be kept in each quarantined directory"
+       Comments35="The maximum size in Mb allowed to be kept in each quarantined directory"
     GratiaExtension="gratia.xml"
 
     Title4="Authentication Configuration"
@@ -59,11 +52,19 @@
     Title5="File and directory location"
 
     UserVOMapFile="/var/lib/osg/user-vo-map"
-    CertInfoLogPattern="/var/log/accounting/blahp.log-*"
         Comments51="Location and wildcard pattern of log files that contains certificate information about the jobs in the format followed by the 'blah demons'."
+    CertInfoLogPattern="/var/log/accounting/blahp.log-*"
+    CondorCEHistoryFolder="/var/lib/gratia/condorce_data"
 
     DataFolder="/var/lib/gratia/data/"
     WorkingFolder="/var/lib/gratia/tmp"
     LogFolder="/var/log/gratia"
 
+    TitleDCacheStorage="dCache-storage-specific attributes" 
+    InfoProviderUrl="http://DCACHE_HOST:2288/info" 
+    ReportPoolUsage="0"
+
 />
+
+<!-- This probe has not yet been configured -->
+

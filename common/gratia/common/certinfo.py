@@ -208,7 +208,7 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
             DebugPrint(0,
                        'WARNING: unable to ascertain LRMS to match against multiple certinfo entries and no other possibilities found yet -- may be unable to resolve ambiguities'
                        )
-    elif len(jobManagers) == 0: # why not append any value not already there? it may be missing it in the loop below
+    if lrms and len(jobManagers) == 0: # why not append any value not already there? it may be missing it in the loop below
         jobManagers.append(lrms)  # Useful default
         DebugPrint(4, 'findCertInfoFile: added default LRMS type ' + lrms + ' to search list')
 
@@ -224,7 +224,7 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
     DebugPrint(4, 'findCertInfoFile: continuing to process')
 
     for jobManager in jobManagers:
-        filestem = Config.get_DataFolder() + 'gratia_certinfo' + r'_' + jobManager + r'_' + localJobId
+        filestem = os.path.join(Config.get_DataFolder(), 'gratia_certinfo' + r'_' + jobManager + r'_' + localJobId)
         DebugPrint(4, 'findCertInfoFile: looking for ' + filestem)
         if os.path.exists(filestem):
             certinfo_files.append(filestem)
@@ -237,11 +237,12 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
         DebugPrint(4, 'findCertInfoFile: found certinfo files %s' % (certinfo_files))
     elif static['glob_files']:
         DebugPrint(4, 'findCertInfoFile: globbing for certinfo file')
-        certinfo_files = glob.glob(Config.get_DataFolder() + 'gratia_certinfo_*_' + localJobId + '*')
+        certinfo_files = glob.glob(os.path.join(Config.get_DataFolder(), 'gratia_certinfo_*_' + localJobId + '*'))
         if certinfo_files == None or len(certinfo_files) == 0:
             DebugPrint(4, 'findCertInfoFile: could not find certinfo files matching localJobId ' + str(localJobId))
             static['glob_files'] = False
             DebugPrint(4, 'findCertInfoFile: could not find certinfo files, disabling globbing')
+            DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId + '. Globbing disabled.')
             return None  # No files
 
         if len(certinfo_files) == 1:

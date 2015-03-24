@@ -1,0 +1,1 @@
+0,30 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/lsf/ProbeConfig && /usr/share/gratia/lsf/lsf -s 1800

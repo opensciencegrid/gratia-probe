@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+import cPickle
+import os
+import re
+import sys
+import time
+import optparse
+import gratia.common.Gratia as Gratia
+from gratia.common.Gratia import DebugPrint
+import gratia.common.GratiaCore as GratiaCore
+import gratia.common.GratiaWrapper as GratiaWrapper
+from gratia.services.StorageElement import StorageElement
+from gratia.services.StorageElementRecord import StorageElementRecord
+
+def  parse_opts():
+
+    parser = optparse.OptionParser(usage="""%prog [options] file """)
+    parser.add_option("-c", "--gratia_config",
+        help="""Location of the Gratia config; defaults to 
+                /etc/gratia/dCache-storagegroup/ProbeConfig.""",
+        dest="gratia_config",
+        default="/etc/gratia/dCache-storagegroup/ProbeConfig")
+
+    parser.add_option("-f", "--storage",
+        help="""Location of the storage info file.""",
+        dest="storage_group",
+        default="/tmp/sg_space.data")
+
+    parser.add_option("-s", "--sleep",
+        help="""This should be used with normal cron usage. It sets a random 
+amount of sleep, up to the specified number of seconds before running.  
+This reduces the load on the Gratia collector.""",
+        dest="sleep",
+        default=0, type="int")
+
+
+    parser.add_option("-v", "--verbose",
+        help="Enable verbose logging to stdout.",
+        default=False, action="store_true", dest="verbose")
+
+    opts, args = parser.parse_args()
+
+    # Initialize Gratia
+    if not opts.gratia_config or not os.path.exists(opts.gratia_config):
+        raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
+    GratiaCore.Config = GratiaCore.ProbeConfiguration(opts.gratia_config)
+
+    if opts.verbose:
+        GratiaCore.Config.set_DebugLevel(5)
+
+    return opts, args
+
+	
+
+
+def sendRecords(fn):
+
+    user_space=cPickle.load(open(fn,"r"))
+    t = os.stat(fn).st_ctime
+
+    storage_groups={}
+    totals_by_sg={}
+    for pg,item1 in user_space.iteritems():
+        storage_groups[pg]={}
+        for pool, item2 in item1.iteritems():
+            for sg, value in item2.iteritems():
+                storage_groups[pg][sg]=storage_groups[pg].get(sg,0)+long(value/1024/1024)
+                totals_by_sg[sg]=totals_by_sg.get(sg,0)+long(value/1024/1024)
+                                        
+
+    site=GratiaCore.Config.getConfigAttribute("SiteName")
+    version="1.2.3"
+    status="Production"
+    timestamp = time.time()
+
+    for pg, value in storage_groups.iteritems():
+        sa  = StorageElement()
+        sar = StorageElementRecord()
+        parent_id = '%s:SE:%s' % (site, site)
+        unique_id = '%s:PoolGroup:%s' % (site, pg)
+        sa.UniqueID(unique_id)
+        sa.Name(pg)
+        sa.SE(site)
+        sa.SpaceType('PoolGroup')
+        sa.Implementation('dCache')
+        sa.Version(version)
+        sa.Status(status)
+        sa.ParentID(parent_id)
+        sa.Timestamp(timestamp)
+        sar.Timestamp(timestamp)
+        sar.UniqueID(unique_id)
+        sar.MeasurementType('logical')
+        sar.StorageType('disk')
+        sar.UsedSpace(sum(value.values()))
+    	Gratia.Send(sa)
+    	Gratia.Send(sar)
+        for sg, used_space in value.iteritems():
+            sa = StorageElement()
+            sar = StorageElementRecord()
+            unique_id = '%s:StorageGroup:%s_%s' % (site,sg,pg)
+            sa.UniqueID(unique_id)
+            sa.SpaceType('StorageGroup')
+            sa.Implementation('dCache')
+            sa.Name('%s_%s' % (sg,pg))
+            sa.VO(sg)
+            sa.Version(version)
+            sa.Status(status)
+            parent_id = '%s:PoolGroup:%s' % (site, pg)
+            sa.ParentID(parent_id)
+            sa.Timestamp(timestamp)
+            sar.Timestamp(timestamp)
+            sar.UniqueID(unique_id)
+            sar.MeasurementType('logical')
+            sar.StorageType('disk')
+            sar.UsedSpace(used_space)
+            Gratia.Send(sa)
+            Gratia.Send(sar)
+                           
+def main():
+   try:
+        opts, dirs = parse_opts()
+   except SystemExit:
+        raise
+   except KeyboardInterrupt:
+        raise
+   except Exception, e:
+        print >> sys.stderr, str(e)
+        sys.exit(1)
+
+   # Sanity checks for the probe's runtime environment.
+   GratiaWrapper.CheckPreconditions()
+
+
+   if opts.sleep:
+        rnd = random.randint(1, int(opts.sleep))
+        DebugPrint(2, "Sleeping for %d seconds before proceeding." % rnd)
+        time.sleep(rnd)
+
+   # Make sure we have an exclusive lock for this probe.
+   GratiaWrapper.ExclusiveLock()
+
+   GratiaCore.Initialize(opts.gratia_config)
+   sendRecords(opts.storage_group)
+     
+
+if __name__ == '__main__':
+    main()
