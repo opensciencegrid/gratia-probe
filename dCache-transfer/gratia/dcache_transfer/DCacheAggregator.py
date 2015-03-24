@@ -239,8 +239,6 @@ class DCacheAggregator:
             raise
 
         self._grid = configuration.get_Grid()
-	#user uids info
-	self.uinfo={}
 
     def __refresh_user_map(self) :
         self.__user_map.clear()
