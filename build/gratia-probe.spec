@@ -1018,7 +1018,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-<<<<<<< .working
 * Tue Mar 24 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.0-1
 - merging of sample-probe branch into trunk. sample-probe development started in Summer 2014
 - new common files in common2 module (base classes for probes)
