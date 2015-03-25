@@ -30,6 +30,7 @@ from DCacheAggregator import DCacheAggregator, sleep_check
 
 ProgramName = "dCacheBillingAggregator"
 
+UNIX_ID_LIST_FILE_NAME_DEFAULT = "/etc/gratia/dCache-transfer/unix.uid.list"
 
 class dCacheProbeConfig(ProbeConfiguration):
     """
@@ -130,6 +131,12 @@ class dCacheProbeConfig(ProbeConfiguration):
             return logging.INFO
         else:
             return logging.DEBUG
+
+    def get_UnixIdListFileName(self):
+        fname = self.getConfigAttribute('UnixIdListFileName')
+        if not fname:
+            return UNIX_ID_LIST_FILE_NAME_DEFAULT
+        return fname
 
 # end class dCacheProbeConfig
 
@@ -271,7 +278,7 @@ def main():
                                              sys.exc_value,
                                              sys.exc_traceback )
         msg = ProgramName + " caught an exception:\n" + "".join(tblist)
-	print msg
+        print msg
         logger.error(msg)
 
     TestContainer.dumpStatistics(logger)

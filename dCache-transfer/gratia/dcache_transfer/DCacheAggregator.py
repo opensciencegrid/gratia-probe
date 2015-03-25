@@ -61,7 +61,6 @@ import TestContainer
 
 DCACHE_AGG_FIELDS = ['initiator', 'client', 'protocol', 'errorcode', 'isnew']
 DCACHE_SUM_FIELDS = ['njobs', 'transfersize', 'connectiontime']
-UNIX_ID_LIST_FILE_NAME="/etc/gratia/dCache-transfer/unix.uid.list"
 
 def sleep_check(length, stopFileName):
     """
@@ -146,9 +145,9 @@ BILLINGDB_SELECT_CMD = """
         d.mappedgid as mappedgid
     FROM
         billinginfo b INNER JOIN  doorinfo d ON b.initiator = d.transaction
-	WHERE b.datestamp >= '%s' AND b.datestamp < '%s'
+        WHERE b.datestamp >= '%s' AND b.datestamp < '%s'
         AND b.p2p='f'
-	AND d.datestamp >= '%s' AND d.datestamp < '%s'
+        AND d.datestamp >= '%s' AND d.datestamp < '%s'
         ORDER BY datestamp
         LIMIT %i
 """
@@ -182,17 +181,18 @@ class DCacheAggregator:
         self._log = logging.getLogger( 'DCacheAggregator' )
         self.__user_map = {}
         self.__uuid_file_mod_time = int(time.time())
-        if os.path.exists(UNIX_ID_LIST_FILE_NAME) :
-            self.__uuid_file_mod_time = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+        self._unix_id_list_file_name = configuration.get_UnixIdListFileName()
+        if os.path.exists(self._unix_id_list_file_name) :
+            self.__uuid_file_mod_time = os.stat(self._unix_id_list_file_name).st_mtime
             self.__refresh_user_map()
-	# Neha - 03/17/2011
-	# Using psycopg2 instead of sqlalchemy
-	DBurl = 'dbname=%s user=%s ' % (configuration.get_DBName(), configuration.get_DBLoginName())
-	DBurl += 'password=%s ' % (configuration.get_DBPassword())
-	DBurl += 'host=%s' % (configuration.get_DBHostName())
+        # Neha - 03/17/2011
+        # Using psycopg2 instead of sqlalchemy
+        DBurl = 'dbname=%s user=%s ' % (configuration.get_DBName(), configuration.get_DBLoginName())
+        DBurl += 'password=%s ' % (configuration.get_DBPassword())
+        DBurl += 'host=%s' % (configuration.get_DBHostName())
 
-	# Neha - 03/17/2011
-	# Commenting out as not using sqlalchemy anymore
+        # Neha - 03/17/2011
+        # Commenting out as not using sqlalchemy anymore
         #DBurl = 'postgres://%s:%s@%s:5432/%s' % \ (configuration.get_DBLoginName(), configuration.get_DBPassword(), configuration.get_DBHostName(), configuration.get_DBName())
         self._skipIntraSite = configuration.get_OnlySendInterSiteTransfers()
         self._stopFileName = configuration.get_StopFileName()
@@ -222,14 +222,14 @@ class DCacheAggregator:
         # Connect to the dCache postgres database.
         # TODO: Using sqlalchemy gives us nothing but a new dependency.  Remove - Done
         # Neha: 03/17/2011 - Removing sqlalchemy. Using psycopg2 instead
-	try:
+        try:
             if TestContainer.isTest():
                 self._db = None
             else:
                 #self._db = sqlalchemy.create_engine(DBurl)
                 #self._connection = self._db.connect()
-		self._connection = psycopg2.connect(DBurl)
-		self._cur = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                self._connection = psycopg2.connect(DBurl)
+                self._cur = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except:
             tblist = traceback.format_exception(sys.exc_type,
                                                 sys.exc_value,
@@ -243,7 +243,7 @@ class DCacheAggregator:
     def __refresh_user_map(self) :
         self.__user_map.clear()
         try:
-            fd=open(UNIX_ID_LIST_FILE_NAME,'r')
+            fd=open(self._unix_id_list_file_name,'r')
             for line in fd:
                 if not line : continue
                 try:
@@ -253,8 +253,7 @@ class DCacheAggregator:
                     pass
             fd.close()
         except:
-            self._log.warn("Make sure " \
-                           "%s on this host" % (UNIX_ID_LIST_FILE_NAME))
+            self._log.warn("Make sure %s is on this host" % (self._unix_id_list_file_name))
 
 
 
@@ -306,8 +305,8 @@ class DCacheAggregator:
         select_time = -time.time()
         if not TestContainer.isTest():
             self._cur.execute(query)
-	    result = self._cur.fetchall()
-	else:
+            result = self._cur.fetchall()
+        else:
             result = BillingRecSimulator.execute(query)
         select_time += time.time()
         if select_time > MAX_QUERY_TIME_SECS:
@@ -326,14 +325,14 @@ class DCacheAggregator:
         filtered_result = []
         for row in result:
             row = dict(row)
-      	    #print row
-	    if row['transfersize'] < 0:
+            #print row
+            if row['transfersize'] < 0:
                 row['transfersize'] = 0
                 row['connectiontime'] = 0
             filtered_result.append(row)
         result = filtered_result
 
-	# If we hit our limit, there's no telling how many identical records
+        # If we hit our limit, there's no telling how many identical records
         # there are on the final millisecond; we must re-query with a smaller
         # interval or a higher limit on the select.
         if len(result) == maxSelect:
@@ -538,9 +537,9 @@ class DCacheAggregator:
                     info = pwd.getpwuid(int(mappedUID))
                     username = info[0]
                 except:
-		    #will try to get id from storage-authzdb
-		    try:
-                        mtime = os.stat(UNIX_ID_LIST_FILE_NAME).st_mtime
+                    #will try to get id from storage-authzdb
+                    try:
+                        mtime = os.stat(self._unix_id_list_file_name).st_mtime
                         if self.__uuid_file_mod_time != mtime:
                             self.__uuid_file_mod_time = mtime
                             self.__refresh_user_map()
@@ -548,10 +547,10 @@ class DCacheAggregator:
                         if not username :
                             self._log.warn("UID %s %s not found locally; make sure " \
                                            "/etc/passwd or %s on this host and your dCache are using " \
-                                           "the same UIDs,GIDs!" % (UNIX_ID_LIST_FILE_NAME,str(int(mappedUID)),str(int(mappedGID))))
+                                           "the same UIDs,GIDs!" % (self._unix_id_list_file_name,str(int(mappedUID)),str(int(mappedGID))))
                     except:
-                    	self._log.warn("UID %s not found locally in /etc/passwed and %s does not exist or "\
-                        	"inaccessible " % (str(int(mappedUID)),UNIX_ID_LIST_FILE_NAME))
+                        self._log.warn("UID %s not found locally in /etc/passwed and %s does not exist or "\
+                                "inaccessible " % (str(int(mappedUID)),self._unix_id_list_file_name))
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -620,7 +619,7 @@ class DCacheAggregator:
             # endtime every time we call execute.
             next_starttime, rows = self._execute(starttime, endtime, self._maxSelect)
 
-	    results += rows
+            results += rows
             totalRecords += len(rows)
             if self._summarize:
                 # Summarize the partial results
@@ -665,11 +664,11 @@ class DCacheAggregator:
 
             # Check to see if the stop file has been created.  If so, break
             if os.path.exists(self._stopFileName):
-		#Neha - 03/17/2011
-	        #Don't need to commit anything since we are only doing select and no inserts or updates
-            	self._cur.close()
-            	self._connection.close()
-	        break
+                #Neha - 03/17/2011
+                #Don't need to commit anything since we are only doing select and no inserts or updates
+                self._cur.close()
+                self._connection.close()
+                break
 
 
     def _determineNextEndtime(self, starttime, summary=False):
