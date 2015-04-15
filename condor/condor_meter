@@ -243,8 +243,7 @@ def main():
 
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
-        DebugPrint(-1, "ERROR: HTCondor is not configured correctly, exiting")
-        sys.exit(1)
+        DebugPrint(-1, "WARNING: HTCondor appears to not be configured correctly")
 
     # Do some sanity checks of gratia configuration before starting    
     if not check_gratia():
@@ -812,27 +811,27 @@ def htcondor_configured():
         # It will always be a string even if returncode != 0 
         cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
-            DebugPrint(-1, "ERROR: condor_config_val returned a non-zero " \
+            DebugPrint(-1, "WARNING: condor_config_val returned a non-zero " \
                            "return code")
             return False
         elif 'Not defined' in cmd_stdout:
-            DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR not set in condor " \
+            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in condor " \
                            "config, please set it")
             return False
         elif (not os.path.exists(cmd_stdout) or 
               not os.path.isdir(cmd_stdout)):
-            DebugPrint(-1 , "ERROR: PER_JOB_HISTORY_DIR points to a " \
+            DebugPrint(-1 , "WARNING: PER_JOB_HISTORY_DIR points to a " \
                             "non-existent or invalid directory: " \
                             "%s" % cmd_stdout)
             return False
         data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
         if not os.path.samefile(cmd_stdout, data_folder):
-            DebugPrint(-1, "ERROR: PER_JOB_HISTORY_DIR (%s) and DataFolder "
+            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR (%s) and DataFolder "
                            "setting (%s) do not match!" %(cmd_stdout, data_folder))
             return False
         return True
     except subprocess.CalledProcessError:
-        DebugPrint(-1, "ERROR: Can't get information on PER_JOB_HISTORY_DIR, " \
+        DebugPrint(-1, "WARNING: Can't get information on PER_JOB_HISTORY_DIR, " \
                        "condor_config_val returned non-zero exit code")
     return False
 
