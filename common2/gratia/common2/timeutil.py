@@ -409,6 +409,53 @@ def datetime_timedelta_to_seconds(delta):
     return total_seconds_precise(delta)
 
 
+## Truncating functions
+
+def at_minute(ds):
+    """
+    Truncate the datetime timestamp at the beginning of the minute
+    :param ds: input datetime timestamp
+    :return: output datetime timestamp where seconds are set to 0
+    """
+    return datetime(ds.year, ds.month, ds.day, ds.hour, ds.minute, 0)
+
+
+def at_hour(ds):
+    """
+    Truncate the datetime timestamp at the beginning of the hour
+    :param ds: input datetime timestamp
+    :return: output datetime timestamp where minutes and seconds are set to 0
+    """
+    return datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
+
+
+def at_day(ds):
+    """
+    Truncate the datetime timestamp at the beginning of the day
+    :param ds: input datetime timestamp
+    :return: output datetime timestamp where time is set to 0 (only date is kept)
+    """
+    return datetime(ds.year, ds.month, ds.day, 0, 0, 0)
+
+
+## Increment functions
+
+def wind_time(dtin, days=0, hours=0, minutes=0, seconds=0, backward=True):
+    """
+    (Re) wind the time backward or forward.
+    All the values are added. e.g. 1 day, 25 hours, 62 minutes is 2days, 2hours, 2 minutes
+    :param dtin: Initial time
+    :param days: Number of days to subtract/add
+    :param hours: Number of hours to subtract/add
+    :param minutes: Number of minutes to subtract/add
+    :param seconds: Number of days to subtract/add
+    :param backward: direction, if True time is subtracted, if False it is added
+    :return: datetime shifted backward or forward
+    """
+    td = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+    return dtin - td
+
+
 def main():
     # add here the tests
     pass

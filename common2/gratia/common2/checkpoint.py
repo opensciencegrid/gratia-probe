@@ -192,7 +192,7 @@ class DateTransactionCheckpoint(Checkpoint):
     # - append multiple lines to the pending file and use the last one (better performance?)
     _single = None
 
-    def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
+    def __init__(self, target, max_age=-1, default_age=30, full_precision=True):
         """Initialize a checkpoint reading the value from the file (if it exists)
 
         :param target: can be the name of the table in the DB for which we are keeping
@@ -292,7 +292,7 @@ class DateTransactionCheckpoint(Checkpoint):
 
     def set_date_seconds_transaction(self, date_epoch, transaction=None):
         """ convert epoch to datetime, assume UTC """
-        date = datetime.datetime.utcfromtimestamp(date_epoch)
+        date = datetime.utcfromtimestamp(date_epoch)
         self.set_val({'date': date, 'transaction': transaction})
 
     def set_val(self, val):

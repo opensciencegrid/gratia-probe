@@ -13,3 +13,8 @@
       Comments93="If there is a password you can enter it here or for added security in the DbPasswordFile that can have more strict permissions"
     DefaultDomainName="my.domain"
       Comments94="Used when hostname is not returning the domain"
+    InputMinInterval="0"
+    InputDelay="21600"
+    CheckpointRollback="0"
+      Comments95="Times affecting the data selection. Only data older than now-InputDelay is selected. InputMinInterval is the min duration to return some records."
+      Comments96="The rollback is done to avoid to miss records. All times are in seconds."
