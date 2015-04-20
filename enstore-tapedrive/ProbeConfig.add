@@ -1,9 +1,6 @@
 
     Title9="Enstore specific probe parameters"
 
-    DataLenMax="0"
-       Comments934="The maximum number of records processed in a single invocation, 0 = all records, no max. Under Title 3"
-
     EnstoreVersion="Enstore version"
       Comments91="This can be used if the enstore rpm commands fail to identify the version, leave empty otherwise"
     DbPort=""
