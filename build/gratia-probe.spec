@@ -131,7 +131,8 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   for probe in %{noarch_packs}
   do
     # Install the cronjob
-    if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storage" ]; then
+    if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storage" -o $probe == "dCache-storagegroup" ]; then
+      # wildcards not working in this test: if [ -e "$probe/gratia-probe-*.cron" ]; then
       install -m 644 $probe/*.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
       rm $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/*.cron
     fi
