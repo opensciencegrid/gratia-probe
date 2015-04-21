@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.14.0
+Version:            1.14.1
 Release:            1%{?dist}
 
 License:            GPL
@@ -1018,8 +1018,12 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
-* Tue Apr 21 2015 Kevin Retzke <kretzke@fnal.gov> - 1.14.1-0
-- renamed dCache-storagegroup probe to all lowercase
+* Tue Apr 21 2015 Kevin Retzke <kretzke@fnal.gov> - 1.14.1-1
+- renamed dCache-storagegroup probe to all lowercase (GRATIA-172)
+- added LogFileName option (GRATIA-165)
+- fixes to checkpoint for Enstore probes (GRATIA-173, GRATIA-174)
+- missing HTCondor PER_JOB_HISTORY_DIR demoted to warning, not stopping the probe
+
 * Tue Mar 24 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.0-1
 - merging of sample-probe branch into trunk. sample-probe development started in Summer 2014
 - new common files in common2 module (base classes for probes)
