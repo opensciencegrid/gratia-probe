@@ -1003,12 +1003,12 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %doc %{default_prefix}/gratia/dCache-storagegroup/README.html
 %dir %{default_prefix}/gratia/dCache-storagegroup
-%{default_prefix}/gratia/dCache-storagegroup/dCache_storage_group_probe
+%{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
 
 %{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
 
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dCache-storagegroup.cron
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron
 
 %post dCache-storagegroup
 %customize_probeconfig -d dCache-storagegroup
@@ -1018,6 +1018,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue Apr 21 2015 Kevin Retzke <kretzke@fnal.gov> - 1.14.1-0
+- renamed dCache-storagegroup probe to all lowercase
 * Tue Mar 24 2015 Marco Mambelli <marcom@fnal.gov> - 1.14.0-1
 - merging of sample-probe branch into trunk. sample-probe development started in Summer 2014
 - new common files in common2 module (base classes for probes)
