@@ -112,9 +112,16 @@ class EnstoreTapeDriveInput(PgInput):
 
     VERSION_ATTRIBUTE = 'EnstoreVersion'
 
+    def __init__(self, conn=None):
+        PgInput.__init__(self, conn)
+        self.input_min_interval = 0
+        self.input_delay = 0
+        self.rollback = 0
+
     def get_init_params(self):
         """Return list of parameters to read form the config file"""
-        return PgInput.get_init_params(self) + [EnstoreTapeDriveInput.VERSION_ATTRIBUTE]
+        return PgInput.get_init_params(self) + [EnstoreTapeDriveInput.VERSION_ATTRIBUTE,
+                'InputMinInterval', 'InputDelay', 'CheckpointRollback']
 
     def start(self, static_info):
         """open DB connection and set version form config file"""
@@ -122,6 +129,18 @@ class EnstoreTapeDriveInput(PgInput):
         DebugPrint(4, "ETDI start, static info: %s" % static_info)
         if EnstoreTapeDriveInput.VERSION_ATTRIBUTE in static_info:
             self._set_version_config(static_info[EnstoreTapeDriveInput.VERSION_ATTRIBUTE])
+        try:
+            self.input_min_interval = int(static_info['InputMinInterval'])
+        except (KeyError, ValueError):
+            pass
+        try:
+            self.input_delay = int(static_info['InputDelay'])
+        except (KeyError, ValueError):
+            pass
+        try:
+            self.rollback = int(static_info['CheckpointRollback'])
+        except (KeyError, ValueError):
+            pass
 
     def _start_stub(self, static_info):
         """start replacement for testing: database connection errors are trapped"""
@@ -172,11 +191,29 @@ Indexes:
         """
         checkpoint = self.checkpoint
         new_checkpoint = None
+        where_clauses = []
+        # DB uses local time -> checkpoint and all timestamps are in local time
+        start_time = None
         if checkpoint:
-            checkpoint_sql = "WHERE start >= '%s'" % timeutil.format_datetime(checkpoint.date(), iso8601=False)
+            start_time = checkpoint.date()
+            if self.rollback > 0:
+                start_time = timeutil.wind_time(start_time, seconds=self.rollback)
+            where_clauses.append("start >= '%s'" % timeutil.format_datetime(start_time, iso8601=False))
             new_checkpoint = checkpoint.date()
+        if self.input_delay > 0:
+            end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
+            where_clauses.append("start <= '%s'" % timeutil.format_datetime(end_time, iso8601=False))
+            if start_time is not None:
+                if self.input_min_interval > 0:
+                    if start_time > timeutil.wind_time(end_time, seconds=self.input_min_interval):
+                        return
+                else:
+                    if start_time > end_time:
+                        return
+        if where_clauses:
+            where_sql = "WHERE %s" % " AND ".join(where_clauses)
         else:
-            checkpoint_sql = ""
+            where_sql = ""
         if limit:
             limit_sql = "LIMIT %s" % limit
         else:
@@ -196,7 +233,7 @@ Indexes:
             FROM tape_mounts
             %s
             ORDER BY start, storage_group
-            %s''' % (checkpoint_sql, limit_sql)
+            %s''' % (where_sql, limit_sql)
 
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
         mount_checkpoint = {}

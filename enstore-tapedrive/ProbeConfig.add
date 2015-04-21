@@ -17,3 +17,8 @@
       Comments95="Limit to the max calculated mount time in seconds. Ignored when 0 or negative. When no dismount record is found, the tape is assumed mounted until the next operation on that tape. This value caps that time."
     EnstoreMinMountTime="0"
       Comments96="Limit to the min calculated mount time in seconds. By default 0, e.g. when a dismount record with missing mount record is found."
+    InputMinInterval="0"
+    InputDelay="21600"
+    CheckpointRollback="0"
+      Comments97="Times affecting the data selection. Only data older than now-InputDelay is selected. InputMinInterval is the min duration to return some records."
+      Comments98="The rollback is done to avoid to miss records. All times are in seconds."
