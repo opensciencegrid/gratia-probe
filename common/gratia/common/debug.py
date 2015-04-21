@@ -73,9 +73,13 @@ def DebugPrint(level, *arg):
 
 
 def LogFileName():
-    '''Return the name of the current log file'''
+    """Return the name of the current log file. If there is no LogFileName set in the configuration
+    a default yy-mm-dd.log is returned
+    """
 
-    filename = time.strftime('%Y-%m-%d') + '.log'
+    filename = getGratiaConfig().get_LogFileName()
+    if not filename:
+        filename = time.strftime('%Y-%m-%d') + '.log'
     return os.path.join(getGratiaConfig().get_LogFolder(), filename)
 
 

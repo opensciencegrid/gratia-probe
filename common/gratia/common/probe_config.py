@@ -380,6 +380,9 @@ class ProbeConfiguration:
     def get_LogFolder(self):
         return self.__getConfigAttribute('LogFolder')
 
+    def get_LogFileName(self):
+        return self.__getConfigAttribute('LogFileName')
+
     def get_PSACCTFileRepository(self):
         return self.__getConfigAttribute('PSACCTFileRepository')
 
