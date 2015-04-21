@@ -795,17 +795,24 @@ def htcondor_configured():
     try:
         path = GratiaCore.Config.getConfigAttribute("CondorLocation")
         condor_config_path = os.path.join(path, "bin", "condor_config_val")
+
+        condor_config_val_args=['-schedd']
+        schedd_name = GratiaCore.Config.getConfigAttribute('CondorScheddName')
+        if schedd_name:
+            condor_config_val_args.extend(['-name', schedd_name])
+        condor_config_val_args.append('PER_JOB_HISTORY_DIR')
+
         if (os.path.exists(condor_config_path) and 
             os.path.isfile(condor_config_path)):
-            cmd = subprocess.Popen([condor_config_path,  
-                                   "-schedd", 
-                                   "PER_JOB_HISTORY_DIR"],
-                                   stdout=subprocess.PIPE)
+            args = [condor_config_path] + condor_config_val_args
+            DebugPrint(4, 'Running command to check condor config: ' \
+                          + ' '.join(args))
+            cmd = subprocess.Popen(args, stdout=subprocess.PIPE)
         else:
-            cmd = subprocess.Popen('condor_config_val -schedd ' +
-                                   'PER_JOB_HISTORY_DIR',
-                                   stdout=subprocess.PIPE,
-                                   shell=True)
+            # args needs to be string when shell=True
+            args = 'condor_config_val ' + ' '.join(condor_config_val_args)
+            DebugPrint(4, 'Running command to check condor config: ' + args)
+            cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
         (cmd_stdout, cmd_stderr) = cmd.communicate()
         # cmd_stdout contains the directory path, removing spaces
         # It will always be a string even if returncode != 0 
