@@ -4,9 +4,6 @@
 #import os  # for os.popen
 # , stat
 import time
-#import datetime
-#import random
-#import pwd, grp
 
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
@@ -153,13 +150,9 @@ active_bytes and (active_bytes+deleted_bytes+unknown_bytes) as total_bytes
 active_files and (active_files+deleted_files+unknown_files) as total_files
 
 NOTE The time in date is stored as local time! (Dmitry 2/1/2015)
+The DB returns time (date) as naive datetime and requires strings like 'YYYY-MM-DD HH:MM:SS'
+date cannot be null
         """
-
-        #TODO: double check that returned format is consistent:
-        # - datetime (timestamp without time zone)
-        # The DB returns time as naive datetime and requires strings like 'YYYY-MM-DD HH:MM:SS'
-        # what is returned if it is NULL?
-
         checkpoint = self.checkpoint
         if checkpoint:
             checkpoint_sql = "WHERE date >= '%s'" % timeutil.format_datetime(checkpoint.date(), iso8601=False)
@@ -182,6 +175,7 @@ NOTE The time in date is stored as local time! (Dmitry 2/1/2015)
             %s
             ''' % (checkpoint_sql, limit_sql)
 
+        query_start_time = time.time()
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
         new_checkpoint = None
         for r in self.query(sql):
@@ -197,9 +191,10 @@ NOTE The time in date is stored as local time! (Dmitry 2/1/2015)
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
+            # Increment one second to avoid the last records matched
+            new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
             #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
             # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
-            #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
             DebugPrint(4, "Saving new Enstore checkpoint %s" % new_checkpoint)
             checkpoint.set_date_transaction(new_checkpoint)
 
@@ -245,8 +240,7 @@ class EnstoreStorageProbe(GratiaMeter):
         self._probeinput = EnstoreStorageInput()
 
     def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
-        #if not timestamp:
-        #    timestamp = time.time()
+        """Return a StorageElement record: name and VO info. Timestamp is set only if provided"""
         if not parent_id:
             parent_id = unique_id
         gse = StorageElement()
@@ -269,8 +263,7 @@ class EnstoreStorageProbe(GratiaMeter):
         return gse
 
     def get_storage_element_record(self, unique_id, timestamp=None):
-        #if not timestamp:
-        #    timestamp = time.time()
+        """Return a StorageElementRecord obj: id and space used. Timestamp is set only if provided"""
         gser = StorageElementRecord()
         gser.UniqueID(unique_id)
         gser.MeasurementType(self.SE_MEASUREMENT_TYPE)
@@ -322,27 +315,36 @@ class EnstoreStorageProbe(GratiaMeter):
         return inrecord['storage_group'], total, unavailable, used, 0, inrecord['active_files']
 
     def main(self):
-        # Initialize the probe an the input
+        # Initialize the probe and the input
         self.start()
         DebugPrintLevel(4, "Enstore storage probe started")
 
-        # Must be in configuration, set initially to EnstoreStorage
+        # Must be in configuration file, set initially to EnstoreStorage
         se = self.get_sitename()
 
+        # Prepare data for parent storage element
         # Understand the meaning of the name: name = self.get_probename()
-        name = se  # "parent"
-        timestamp = time.time()
-
-        # Parent storage element
-        DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s)" % (se, name))
+        parent_name = se
         unique_id = "%s:SE:%s" % (se, se)
         parent_id = unique_id
-        gse = self.get_storage_element(unique_id, se, name, timestamp=timestamp)
-        Gratia.Send(gse)
-        # TODO: is a SER with totals needed?
+        # The parent record will be sent in the loop and after (one for each date where there are other records)
 
+        srecord_date = None
         # Loop over storage records
         for srecord in self._probeinput.get_records():
+            if srecord_date is None:
+                srecord_date = srecord['date']
+            else:
+                # records are grouped and ordered by date. If date changes, will not go back to old value
+                # parent record for that timestamp can be sent
+                # TODO: add also a SER with summary for used and "available" space?
+                if not srecord_date == srecord['date']:
+                    # Parent storage element
+                    DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s/%s)" % (se, parent_name, srecord_date))
+                    timestamp = timeutil.format_datetime(timeutil.datetime_to_utc(srecord_date))
+                    gse = self.get_storage_element(parent_id, se, parent_name, timestamp)
+                    Gratia.Send(gse)
+                    srecord_date = srecord['date']
             vo_name = srecord['storage_group']
             DebugPrint(4, "Sending SE/SER for VO %s" % vo_name)
             unique_id = "%s:StorageGroup:%s" % (se, vo_name)
@@ -359,6 +361,12 @@ class EnstoreStorageProbe(GratiaMeter):
 
             Gratia.Send(gse)
             Gratia.Send(gser)
+
+        if srecord_date is not None:
+            DebugPrintLevel(4, "Sending the parent StorageElement (%s/%s/%s)" % (se, parent_name, srecord_date))
+            timestamp = timeutil.format_datetime(timeutil.datetime_to_utc(srecord_date))
+            gse = self.get_storage_element(parent_id, se, parent_name, timestamp)
+            Gratia.Send(gse)
 
 
 if __name__ == "__main__":

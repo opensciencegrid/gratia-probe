@@ -453,7 +453,28 @@ def wind_time(dtin, days=0, hours=0, minutes=0, seconds=0, backward=True):
     :return: datetime shifted backward or forward
     """
     td = timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
-    return dtin - td
+    if backward:
+        return dtin - td
+    else:
+        return dtin + td
+
+
+def conditional_increment(dtin, dt_condition, increment=1):
+    """
+    If dtin precedes dt_condition,
+     then the increment seconds are added to dtin, otherwise dtin is returned
+    :param dtin: input datetime object
+    :param dt_condition: condition time (datetime or UNIX timestamp)
+    :param increment: number of seconds (int) to add to dtin
+    :return: datetime object, incremented if needed
+    """
+    try:
+        if dtin >= dt_condition:
+            return dtin
+    except TypeError:
+        if dtin.timetuple() >= time.localtime(dt_condition):
+            return dtin
+    return dtin + timedelta(seconds=increment)
 
 
 def main():
