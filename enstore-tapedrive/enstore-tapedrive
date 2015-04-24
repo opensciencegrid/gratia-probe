@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import datetime
 
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
@@ -107,7 +108,11 @@ class _EnstoreTapeDriveInputStub:
 
 
 class EnstoreTapeDriveInput(PgInput):
-    """Get tape drive usage information from the Enstore accounting DB
+    """Get tape drive usage information from the Enstore accounting DB.
+    The table has no monotone unique ID.
+    Uses DateTransactionCheckpoint and stores in the transaction field the number of seconds between the
+    last unhandled mount (checkpoint date) and the last dismount. Date include the extremes not to loose record when
+    they are added with the timestamp equal to the last one.
     """
 
     VERSION_ATTRIBUTE = 'EnstoreVersion'
@@ -189,17 +194,30 @@ Indexes:
     "tape_mounts_storage_group_idx" btree (storage_group)
     The time zone of the timestamps is the local one
         """
+        OK_TO_SEND_RECORD = {'state': 'oktosend'}
         checkpoint = self.checkpoint
         new_checkpoint = None
+        last_checkpoint = None
         where_clauses = []
         # DB uses local time -> checkpoint and all timestamps are in local time
         start_time = None
+        ok_to_send_time = None
         if checkpoint:
             start_time = checkpoint.date()
+            checkpoint_interval = checkpoint.transaction()
+            if checkpoint_interval is None or checkpoint_interval == 0:
+                # NO interval, OK to send from the beginning
+                yield OK_TO_SEND_RECORD
+            else:
+                ok_to_send_time = timeutil.wind_time(start_time, seconds=checkpoint_interval, backward=False)
             if self.rollback > 0:
                 start_time = timeutil.wind_time(start_time, seconds=self.rollback)
             where_clauses.append("start >= '%s'" % timeutil.format_datetime(start_time, iso8601=False))
-            new_checkpoint = checkpoint.date()
+            new_checkpoint = start_time  # initialized because a could remain None if there are only dismount records
+            # last_checkpoint used to check - no new checkpoint if there are no new records
+        else:
+            # NO Checkpoint - OK to send from the beginning
+            yield OK_TO_SEND_RECORD
         if self.input_delay > 0:
             end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
             where_clauses.append("start <= '%s'" % timeutil.format_datetime(end_time, iso8601=False))
@@ -241,13 +259,20 @@ Indexes:
             # Filter out values that are not acceptable
             if r['storage_group'] is None:
                 continue
-            if r['state'] not in ('M', 'D', 'm'):
+            if r['state'] not in ('M', 'D'):
                 continue
+            if ok_to_send_time is not None:
+                # if ok_to_send_time is not None, checkpoint is True
+                if r['start'] >= ok_to_send_time:
+                    yield OK_TO_SEND_RECORD
+                    # to send the record OK_TO_SEND_RECORD only once
+                    ok_to_send_time = None
             yield r
             if checkpoint:
                 # psycopg2 returns floats for timestamp without time zone
                 #  timestamp->datetime, timestamp without time zone -> float (seconds since Epoch)
                 state = r['state']
+                last_checkpoint = r['start']  # using start because finish could be NULL
                 if state == 'M':
                     new_checkpoint = r['start']
                     mount_checkpoint[r['volume']] = new_checkpoint
@@ -258,10 +283,13 @@ Indexes:
             for i in mount_checkpoint.values():
                 if i is not None and i < new_checkpoint:
                     new_checkpoint = i
-            if new_checkpoint is not None:
-                DebugPrint(4, "Saving New Checkpoint: %s (%s)" % (new_checkpoint, type(new_checkpoint)))
-                # new_checkpoint should be None or datetime
-                checkpoint.set_date_transaction(new_checkpoint)
+            if last_checkpoint is not None:
+                # last_checkpoint should be None or datetime, new_checkpoint always datetime
+                # the interval is guaranteed to be positive
+                checkpoint_interval = timeutil.total_seconds(last_checkpoint-new_checkpoint)
+                DebugPrint(4, "Saving New Checkpoint: %s - %s (%s)" %
+                           (new_checkpoint, last_checkpoint, checkpoint_interval))
+                checkpoint.set_date_transaction(new_checkpoint, checkpoint_interval)
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array
@@ -420,7 +448,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
 
         # Loop over storage records
         for srecord in self._probeinput.get_records(self.get_input_max_length()):
-            """
+            """Values in srecord:
             node,
             volume, - label
             type, -
@@ -432,6 +460,9 @@ class EnstoreTapeDriveProbe(GratiaMeter):
             reads,
             writes
             """
+            # Variable used to unlock sending of records.
+            # Controlled by the input via special srecord with status='oktosend'
+            ok_to_send = False
             DebugPrint(5, "Preparing tape drive record for: %s" % srecord)
 
             # volume (or label) is a unique identifier of a tape.
@@ -451,12 +482,13 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                         srecord['storage_group'], srecord['start'])
                     )
                     # Send the old record (end at the end of mount OR at start of new mount) and remove the mount
-                    # if you loose the ticket you pay all OR get by
-                    EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['start'],
-                                                                  estimated=True, max_duration=max_mount_time,
-                                                                  min_duration=min_mount_time)
-                    #del mounts[t_volume]
-                    #
+                    # "if you loose the ticket you pay all OR get by"
+                    if ok_to_send:
+                        EnstoreTapeDriveProbe.mount_complete_and_send(mounts[t_volume], srecord['start'],
+                                                                      estimated=True, max_duration=max_mount_time,
+                                                                      min_duration=min_mount_time)
+                    # del not needed here because is reassigned right after anyway
+                    # del mounts[t_volume]
                 # update the record
                 mounts[t_volume] = EnstoreTapeDriveProbe.mount_init(srecord)
                 # read and write information is reported only at dismount
@@ -468,10 +500,11 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                             t_volume, mounts[t_volume]['storage_group'], srecord['storage_group'])
                         )
                         # close, dismount at finish, send the record, and remove the mount
-                        EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['start'],
-                                                                      estimated=True, max_duration=max_mount_time,
-                                                                      min_duration=min_mount_time)
-                        #del mounts[t_volume]
+                        if ok_to_send:
+                            EnstoreTapeDriveProbe.mount_complete_and_send(mounts[t_volume], srecord['start'],
+                                                                          estimated=True, max_duration=max_mount_time,
+                                                                          min_duration=min_mount_time)
+                        del mounts[t_volume]
                 except KeyError:
                     pass
                 if not t_volume in mounts:
@@ -493,10 +526,16 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                     mount_writes = int(srecord['writes'])
                 except (ValueError, TypeError):
                     mount_writes = 0
-                EnstoreTapeDriveProbe.mount_complete_and_send(mounts.pop(t_volume), srecord['finish'],
-                                                              mount_reads, mount_writes,
-                                                              max_duration=max_mount_time, min_duration=min_mount_time)
-                #del mounts[t_volume]
+                #tmp_record = mounts.pop(t_volume) # instead of access and del
+                if ok_to_send:
+                    EnstoreTapeDriveProbe.mount_complete_and_send(mounts[t_volume], srecord['finish'],
+                                                                  mount_reads, mount_writes,
+                                                                  max_duration=max_mount_time,
+                                                                  min_duration=min_mount_time)
+                # delete anyway
+                del mounts[t_volume]
+            elif srecord['state'] == 'oktosend':
+                ok_to_send = True
             else:
                 # Invalid state!
                 DebugPrint(3, "Invalid state %s. Operation on volume %s by %s reported at %s" % (
