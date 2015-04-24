@@ -241,6 +241,7 @@ encp_id - unique ID
 put NULL on duration if overall_rate is 0 (skip the value)
         """
         checkpoint = self.checkpoint
+        query_start_time = datetime.datetime.now()
         where_clauses = []
         # DB uses local time -> checkpoint and all timestamps are in local time
         start_time = None
@@ -251,7 +252,7 @@ put NULL on duration if overall_rate is 0 (skip the value)
                 start_time = timeutil.wind_time(start_time, seconds=self.rollback)
             where_clauses.append("date >= '%s'" % timeutil.format_datetime(start_time, iso8601=False))
         if self.input_delay > 0:
-            end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
+            end_time = timeutil.wind_time(query_start_time, seconds=self.input_delay)
             where_clauses.append("date <= '%s'" % timeutil.format_datetime(end_time, iso8601=False))
             if start_time is not None:
                 if self.input_min_interval > 0:
@@ -298,9 +299,11 @@ put NULL on duration if overall_rate is 0 (skip the value)
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
-            #  new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
-            #checkpoint.set_date_transaction(datetime.datetime.fromtimestamp(new_checkpoint))
+            # Increment one second to avoid the last records matched in the next call.
+            # The increment happens only if the checkpoint is in the past. If it is at the edge of
+            # the time interval of the query (query_start_time), then there is no increment,
+            # not to lose values that could be added with the same timestamp. Here duplicates are the lesser evil.
+            new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
             checkpoint.set_date_transaction(new_checkpoint)
 
     def get_records_summary(self, limit=None):
@@ -464,13 +467,14 @@ class EnstoreTransferProbe(GratiaMeter):
             uniq_id = srecord['encp_id']
             r.LocalJobId(uniq_id)
             r.Grid("Local")
-            # psycopg2 returns datetime obj, StartTime requires float or string
-            ##### it is actually End Time!! r.StartTime(timeutil.format_datetime(timeutil.datetime_to_utc(srecord['date'])))
+            # psycopg2 returns datetime obj, EndTime requires float or string
+            # srecord['date'] is the record insertion time, end time of the transfer
             r.EndTime(timeutil.format_datetime(timeutil.datetime_to_utc(srecord['date'])))
-            # srecord['size'] is always in bytes
+            r.TimeDuration(srecord['elapsed'], description='Elapsed from queue time')
             # Network(self, value, storageUnit=r'', phaseUnit=r'', metric='total', description=r'')
             # Metric should be one of 'total','average','max','min'
             # phaseUnit (duration) if numeric s considered to be in seconds and is converted in ISO timestamp
+            # srecord['size'] is always in bytes
             size = srecord['size']
             rate = srecord['overall_rate']
             if rate == 0:
