@@ -279,6 +279,7 @@ put NULL on duration if overall_rate is 0 (skip the value)
             overall_rate,
             mover_interface,
             storage_group,
+            elapsed,
             encp_id
             FROM encp_xfer
             %s
@@ -426,7 +427,7 @@ class EnstoreTransferProbe(GratiaMeter):
 
         # Loop over storage records
         for srecord in self._probeinput.get_records(self.get_input_max_length()):
-            """
+            """Values returned in srecord:
             date,
             node, pid,
             username,
@@ -434,7 +435,8 @@ class EnstoreTransferProbe(GratiaMeter):
             size,
             rw,
             mover_interface,
-            storage_group
+            storage_group,
+            elapsed,
             encp_id
             """
             DebugPrint(5, "Preparing transfer record for: %s" % srecord)
@@ -463,7 +465,8 @@ class EnstoreTransferProbe(GratiaMeter):
             r.LocalJobId(uniq_id)
             r.Grid("Local")
             # psycopg2 returns datetime obj, StartTime requires float or string
-            r.StartTime(timeutil.format_datetime(timeutil.datetime_to_utc(srecord['date'])))
+            ##### it is actually End Time!! r.StartTime(timeutil.format_datetime(timeutil.datetime_to_utc(srecord['date'])))
+            r.EndTime(timeutil.format_datetime(timeutil.datetime_to_utc(srecord['date'])))
             # srecord['size'] is always in bytes
             # Network(self, value, storageUnit=r'', phaseUnit=r'', metric='total', description=r'')
             # Metric should be one of 'total','average','max','min'
