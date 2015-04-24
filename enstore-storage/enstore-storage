@@ -191,7 +191,10 @@ date cannot be null
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
         if new_checkpoint:
-            # Increment one second to avoid the last records matched
+            # Increment one second to avoid the last records matched in the next call.
+            # The increment happens only if the checkpoint is in the past. If it is at the edge of
+            # the time interval of the query (query_start_time), then there is no increment,
+            # not to lose values that could be added with the same timestamp. Here duplicates are the lesser evil.
             new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
             #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
             # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
