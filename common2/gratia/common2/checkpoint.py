@@ -5,7 +5,7 @@ __author__ = 'marcom'
 #import time
 #import calendar
 
-#import sys
+import sys  # used for DebugPrint replacement
 import os
 #import logging
 import stat
@@ -19,8 +19,9 @@ except ImportError:
 try:
     from gratia.common.debug import DebugPrint
 except ImportError:
+    # DebugPrint form debug prints on log file (which this function will not) and on stderr
     def DebugPrint(val, msg):
-        print ("DEBUG LEVEL %s: %s" % (val, msg))
+        sys.stderr.write("DEBUG LEVEL %s: %s\n" % (val, msg))
 
 import gratia.common2.timeutil as timeutil  # for datetime_to_unix_time
 
