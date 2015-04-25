@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-#import sys,
-#import os  # for os.popen
-# , stat
 import time
 
 from gratia.common.Gratia import DebugPrint
