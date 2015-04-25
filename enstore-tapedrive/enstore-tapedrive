@@ -201,6 +201,7 @@ Indexes:
         where_clauses = []
         # DB uses local time -> checkpoint and all timestamps are in local time
         start_time = None
+        end_time = datetime.datetime.now()
         ok_to_send_time = None
         if checkpoint:
             start_time = checkpoint.date()
@@ -219,15 +220,15 @@ Indexes:
             # NO Checkpoint - OK to send from the beginning
             yield OK_TO_SEND_RECORD
         if self.input_delay > 0:
-            end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
+            end_time = timeutil.wind_time(end_time, seconds=self.input_delay)
             where_clauses.append("start <= '%s'" % timeutil.format_datetime(end_time, iso8601=False))
-            if start_time is not None:
-                if self.input_min_interval > 0:
-                    if start_time > timeutil.wind_time(end_time, seconds=self.input_min_interval):
-                        return
-                else:
-                    if start_time > end_time:
-                        return
+        if start_time is not None:
+            if self.input_min_interval > 0:
+                if start_time > timeutil.wind_time(end_time, seconds=self.input_min_interval):
+                    return
+            else:
+                if start_time > end_time:
+                    return
         if where_clauses:
             where_sql = "WHERE %s" % " AND ".join(where_clauses)
         else:

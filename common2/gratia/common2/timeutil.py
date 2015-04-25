@@ -4,6 +4,14 @@ __author__ = 'marcom'
 
 ###########################################################################
 #
+# TODO: support microseconds
+# time supports only seconds (no milli/microseconds)
+# datetime does have microseconds resolution
+# Some systems have microseconds resolution
+# e.g. Postgresql: http://www.postgresql.org/docs/9.2/static/functions-datetime.html
+# This module uses time
+# Some useful functions in datetime are available only starting with Python 2.5
+# This is compatible with Python 2.4
 #
 ###########################################################################
 
@@ -459,22 +467,26 @@ def wind_time(dtin, days=0, hours=0, minutes=0, seconds=0, backward=True):
         return dtin + td
 
 
-def conditional_increment(dtin, dt_condition, increment=1):
+def conditional_increment(dtin, dt_condition, seconds=1, microseconds=0):
     """
-    If dtin precedes dt_condition,
-     then the increment seconds are added to dtin, otherwise dtin is returned
+    If dtin precedes dt_condition of at least 1 second more then the increment (seconds+microseconds),
+    then the increment is added to dtin, otherwise dtin is returned.
+    1 second gap is chosen because it is the time resolution of this module (timeutil).
+    It may change once Python 2.4 is no more supported
     :param dtin: input datetime object
     :param dt_condition: condition time (datetime or UNIX timestamp)
-    :param increment: number of seconds (int) to add to dtin
+    :param seconds: number of seconds (int) to add to dtin
+    :param microseconds: number of microseconds (int) to add to dtin
     :return: datetime object, incremented if needed
     """
+    dt_safe = dtin + timedelta(seconds=seconds+1, microseconds=microseconds)
     try:
-        if dtin >= dt_condition:
+        if dt_safe >= dt_condition:
             return dtin
     except TypeError:
-        if dtin.timetuple() >= time.localtime(dt_condition):
+        if dt_safe.timetuple() >= time.localtime(dt_condition):
             return dtin
-    return dtin + timedelta(seconds=increment)
+    return dtin + timedelta(seconds=seconds, microseconds=microseconds)
 
 
 def main():
