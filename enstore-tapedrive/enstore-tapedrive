@@ -7,6 +7,7 @@ import gratia.common.Gratia as Gratia
 
 from gratia.common2.meter import GratiaMeter
 from gratia.common2.pgpinput import PgInput
+from gratia.common2.checkpoint import DateTransactionAuxCheckpoint
 import gratia.common2.timeutil as timeutil
 
 
@@ -128,6 +129,26 @@ class EnstoreTapeDriveInput(PgInput):
         return PgInput.get_init_params(self) + [EnstoreTapeDriveInput.VERSION_ATTRIBUTE,
                 'InputMinInterval', 'InputDelay', 'CheckpointRollback']
 
+    def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
+        """Add a checkpoint, default file name is cfp-INPUT_NAME
+        :param fname: checkpoint file name (considered as prefix unless fullname=True)
+                file name is fname-INPUT_NAME
+        :param max_val: trim value for the checkpoint
+        :param default_val: value if no checkpoint is available
+        :param fullname: Default: False, if true, fname is considered the full file name
+        :return:
+        """
+
+        if not fname:
+            fname = "cpf-%s" % self.get_name()
+        else:
+            if not fullname:
+                fname = "%s-%s" % (fname, self.get_name())
+        if max_val is not None or default_val is not None:
+            self.checkpoint = DateTransactionAuxCheckpoint(fname, max_val, default_val)
+        else:
+            self.checkpoint = DateTransactionAuxCheckpoint(fname)
+
     def start(self, static_info):
         """open DB connection and set version form config file"""
         PgInput.start(self, static_info)
@@ -168,6 +189,14 @@ class EnstoreTapeDriveInput(PgInput):
         # RPM package is 'enstore'
         return self._get_version('enstore')
 
+    @staticmethod
+    def get_record_id(r):
+        # This record should be unique. Only one operation per volume is possible
+        #TODO: verify actual DB duplicate constraint
+        return "%s-%s" % (r['start'], r['volume'])
+        # More complete record?
+        # return "%s-%s-%s-%s-%s" % (r['start'], r['node'], r['type'], r['volume'], r['storage_group'])
+
     def get_records(self, limit=None):
         """Select the mounting records from the tape_mounts table
 accounting=> \d tape_mounts
@@ -194,10 +223,11 @@ Indexes:
     "tape_mounts_storage_group_idx" btree (storage_group)
     The time zone of the timestamps is the local one
         """
-        OK_TO_SEND_RECORD = {'state': 'oktosend'}
+        OK_TO_SEND_RECORD = {'state': 'oktosend', 'volume': 'oktosend'}
         checkpoint = self.checkpoint
         new_checkpoint = None
         last_checkpoint = None
+        checkpoint_record_id = None
         where_clauses = []
         # DB uses local time -> checkpoint and all timestamps are in local time
         start_time = None
@@ -205,9 +235,14 @@ Indexes:
         ok_to_send_time = None
         if checkpoint:
             start_time = checkpoint.date()
+            checkpoint_record_id = checkpoint.aux()
             checkpoint_interval = checkpoint.transaction()
-            if checkpoint_interval is None or checkpoint_interval == 0:
+            if checkpoint_interval is None:
+                checkpoint_interval = 0
+            if checkpoint_record_id is None and checkpoint_interval == 0:
                 # NO interval, OK to send from the beginning
+                DebugPrint(4, "Sending OK_TO_SEND - no interval in checkpoint (%s/%s)" %
+                           (start_time, checkpoint_interval))
                 yield OK_TO_SEND_RECORD
             else:
                 ok_to_send_time = timeutil.wind_time(start_time, seconds=checkpoint_interval, backward=False)
@@ -218,6 +253,7 @@ Indexes:
             # last_checkpoint used to check - no new checkpoint if there are no new records
         else:
             # NO Checkpoint - OK to send from the beginning
+            DebugPrint(4, "Sending OK_TO_SEND - no checkpoint")
             yield OK_TO_SEND_RECORD
         if self.input_delay > 0:
             end_time = timeutil.wind_time(end_time, seconds=self.input_delay)
@@ -264,16 +300,26 @@ Indexes:
                 continue
             if ok_to_send_time is not None:
                 # if ok_to_send_time is not None, checkpoint is True
-                if r['start'] >= ok_to_send_time:
+                if r['start'] > ok_to_send_time:
+                    # send also the current record (yield is after)
                     yield OK_TO_SEND_RECORD
                     # to send the record OK_TO_SEND_RECORD only once
                     ok_to_send_time = None
+                elif self.get_record_id(r) == checkpoint_record_id:
+                    # send starting w/ the next record (sending r first)
+                    yield r
+                    yield OK_TO_SEND_RECORD
+                    # to send the record OK_TO_SEND_RECORD only once
+                    ok_to_send_time = None
+                    # yield was done already
+                    continue
             yield r
             if checkpoint:
                 # psycopg2 returns floats for timestamp without time zone
                 #  timestamp->datetime, timestamp without time zone -> float (seconds since Epoch)
                 state = r['state']
                 last_checkpoint = r['start']  # using start because finish could be NULL
+                new_checkpoint_record_id = self.get_record_id(r)
                 if state == 'M':
                     new_checkpoint = r['start']
                     mount_checkpoint[r['volume']] = new_checkpoint
@@ -290,7 +336,7 @@ Indexes:
                 checkpoint_interval = timeutil.total_seconds(last_checkpoint-new_checkpoint)
                 DebugPrint(4, "Saving New Checkpoint: %s - %s (%s)" %
                            (new_checkpoint, last_checkpoint, checkpoint_interval))
-                checkpoint.set_date_transaction(new_checkpoint, checkpoint_interval)
+                checkpoint.set_date_transaction_aux(new_checkpoint, checkpoint_interval, new_checkpoint_record_id)
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array
@@ -536,6 +582,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                 # delete anyway
                 del mounts[t_volume]
             elif srecord['state'] == 'oktosend':
+                DebugPrint(4, "Received OK_TO_SEND - setting True")
                 ok_to_send = True
             else:
                 # Invalid state!

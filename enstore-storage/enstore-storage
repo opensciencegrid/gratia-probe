@@ -10,6 +10,7 @@ from gratia.services.StorageElementRecord import StorageElementRecord
 
 from gratia.common2.meter import GratiaMeter
 from gratia.common2.pgpinput import PgInput
+from gratia.common2.checkpoint import DateTransactionAuxCheckpoint
 import gratia.common2.timeutil as timeutil
 
 
@@ -93,6 +94,26 @@ class EnstoreStorageInput(PgInput):
         """Return list of parameters to read form the config file"""
         return PgInput.get_init_params(self) + [EnstoreStorageInput.VERSION_ATTRIBUTE]
 
+    def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
+        """Add a checkpoint, default file name is cfp-INPUT_NAME
+        :param fname: checkpoint file name (considered as prefix unless fullname=True)
+                file name is fname-INPUT_NAME
+        :param max_val: trim value for the checkpoint
+        :param default_val: value if no checkpoint is available
+        :param fullname: Default: False, if true, fname is considered the full file name
+        :return:
+        """
+
+        if not fname:
+            fname = "cpf-%s" % self.get_name()
+        else:
+            if not fullname:
+                fname = "%s-%s" % (fname, self.get_name())
+        if max_val is not None or default_val is not None:
+            self.checkpoint = DateTransactionAuxCheckpoint(fname, max_val, default_val)
+        else:
+            self.checkpoint = DateTransactionAuxCheckpoint(fname)
+
     def start(self, static_info):
         PgInput.start(self, static_info)
         DebugPrint(4, "ESI start, static info: %s" % static_info)
@@ -119,6 +140,12 @@ class EnstoreStorageInput(PgInput):
     def get_version(self):
         # RPM package is 'enstore'
         return self._get_version('enstore')
+
+    @staticmethod
+    def get_record_id(srecord):
+        # This record should be unique. Only one storage_group per timestamp
+        #TODO: verify actual DB duplicate constraint
+        return "%s-%s" % (srecord['date'], srecord['storage_group'])
 
     def get_records(self, limit=None):
         """Select the usage records from the storage table
@@ -151,8 +178,18 @@ The DB returns time (date) as naive datetime and requires strings like 'YYYY-MM-
 date cannot be null
         """
         checkpoint = self.checkpoint
+        checkpoint_datetime = None
+        ok_to_send = True
         if checkpoint:
-            checkpoint_sql = "WHERE date >= '%s'" % timeutil.format_datetime(checkpoint.date(), iso8601=False)
+            checkpoint_datetime = checkpoint.date()
+            checkpoint_record_id = checkpoint.aux()
+            # the checkpoint stores date and record_id
+            # If there is a record_id is OK to send if time>cp_time or time==cp_time and
+            # the last record has been encountered.
+            # assuming that the order of the list returned is the same
+            if checkpoint_record_id is not None:
+                ok_to_send = False
+            checkpoint_sql = "WHERE date >= '%s'" % timeutil.format_datetime(checkpoint_datetime, iso8601=False)
         else:
             checkpoint_sql = ""
         if limit:
@@ -175,7 +212,19 @@ date cannot be null
         query_start_time = time.time()
         DebugPrint(4, "Requesting new Enstore records %s" % sql)
         new_checkpoint = None
+        new_checkpoint_record_id = None
         for r in self.query(sql):
+            # skip records before the one checkpointed
+            if not ok_to_send:
+                if r['date'] > checkpoint_datetime:
+                    # send also the current record
+                    ok_to_send = True
+                elif self.get_record_id(r) == checkpoint_record_id:
+                    # send starting w/ the next record
+                    ok_to_send = True
+                    continue
+                else:
+                    continue
             # Add handy data to job record
             #r['cluster'] = self._cluster
             #self._addUserInfoIfMissing(r)
@@ -187,16 +236,18 @@ date cannot be null
                 new_date = r['date']
                 if new_checkpoint is None or new_date > new_checkpoint:
                     new_checkpoint = new_date
+                    new_checkpoint_record_id = self.get_record_id(r)
         if new_checkpoint:
-            # Increment one second to avoid the last records matched in the next call.
-            # The increment happens only if the checkpoint is in the past. If it is at the edge of
-            # the time interval of the query (query_start_time), then there is no increment,
-            # not to lose values that could be added with the same timestamp. Here duplicates are the lesser evil.
-            new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
+            ## Using last value (new_checkpoint_record_id)
+            ##  Increment one second to avoid the last records matched in the next call.
+            ## The increment happens only if the checkpoint is in the past. If it is at the edge of
+            ## the time interval of the query (query_start_time), then there is no increment,
+            ## not to lose values that could be added with the same timestamp. Here duplicates are the lesser evil.
+            #new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
             #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
             # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
             DebugPrint(4, "Saving new Enstore checkpoint %s" % new_checkpoint)
-            checkpoint.set_date_transaction(new_checkpoint)
+            checkpoint.set_date_transaction_aux(new_checkpoint, 0, new_checkpoint_record_id)
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array"""
