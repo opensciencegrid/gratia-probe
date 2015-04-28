@@ -243,7 +243,7 @@ def main():
 
     # Check to make sure HTCondor config is set correctly
     if not htcondor_configured():
-        DebugPrint(-1, "WARNING: HTCondor appears to not be configured correctly")
+        DebugPrint(-1, "WARNING: HTCondor appears to not be configured correctly. Continuing anyway.")
 
     # Do some sanity checks of gratia configuration before starting    
     if not check_gratia():
@@ -819,11 +819,12 @@ def htcondor_configured():
         cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
             DebugPrint(-1, "WARNING: condor_config_val returned a non-zero " \
-                           "return code")
+                           "return code. Maybe the schedd is overloaded.")
             return False
         elif 'Not defined' in cmd_stdout:
-            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in condor " \
-                           "config, please set it")
+            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in the default condor schedd" \
+                           "config. You may need to change or reload the condor configuration" \
+                           "or specify a different CondorScheddName in the Gratia config.")
             return False
         elif (not os.path.exists(cmd_stdout) or 
               not os.path.isdir(cmd_stdout)):
