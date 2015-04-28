@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import time
+import datetime
 
 from gratia.common.Gratia import DebugPrint
 #import gratia.common.GratiaWrapper as GratiaWrapper
@@ -8,21 +8,9 @@ import gratia.common.Gratia as Gratia
 from gratia.services.StorageElement import StorageElement
 from gratia.services.StorageElementRecord import StorageElementRecord
 
-from gratia.common2.meter import GratiaMeter
+from gratia.common2.meter import GratiaMeter, DebugPrintLevel
 from gratia.common2.pgpinput import PgInput
-from gratia.common2.checkpoint import DateTransactionAuxCheckpoint
 import gratia.common2.timeutil as timeutil
-
-
-def DebugPrintLevel(level, *args):
-    if level <= 0:
-        level_str = "CRITICAL"
-    elif level >= 4:
-        level_str = "DEBUG"
-    else:
-        level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
-    level_str = "%s - EnstoreStorage: " % level_str
-    DebugPrint(level, level_str, *args)
 
 
 class _EnstoreStorageInputStub:
@@ -94,26 +82,6 @@ class EnstoreStorageInput(PgInput):
         """Return list of parameters to read form the config file"""
         return PgInput.get_init_params(self) + [EnstoreStorageInput.VERSION_ATTRIBUTE]
 
-    def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
-        """Add a checkpoint, default file name is cfp-INPUT_NAME
-        :param fname: checkpoint file name (considered as prefix unless fullname=True)
-                file name is fname-INPUT_NAME
-        :param max_val: trim value for the checkpoint
-        :param default_val: value if no checkpoint is available
-        :param fullname: Default: False, if true, fname is considered the full file name
-        :return:
-        """
-
-        if not fname:
-            fname = "cpf-%s" % self.get_name()
-        else:
-            if not fullname:
-                fname = "%s-%s" % (fname, self.get_name())
-        if max_val is not None or default_val is not None:
-            self.checkpoint = DateTransactionAuxCheckpoint(fname, max_val, default_val)
-        else:
-            self.checkpoint = DateTransactionAuxCheckpoint(fname)
-
     def start(self, static_info):
         PgInput.start(self, static_info)
         DebugPrint(4, "ESI start, static info: %s" % static_info)
@@ -123,13 +91,13 @@ class EnstoreStorageInput(PgInput):
     def _start_stub(self, static_info):
         """start replacement for testing: database connection errors are trapped"""
         try:
-            DebugPrintLevel(4, "Testing DB connection. The probe will not use it")
+            DebugPrint(4, "Testing DB connection. The probe will not use it")
             PgInput.start(self, static_info)
             if self.status_ok():
-                DebugPrintLevel(4, "Connection successful")
+                DebugPrint(4, "Connection successful")
             else:
-                DebugPrintLevel(4, "Connection failed")
-            DebugPrintLevel(4, "Closing the connection")
+                DebugPrint(4, "Connection failed")
+            DebugPrint(4, "Closing the connection")
             self.stop()
         except:
             DebugPrint(1, "Database connection failed. The test can continue since stubs are used.")
@@ -178,24 +146,31 @@ The DB returns time (date) as naive datetime and requires strings like 'YYYY-MM-
 date cannot be null
         """
         checkpoint = self.checkpoint
-        checkpoint_datetime = None
-        ok_to_send = True
-        if checkpoint:
-            checkpoint_datetime = checkpoint.date()
-            checkpoint_record_id = checkpoint.aux()
-            # the checkpoint stores date and record_id
-            # If there is a record_id is OK to send if time>cp_time or time==cp_time and
-            # the last record has been encountered.
-            # assuming that the order of the list returned is the same
-            if checkpoint_record_id is not None:
-                ok_to_send = False
-            checkpoint_sql = "WHERE date >= '%s'" % timeutil.format_datetime(checkpoint_datetime, iso8601=False)
-        else:
-            checkpoint_sql = ""
+
+
+        where_clauses = []
+        # DB uses local time -> checkpoint and all timestamps are in local time
+        start_time = None
+        #end_time = timeutil.at_minute(datetime.datetime.now())
+        end_time = None
+        # Give to the end time a 60 seconds delay. To allow for enstore DB processing time
         if limit:
-            limit_sql = "LIMIT %s" % limit
+            end_time = timeutil.wind_time(start_time, hours=limit, backward=False)
+            end_time = min(end_time, timeutil.wind_time(datetime.datetime.now(), seconds=60))
         else:
-            limit_sql = ""
+            end_time = timeutil.wind_time(datetime.datetime.now(), seconds=60)
+        if checkpoint:
+            start_time = checkpoint.date()
+            where_clauses.append("date >= '%s'" % timeutil.format_datetime(start_time, iso8601=False))
+            end_time = timeutil.at_minute(end_time)
+            where_clauses.append("date < '%s'" % timeutil.format_datetime(end_time, iso8601=False))
+            # Should I let the query handle this? Would be empty
+            if start_time >= end_time:
+                return
+        if where_clauses:
+            where_sql = "WHERE %s" % " AND ".join(where_clauses)
+        else:
+            where_sql = ""
 
         sql = '''SELECT
             date,
@@ -206,48 +181,21 @@ date cannot be null
             FROM historic_tape_bytes
             %s
             ORDER BY date, storage_group
-            %s
-            ''' % (checkpoint_sql, limit_sql)
+            ''' % (where_sql)
 
-        query_start_time = time.time()
-        DebugPrint(4, "Requesting new Enstore records %s" % sql)
-        new_checkpoint = None
-        new_checkpoint_record_id = None
+        DebugPrint(4, "Requesting new Enstore Storage records %s" % sql)
         for r in self.query(sql):
-            # skip records before the one checkpointed
-            if not ok_to_send:
-                if r['date'] > checkpoint_datetime:
-                    # send also the current record
-                    ok_to_send = True
-                elif self.get_record_id(r) == checkpoint_record_id:
-                    # send starting w/ the next record
-                    ok_to_send = True
-                    continue
-                else:
-                    continue
-            # Add handy data to job record
+            # Consider adding handy data to job record
             #r['cluster'] = self._cluster
             #self._addUserInfoIfMissing(r)
             #TODO: filter out invalid records (e.g. check for None values)?
             yield r
-            if checkpoint:
-                # psycopg2 returns datetime obj: timestamp->datetime, timestamp without time zone (naive)
-                # checkpoint will use naive timestamps, probe will convert later to UTC (enstore uses local time)
-                new_date = r['date']
-                if new_checkpoint is None or new_date > new_checkpoint:
-                    new_checkpoint = new_date
-                    new_checkpoint_record_id = self.get_record_id(r)
-        if new_checkpoint:
-            ## Using last value (new_checkpoint_record_id)
-            ##  Increment one second to avoid the last records matched in the next call.
-            ## The increment happens only if the checkpoint is in the past. If it is at the edge of
-            ## the time interval of the query (query_start_time), then there is no increment,
-            ## not to lose values that could be added with the same timestamp. Here duplicates are the lesser evil.
-            #new_checkpoint = timeutil.conditional_increment(new_checkpoint, query_start_time)
-            #print "****** MMDB Saving New Checkpoint: %s, %s, %s" % (type(new_checkpoint),
-            # new_checkpoint, datetime.datetime.fromtimestamp(new_checkpoint))
-            DebugPrint(4, "Saving new Enstore checkpoint %s" % new_checkpoint)
-            checkpoint.set_date_transaction_aux(new_checkpoint, 0, new_checkpoint_record_id)
+
+        # Not checking how old is the last record compared to the checkpoint (like in other probes).
+        # These entries are updated once in a while (monthly) and would trigger frequent warnings
+        if checkpoint:
+            DebugPrint(4, "Saving new Enstore Storage checkpoint %s" % end_time)
+            checkpoint.set_date_transaction(end_time)
 
     def _get_records_stub(self, limit=None):
         """get_records replacement for tests: records are from a pre-filled array"""
