@@ -31,7 +31,7 @@ def close_and_unlink_lock():
         fd.close()
 atexit.register(close_and_unlink_lock)
 
-def CheckPreconditions():
+def CheckPreconditions(check_enabled=True):
     """
     Checks the following things:
         - Probe is Enabled in the configuration.
@@ -44,9 +44,11 @@ def CheckPreconditions():
     Gratia must be initialized prior to calling this function.
     """
     probe_name = GratiaCore.Config.get_ProbeName()
-    enabled = GratiaCore.Config.getConfigAttribute("EnableProbe")
-    if (not enabled) or (enabled == "0") or (enabled.lower() == "false"):
-        raise Exception("Probe %s is not enabled" % probe_name)
+
+    if check_enabled:
+        enabled = GratiaCore.Config.getConfigAttribute("EnableProbe")
+        if (not enabled) or (enabled == "0") or (enabled.lower() == "false"):
+            raise Exception("Probe %s is not enabled" % probe_name)
 
     data_folder = GratiaCore.Config.get_DataFolder()
     if not (os.path.isdir(data_folder) and os.access(data_folder,

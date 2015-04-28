@@ -132,7 +132,10 @@ class GratiaProbe(object):
         self.set_verbose()
 
         # Sanity checks for the probe's runtime environment.
-        GratiaWrapper.CheckPreconditions()
+        if self._opts.enable:
+            GratiaWrapper.CheckPreconditions(check_enabled=False)
+        else:
+            GratiaWrapper.CheckPreconditions()
 
         if self._opts.sleep:
             rnd = random.randint(1, int(self._opts.sleep))
@@ -488,6 +491,9 @@ Command line usage: %prog
         parser.add_option("-c", "--checkpoint", help="Only reports records past"
             " checkpoint; default is to report all records.",
             dest="checkpoint", default=False, action="store_true")
+        parser.add_option("-e", "--enable", help="Force the probe to be enabled ignoring"
+            " the setting in the config file; default is False, follow the config file setting.",
+            dest="enable", default=False, action="store_true")
         parser.add_option("-r", "--recovery", 
             help="Recovers the records from come history or log file (e.g. condor_history, "
                  "accounting, ...), ignoring the live records. "
