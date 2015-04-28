@@ -466,7 +466,14 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
 
     def _load(self, target):
         pkl_file = open(target, 'rb')
-        self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
+        # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
+        vlist = cPickle.load(pkl_file)
+        self._dateStamp = vlist[0]
+        self._transaction = vlist[1]
+        if len(vlist) > 2:
+            self._aux = vlist[2]
+        else:
+            self._aux = None
         pkl_file.close()
 
     def get_val(self):
@@ -600,6 +607,29 @@ CHECKPOINTS = {
 }
 
 
+def load_checkpoint(target):
+    """Load an arbitrary Checkpoint and return it.
+    The type of checkpoint depends on the number of arguments in the pickle file.
+    """
+    cp = None
+    pkl_file = open(target, 'rb')
+        # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
+    vlist = cPickle.load(pkl_file)
+    # Assume that 3 parameters is DTA, 2 is DT, 1 is simple cp
+    if len(vlist) == 3:
+        cp = DateTransactionAuxCheckpoint(target)
+        cp.set_date_transaction_aux(*vlist)
+    elif len(vlist) == 2:
+        cp = DateTransactionCheckpoint(target)
+        cp.set_date_transaction(*vlist)
+    elif len(vlist) == 1:
+        p = DateTransactionAuxCheckpoint(target)
+        cp.set_val(vlist)
+    else:
+        print "Invalid length of checkpoint arguments %s (%s)" % (vlist, len(vlist))
+    return cp
+
+
 def test():
     print "Checkpoint test"
     print "File list (in %s)" % os.curdir
@@ -653,7 +683,7 @@ if __name__ == "__main__":
         usage(sys.argv[0])
         sys.exit(2)
     cp_fname = None
-    cp_type = DateTransactionCheckpoint
+    cp_type = None
     verbose = False
     for o, a in opts:
         if o == "-v":
@@ -682,7 +712,10 @@ if __name__ == "__main__":
     if args[0] == 'test':
         test()
         sys.exit(0)
-    cp = cp_type(cp_fname)
+    if cp_type is None:
+        cp = load_checkpoint(cp_fname)
+    else:
+        cp = cp_type(cp_fname)
     if args[0] == 'read':
         if isinstance(cp, DateTransactionCheckpoint):
             print "Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction())
@@ -692,6 +725,8 @@ if __name__ == "__main__":
         else:
             print "Checkpoint (%s/%s) value:\n%s" % (cp.get_target(), type(cp), repr(cp.get_val()))
     elif args[0] == 'write':
+        if cp_type is None:
+            cp_type = DateTransactionCheckpoint
         if len(args) < 2:
             print "Must provide at least one value to write (%s)" % args[1:]
             usage(sys.argv[0])
