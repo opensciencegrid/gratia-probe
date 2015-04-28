@@ -43,6 +43,18 @@ prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
 
 
+# This should be added as improvement of Gratia logging in gratia.common.debug
+def DebugPrintLevel(level, *args):
+    if level <= 0:
+        level_str = "CRITICAL"
+    elif level >= 4:
+        level_str = "DEBUG"
+    else:
+        level_str = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"][level]
+    level_str = "%s - EnstoreStorage: " % level_str
+    DebugPrint(level, level_str, *args)
+
+
 def warn_of_signal_generator(alarm):
     """Callback function for signal handling
     alarm is curried by the method setting the handler
