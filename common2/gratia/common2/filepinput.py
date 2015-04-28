@@ -276,7 +276,7 @@ class FileInput(ProbeInput):
 
     def start(self, static_info):
         """start: initialize variables"""
-        self._static_info = static_info
+        self.add_static_info(static_info)
         if static_info['InputDataDirectory']:
             self.data_dir = static_info['InputDataDirectory']
         if static_info['InputDataFile']:
