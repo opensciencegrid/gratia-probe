@@ -1,11 +1,8 @@
 #!/usr/bin/python
 __author__ = 'marcom'
 
-#import sys, os, stat
-#import time
-#import calendar
 
-import sys  # used for DebugPrint replacement
+import sys  # used for main and DebugPrint replacement
 import os
 #import logging
 import stat
@@ -455,7 +452,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
             txn - integer (can be None)
             aux - arbitrary pickable object or dictionary (can be None)
     """
-    def __init__(self, target, max_age=-1, default_age=30, full_precision=False):
+    def __init__(self, target, max_age=-1, default_age=30, full_precision=True):
         if not target:
             target = 'dtacheckpoint'
         # set the default (the ones not set in DateTransactionCheckpoint)
@@ -467,6 +464,8 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
     def _load(self, target):
         pkl_file = open(target, 'rb')
         # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
+        # Using a list instead of unpacking allows to upgrade from DateTransactionCheckpoint to
+        # DateTransactionAuxCheckpoint
         vlist = cPickle.load(pkl_file)
         self._dateStamp = vlist[0]
         self._transaction = vlist[1]
@@ -612,9 +611,16 @@ def load_checkpoint(target):
     The type of checkpoint depends on the number of arguments in the pickle file.
     """
     cp = None
-    pkl_file = open(target, 'rb')
-        # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
-    vlist = cPickle.load(pkl_file)
+    vlist = []
+    try:
+        pkl_file = open(target, 'rb')
+        vlist = cPickle.load(pkl_file)
+    except IOError, (errno, strerror):
+        print "Couldn't read the checkpoint file %s: %s." % (target, strerror)
+        raise
+    except EOFError:
+        print "The checkpoint file %s is empty or has wrong data (EOFError)." % (target,)
+        raise
     # Assume that 3 parameters is DTA, 2 is DT, 1 is simple cp
     if len(vlist) == 3:
         cp = DateTransactionAuxCheckpoint(target)
@@ -660,7 +666,8 @@ def test():
 def usage(name):
     outstr = """%(name)s [options] [test|read|write]
 %(name)s test - run a checksum test
-%(name)s [options] read - read a  DateTransactionCheckpoint
+%(name)s clear - remove a checksum file
+%(name)s [options] read - read a checkpoint
 %(name)s [options] write date [[transaction] aux] - write a checkpoint
      default: DateTransactionCheckpoint
 Options:
@@ -671,7 +678,6 @@ Options:
     print outstr % ({'name': name})
 
 if __name__ == "__main__":
-    import sys
     import getopt
     import time  # needed for python < 2.5
 
@@ -712,11 +718,17 @@ if __name__ == "__main__":
     if args[0] == 'test':
         test()
         sys.exit(0)
-    if cp_type is None:
-        cp = load_checkpoint(cp_fname)
-    else:
+    if args[0] == 'clear':
+        os.remove(cp_fname)
+        sys.exit(0)
+    cp = None
+    if cp_type is not None:
         cp = cp_type(cp_fname)
     if args[0] == 'read':
+        if cp is None:
+            # By default try to guess the checkpoint type from the file (this has no default values like when a
+            # checkpoint type is specified)
+            cp = load_checkpoint(cp_fname)
         if isinstance(cp, DateTransactionCheckpoint):
             print "Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction())
             if isinstance(cp, DateTransactionAuxCheckpoint):
@@ -725,14 +737,19 @@ if __name__ == "__main__":
         else:
             print "Checkpoint (%s/%s) value:\n%s" % (cp.get_target(), type(cp), repr(cp.get_val()))
     elif args[0] == 'write':
-        if cp_type is None:
-            cp_type = DateTransactionCheckpoint
+        if cp is None:
+            # DateTransactionCheckpoint is the default for write (read tries to guess the type in the file)
+            cp = DateTransactionCheckpoint(cp_fname)
         if len(args) < 2:
             print "Must provide at least one value to write (%s)" % args[1:]
             usage(sys.argv[0])
             sys.exit(2)
         for i in range(len(args), 4):
             args.append(None)
+        try:
+            args[2] = long(args[2])
+        except (ValueError, TypeError):
+            pass
         try:
             try:
                 # time.strptime()
