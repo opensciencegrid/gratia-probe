@@ -1,1 +1,2 @@
-10 5,17 * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-transfer/ProbeConfig && /usr/share/gratia/enstore-transfer/enstore-transfer -c -s 1800
+# To send the output to a specific email add MAILTO=user@host
+10,40 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-transfer/ProbeConfig && /usr/share/gratia/enstore-transfer/enstore-transfer -c -s 1800

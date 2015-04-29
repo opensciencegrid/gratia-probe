@@ -1,1 +1,4 @@
+# This probe may work with intervals spanning back several hours (observed times between mount and dismount are up to 80 hours). It is more efficient not to run it more than twice a day.
+# You may want to run it more frequently only if you need to recover a lot of old data and want to do it in chunks.
+# To send the output to a specific email add MAILTO=user@host
 10 5,17 * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-tapedrive/ProbeConfig && /usr/share/gratia/enstore-tapedrive/enstore-tapedrive -c -s 1800
