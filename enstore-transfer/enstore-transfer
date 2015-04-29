@@ -301,7 +301,7 @@ put NULL on duration if overall_rate is 0 (skip the value)
                 if last_record_time is None or new_date > last_record_time:
                     last_record_time = new_date
         if last_record_time and end_time:
-            if end_time > timeutil.wind_time(last_record_time, minutes=5):
+            if timeutil.wind_time(end_time, minutes=5) > last_record_time:
                 DebugPrint(3, "Warning, no records in the last 5 min of EnstoreTransfer probe")
         if checkpoint:
             DebugPrint(4, "Saving new Enstore Transfer checkpoint %s" % end_time)
