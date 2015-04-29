@@ -259,7 +259,7 @@ class LsfProbe(GratiaMeter):
             DebugPrint(4, "Using grid job ID %s also as RecordIdentity!" % global_id)
         elif jrecord.fromHost and jrecord.jobID and jrecord.startTimeEpoch:
             #
-            global_id = "%s:%s_%d" % (self._normalize_hostname(jrecord.fromHost), jrecord.jobID, jrecord.submitTimeEpoch)
+            global_id = "%s:%s_%d" % (self._normalize_hostname(jrecord.fromHost), jrecord.jobID, jrecord.startTimeEpoch)
             # ":".$urAcctlogInfo{lrmsId}."_".$urAcctlogInfo{start}
             DebugPrint(4, "Composing global job ID %s for RecordIdentity" % global_id)
         if not global_id:
