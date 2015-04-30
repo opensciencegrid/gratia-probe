@@ -1,3 +1,10 @@
-# Since enstore space data is currently updated once a month (23:30 of the last day) and may increase to weekly, there is no reason to run this probe more than once a day
+## Enstore storage can be invoked in 2 different ways. They will not interfere with each other. Only the first one may use the checkpoint. They send the same record, with different time stamps.
 # To send the output to a specific email add MAILTO=user@host
+## 1. Retrieving monthly historic data: the timestamp is of when the data was recoded in the historic table.
+# Since enstore space data is currently recorded once a month (23:30 of the last day of the month), there is no reason to run this probe more than once a day (even less)
+# The data collected at 23:30 on the last day of the month is dated to the first day of the month, e.g. 4/30 23:30 becomes 4/1 0:01 in the historic table.
+# Once old data is recovered this probe invocation can be disabled and only 2 kept
 40 0 * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-storage/ProbeConfig && /usr/share/gratia/enstore-storage/enstore-storage -c -s 1800
+## 2. Retrieving current space usage, option --current: the timestamp will be always the invocation time (past data cannot be retrieved because is not available in this table).
+# To be more regular omit the delay. Checkpoint makes no sense here (is ignored anyway). Invoke this once/day (or how frequently you want data points). Execution is few seconds.
+10 0 * * * root /usr/share/gratia/common/cron_check  /etc/gratia/enstore-storage/ProbeConfig && /usr/share/gratia/enstore-storage/enstore-storage --current

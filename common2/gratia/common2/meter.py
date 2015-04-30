@@ -469,14 +469,20 @@ class GratiaMeter(GratiaProbe):
 
     def get_opts_parser(self):
         """Return an options parser. It must invoke the parent option parser.
+
         All children will have the same structure to add options to the parent options parser.
+        If extending this function remember to:
+        1. invoke the parent with super() at the beginning and assign it to parser
+        2. return the parser at the end of get_opts_parser.
+        If you miss one of these two the probe will fail and there will probably be no output helping in troubleshooting
         """
         # this is not needed but for clarity
         parser = None
         try:
             # child classes will use the parent parser instead:
             # For GratiaMeter this will trigger an AttributeError because it is not defined in the parent
-            parser = super.get_opts_parser()
+            # Children should have their class name here
+            parser = super(GratiaMeter, self).get_opts_parser()
         except AttributeError:
             # base class initializes the parser
             parser = optparse.OptionParser(usage="""%prog [options] [input1 [input2]]

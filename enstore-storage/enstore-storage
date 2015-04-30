@@ -115,6 +115,95 @@ class EnstoreStorageInput(PgInput):
         #TODO: verify actual DB duplicate constraint
         return "%s-%s" % (srecord['date'], srecord['storage_group'])
 
+    def get_current_records(self, limit=None):
+        """
+        List rhe current usage of enstore storage. There is no checkpoint since this is a status DB, there are no
+        historical data, the time is always the one of the query.
+        :param limit: ignored (kept for compatibility)
+        :return:
+        The query suggested by Dmitry is equivalent to the one generating entries in the historic table
+        (historic_tape_bytes). The query used is derived from that.
+        Volume contains the current status of all enstore volumes
+        enstoredb=> \d volume
+                                           Table "public.volume"
+      Column       |            Type             |                        Modifiers
+-------------------+-----------------------------+----------------------------------------------------------
+ id                | integer                     | not null default nextval(('volume_seq'::text)::regclass)
+ label             | character varying           |
+ block_size        | integer                     | default 0
+ capacity_bytes    | bigint                      | default 0
+ declared          | timestamp without time zone |
+ eod_cookie        | character varying           |
+ first_access      | timestamp without time zone |
+ last_access       | timestamp without time zone |
+ library           | character varying           |
+ media_type        | character varying           |
+ non_del_files     | integer                     | default 0
+ remaining_bytes   | bigint                      | default 0
+ sum_mounts        | integer                     | default 0
+ sum_rd_access     | integer                     | default 0
+ sum_rd_err        | integer                     | default 0
+ sum_wr_access     | integer                     | default 0
+ sum_wr_err        | integer                     | default 0
+ system_inhibit_0  | character varying           |
+ system_inhibit_1  | character varying           |
+ si_time_0         | timestamp without time zone |
+ si_time_1         | timestamp without time zone |
+ user_inhibit_0    | character varying           |
+ user_inhibit_1    | character varying           |
+ storage_group     | character varying           |
+ file_family       | character varying           |
+ wrapper           | character varying           |
+ comment           | character varying           |
+ write_protected   | character(1)                | default 'u'::bpchar
+ active_files      | integer                     | default 0
+ deleted_files     | integer                     | default 0
+ unknown_files     | integer                     | default 0
+ active_bytes      | bigint                      | default 0
+ deleted_bytes     | bigint                      | default 0
+ unknown_bytes     | bigint                      | default 0
+ modification_time | timestamp without time zone |
+Indexes:
+    "volume_pkey" PRIMARY KEY, btree (id)
+    "volume_label_key" UNIQUE CONSTRAINT, btree (label)
+    "volume_declared_idx" btree (declared)
+    "volume_eod_cookie_idx" btree (eod_cookie)
+    "volume_file_family_idx" btree (file_family)
+    "volume_label_key_idx" btree (label)
+    "volume_last_access_idx" btree (last_access)
+    "volume_library_idx" btree (library)
+    "volume_media_type_idx" btree (media_type)
+    "volume_modification_time_idx" btree (modification_time)
+    "volume_remaining_bytes_idx" btree (remaining_bytes)
+    "volume_storage_group_idx" btree (storage_group)
+    "volume_system_inhibit_0_idx" btree (system_inhibit_0)
+    "volume_system_inhibit_1_idx" btree (system_inhibit_1)
+    "volume_user_inhibit_0_idx" btree (user_inhibit_0)
+    "volume_user_inhibit_1_idx" btree (user_inhibit_1)
+    "volume_wrapper_idx" btree (wrapper)
+    "volume_write_protected_idx" btree (write_protected)
+Check constraints:
+    "volume_write_protected_check" CHECK (write_protected = 'u'::bpchar OR write_protected = 'y'::bpchar OR write_protected = 'n'::bpchar)
+Referenced by:
+    TABLE "file" CONSTRAINT "$1" FOREIGN KEY (volume) REFERENCES volume(id)
+    TABLE "state" CONSTRAINT "$1" FOREIGN KEY (volume) REFERENCES volume(id) ON DELETE CASCADE
+    TABLE "volume_audit_counter" CONSTRAINT "$1" FOREIGN KEY (volume) REFERENCES volume(id) ON DELETE CASCADE
+    TABLE "volume_audit" CONSTRAINT "$1" FOREIGN KEY (volume) REFERENCES volume(id) ON DELETE CASCADE
+        """
+        sql = '''SELECT now() as date,
+storage_group,
+coalesce(sum(active_bytes),0) as active_bytes,
+coalesce((sum(active_bytes)+sum(unknown_bytes)+sum(deleted_bytes)),0) as total_bytes,
+coalesce(sum(active_files),0) as active_files,
+coalesce((sum(active_files)+sum(unknown_files)+sum(deleted_files)),0) as total_files
+FROM volume WHERE system_inhibit_0!='DELETED' and
+media_type not in ('null','disk') and library not like '%shelf%' and library not like '%test%'
+GROUP BY storage_group ORDER BY storage_group'''
+
+        DebugPrint(4, "Requesting new current Enstore Storage records %s" % sql)
+        for r in self.query(sql):
+            yield r
+
     def get_records(self, limit=None):
         """Select the usage records from the storage table
         enstoredb=> \d historic_tape_bytes;
@@ -237,6 +326,27 @@ class EnstoreStorageProbe(GratiaMeter):
     def __init__(self):
         GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreStorageInput()
+        # --current invokes get_current_records which ignores the checkpoint or other flow options
+        if self._opts.current:
+            DebugPrint(4, "Selecting current records. Will ignore checkpoint and flow options.")
+            self._get_records = self._probeinput.get_current_records
+        else:
+            self._get_records = self._probeinput.get_records
+
+    def get_opts_parser(self):
+        """Return an options parser. Extends the GratiaMeter one.
+        :return: option parser with new options
+        """
+        # extend the parent parser
+        parser = super(EnstoreStorageProbe, self).get_opts_parser()
+
+        # add (other) options
+        parser.add_option(
+            "--current",
+            help="Query the Volume table (with the current space usage) instead of the historic_tape_bytes.",
+            dest="current", default=False, action="store_true"
+        )
+        return parser
 
     def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
         """Return a StorageElement record: name and VO info. Timestamp is set only if provided"""
@@ -330,7 +440,8 @@ class EnstoreStorageProbe(GratiaMeter):
 
         srecord_date = None
         # Loop over storage records
-        for srecord in self._probeinput.get_records():
+        # These can be either historic records or a current snapshot depending on CLI option
+        for srecord in self._get_records():
             if srecord_date is None:
                 srecord_date = srecord['date']
             else:
