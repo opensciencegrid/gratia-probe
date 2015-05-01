@@ -120,6 +120,7 @@ class EnstoreTapeDriveInput(PgInput):
 
     def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
         """Add a checkpoint, default file name is cfp-INPUT_NAME
+
         :param fname: checkpoint file name (considered as prefix unless fullname=True)
                 file name is fname-INPUT_NAME
         :param max_val: trim value for the checkpoint
@@ -179,6 +180,32 @@ class EnstoreTapeDriveInput(PgInput):
         return self._get_version('enstore')
 
     @staticmethod
+    def get_dismount_mount_record(r, start_time):
+        """Provide a mount record to trigger the dismount of a previous mount record r.
+
+        It is used if no record on the same tape is found after the limit is reached.
+        This record will never trigger a Gratia record since it is the last one sent to the meter
+        and no other record will follow on the same volume.
+
+        :param r: mount record to dismount
+        :param start_time: tart time of the new mount record
+        :return: mount record (dictionary with DB record keys)
+        """
+        retv = {'state': 'M',
+                'node': r['node'],
+                'volume': r['volume'],
+                'type': r['type'],
+                'logname': r['logname'],
+                'volume': r['volume'],
+                'start': start_time,
+                'finish': timeutil.wind_time(start_time, seconds=20, backward=False),
+                'storage_group': 'PROBE_UTILITY',
+                'reads': 0,
+                'writes':0
+                }
+        return retv
+
+    @staticmethod
     def get_record_id(r):
         # This record should be unique. Only one operation per volume is possible
         #TODO: verify actual DB duplicate constraint
@@ -188,6 +215,7 @@ class EnstoreTapeDriveInput(PgInput):
 
     def get_records(self, limit=None):
         """Select the mounting records from the tape_mounts table
+
 accounting=> \d tape_mounts
                Table "public.tape_mounts"
     Column     |            Type             | Modifiers
@@ -219,6 +247,7 @@ Indexes:
         start_time = None
         # initialized anyway below -  end_time = datetime.datetime.now()
         ok_to_send_time = None
+        end_by_limit = False
 
         if checkpoint:
             start_time = checkpoint.date()
@@ -251,21 +280,31 @@ Indexes:
             DebugPrint(4, "Sending OK_TO_SEND - no checkpoint")
             yield OK_TO_SEND_RECORD
 
-        if limit:
+        if limit > 0:
             end_time = timeutil.wind_time(start_time, hours=limit, backward=False)
-            # If limit is 0, check that the end_time is not in the future
-            end_time = min(end_time, timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay))
+            # If input_delay is 0, check that the end_time is not in the future
+            delay_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
+            if end_time > delay_time:
+                end_time = delay_time
+            else:
+                end_by_limit = True
+            #end_time = min(end_time, timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay))
         else:
             end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
         if checkpoint or limit or self.input_delay>0:
             end_time = timeutil.at_minute(end_time)
             where_clauses.append("start < '%s'" % timeutil.format_datetime(end_time, iso8601=False))
-            if ok_to_send_time is not None and ok_to_send_time >= end_time:
+            if ok_to_send_time is not None and ok_to_send_time >= timeutil.wind_time(end_time, seconds=60):
                 # If ok_to_send_time is not None, then checkpoint_interval was assigned (in checkpoint block)
-                DebugPrint(2, "End time comes before new records are encountered (%s =< %s)" %
+                DebugPrint(2, "End time comes before new records are encountered (%s - %s <= 60sec)" %
                            (end_time, ok_to_send_time))
-                DebugPrint(2, "To avoid deadlock DataLengthMax in the config files must be > %s" %
-                           (checkpoint_interval/3600))
+                if end_by_limit:
+                    DebugPrint(2, "To avoid misinterpreting records DataLengthMax in the config file must be > %s" %
+                               (checkpoint_interval/3600))
+                else:
+                    DebugPrint(2, "Either the probe runs too frequently or DataLengthMax may be too short. "
+                                  "Current interval (hours):" %
+                               (checkpoint_interval/3600))
         if start_time is not None:
             if self.input_min_interval > 0:
                 if start_time > timeutil.wind_time(end_time, seconds=self.input_min_interval):
@@ -296,6 +335,8 @@ Indexes:
 
         DebugPrint(4, "Requesting new EnstoreTapeDrive records %s" % sql)
         last_record_start_time = None
+        first_record_start_time = None
+        first_record = None
         mount_checkpoint = {}
         for r in self.query(sql):
             # Filter out values that are not acceptable
@@ -315,6 +356,9 @@ Indexes:
             if checkpoint:
                 state = r['state']
                 last_record_start_time = r['start']  # using start because finish could be NULL
+                if first_record is None:
+                    first_record = r
+                    first_record_start_time = last_record_start_time
                 if state == 'M':
                     mount_checkpoint[r['volume']] = last_record_start_time
                 elif state == 'D':
@@ -331,7 +375,18 @@ Indexes:
             first_unresolved_mount = end_time
             for i in mount_checkpoint.values():
                 if i is not None and i < first_unresolved_mount:
-                    first_unresolved_mount = i
+                    # If there are records (exist a i not None), first record variables are guaranteed not None
+                    if i > first_record_start_time or not end_by_limit:
+                        # it is past the first record or the time span is shorter than DataLengthMax
+                        # this guarantees that the new invocation will may have more records
+                        first_unresolved_mount = i
+                    else:
+                        # skip i for checkpoint consideration
+                        DebugPrint(2,
+                                   "Warning, reached DataLengthMax while the first mount record is still not matched.\n"
+                                   "Sending a fake dismount record and advancing the checkpoint past it")
+                        yield self.get_dismount_mount_record(first_record, end_time)
+
             if first_unresolved_mount == end_time:
                 checkpoint_interval = 0
             else:
