@@ -13,8 +13,10 @@ import gratia.common2.timeutil as timeutil
 
 class _EnstoreTapeDriveInputStub:
     """Stub class, needs to be defined before the regular one, to avoid NameError
-    """
-    """ Query: accounting=> select * from tape_mounts where start > '2014-11-15';
+
+    Query producing the data in the test array:
+::
+Query: accounting=> select * from tape_mounts where start > '2014-11-15';
        node        | volume |    type     |   logname   |        start        |       finish        | state | storage_group | reads | writes
 -------------------+--------+-------------+-------------+---------------------+---------------------+-------+---------------+-------+--------
  enmvr021.fnal.gov | TST082 | ULTRIUM-TD4 | LTO4_021BMV | 2014-11-21 12:40:24 | 2014-11-21 12:41:13 | M     | ANM           |     0 |      0
@@ -99,6 +101,7 @@ class _EnstoreTapeDriveInputStub:
 
 class EnstoreTapeDriveInput(PgInput):
     """Get tape drive usage information from the Enstore accounting DB.
+
     The table has no monotone unique ID.
     Uses DateTransactionCheckpoint and stores in the transaction field the number of seconds between the
     last unhandled mount (checkpoint date) and the last dismount. Date include the extremes not to loose record when
@@ -216,29 +219,36 @@ class EnstoreTapeDriveInput(PgInput):
     def get_records(self, limit=None):
         """Select the mounting records from the tape_mounts table
 
-accounting=> \d tape_mounts
-               Table "public.tape_mounts"
-    Column     |            Type             | Modifiers
----------------+-----------------------------+-----------
- node          | character varying           | not null
- volume        | character varying           | not null
- type          | character varying(32)       | not null
- logname       | character varying(16)       | not null
- start         | timestamp without time zone | not null
- finish        | timestamp without time zone |
- state         | character(1)                | not null
- storage_group | character varying           |
- reads         | integer                     |
- writes        | integer                     |
-Indexes:
-    "tape_mnts_node_idx" btree (node)
-    "tape_mnts_oid_idx" btree (oid)
-    "tape_mnts_start_idx" btree (start)
-    "tape_mnts_type_idx" btree (type)
-    "tape_mnts_volume_idx" btree (volume)
-    "tape_mounts_logname_idx" btree (logname)
-    "tape_mounts_storage_group_idx" btree (storage_group)
-    The time zone of the timestamps is the local one
+Database table:
+::
+    accounting=> \d tape_mounts
+                   Table "public.tape_mounts"
+        Column     |            Type             | Modifiers
+    ---------------+-----------------------------+-----------
+     node          | character varying           | not null
+     volume        | character varying           | not null
+     type          | character varying(32)       | not null
+     logname       | character varying(16)       | not null
+     start         | timestamp without time zone | not null
+     finish        | timestamp without time zone |
+     state         | character(1)                | not null
+     storage_group | character varying           |
+     reads         | integer                     |
+     writes        | integer                     |
+    Indexes:
+        "tape_mnts_node_idx" btree (node)
+        "tape_mnts_oid_idx" btree (oid)
+        "tape_mnts_start_idx" btree (start)
+        "tape_mnts_type_idx" btree (type)
+        "tape_mnts_volume_idx" btree (volume)
+        "tape_mounts_logname_idx" btree (logname)
+        "tape_mounts_storage_group_idx" btree (storage_group)
+        The time zone of the timestamps is the local one
+
+Records are selected and transformed for the probe consumption.
+
+:param limit: maximum number of hours to include in the query
+:yield: record for the probe
         """
         OK_TO_SEND_RECORD = {'state': 'oktosend', 'volume': 'oktosend'}
         checkpoint = self.checkpoint
@@ -515,6 +525,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
         DebugPrint(4, "Sending tape drive record for VO %s: %s" % (mrecord['storage_group'], local_id))
         Gratia.Send(r)
 
+    @staticmethod
     def mount_init(srecord, estimated=False):
         """Create a mount record copying the values form the input
 
@@ -532,9 +543,9 @@ class EnstoreTapeDriveProbe(GratiaMeter):
             'estimated': estimated
         }
         return retv
-    mount_init = staticmethod(mount_init)
 
     def main(self):
+        """Main loop: retrieve the data and send it to the Gratia collector"""
         # Initialize the probe an the input
         self.start()
         DebugPrint(4, "Enstore tape drive probe started")

@@ -3,7 +3,7 @@
 This module parses the user-vo-map file, an OSG-specific file format
 that maps a given username to a VO.
 
-Here's a sample file:
+Here's a sample file::
 
 ************************************************
 # User-VO map
@@ -26,6 +26,7 @@ ligo ligo
 des des
 glow glow
 ************************************************
+
 
 The line starting with '#voi' is the lower-case version of all VO names
 The line starting with '#VOc' is the proper-case version of all VO names

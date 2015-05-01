@@ -1,19 +1,13 @@
 #!/usr/bin/python
 #
-# sample_probe - Python-based sample probe for Gratia
-#       By Marco Mambelli; Jun 9, 2014
+# File input using iterators
+# By Marco Mambelli; Jun 9, 2014
 #
 
 import os
 import re
 import glob
-
-#import sys
-#import time
-#import random
 import os.path
-#import optparse
-#import subprocess
 
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaCore as GratiaCore
@@ -118,8 +112,7 @@ from probeinput import ProbeInput, IgnoreRecordException
 
 
 class FileInput(ProbeInput):
-    """
-    Input file
+    """Input file
     """
 
     ########## Utility functions ########
@@ -140,8 +133,8 @@ class FileInput(ProbeInput):
     FILE_FILTER_RE = re.compile("^datafile\.(?:.*?\#)?\d+\.log")
 
     def name_filter_re(self, name):
-        """
-        Verify that it is a valid name using the regex FILE_FILTER_RE
+        """Verify that it is a valid name using the regex FILE_FILTER_RE
+
         :param name: name of the file or directory
         :return: True if match, False otherwise
         """
@@ -166,13 +159,13 @@ class FileInput(ProbeInput):
 
     @staticmethod
     def iter_tree(top_directory, dirname_filter=None, filename_filter=None):
-        """
-        Generator: iterate over all relevant files in the directory tree, yielding one
+        """Generator: iterate over all relevant files in the directory tree, yielding one
         (file name) at a time.
+
         :param top_directory:
         :param dirname_filter:
         :param filename_filter:
-        :return:
+        :yield: file name (path)
         """
         # find all .txt documents, no matter how deep under top_directory
         for root, dirs, files in os.walk(top_directory):
@@ -190,15 +183,15 @@ class FileInput(ProbeInput):
 
     @staticmethod
     def iter_directory(directory, filename_filter=None, filename_re="*", sort=None):
-        """
-        Generator: iterate over all relevant files in the directory, yielding one
+        """Generator: iterate over all relevant files in the directory, yielding one
         (file name) at a time.
+
         :param directory: directory name
         :param filename_filter: function accepting a file name and returning if it is valid True/False
                                 (Default: None)
         :param filename_re: regular expression to filter file names (Default: *)
         :param sort: sorting of file names (Default: None)
-        :return:
+        :yield: file name (path)
         """
         # find all files matching the RE
         files = [os.path.basename(i) for i in glob.glob(os.path.join(directory, filename_re))]
@@ -228,10 +221,10 @@ class FileInput(ProbeInput):
 
     @staticmethod
     def iter_file(fname, buffering=None):
-        """
-        Generator returning all the lines of the file
+        """Generator returning all the lines of the file
+
         :param fname: file name
-        :return:
+        :yield: line of the file
         """
         # Discussion about file buffer size
         # http://seann.herdejurgen.com/resume/samag.com/html/v11/i04/a6.htm
@@ -244,8 +237,8 @@ class FileInput(ProbeInput):
 
     @staticmethod
     def iter_enumerate_file(fname, buffering=None):
-        """
-        Generator returning all the lines of the file
+        """Generator returning all the lines of the file
+
         :param fname: file name
         :return: a tuple containing the line, the line number and the position in the file
         """
@@ -284,6 +277,7 @@ class FileInput(ProbeInput):
 
     def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
         """Add a checkpoint, default file name is cfp-INPUT_NAME
+
         :param fname: checkpoint file name (considered as prefix unless fullname=True)
                 file name is fname-INPUT_NAME
         :param max_val: trim value for the checkpoint
@@ -316,6 +310,7 @@ class FileInput(ProbeInput):
     def get_named_records(self, limit=None):
         """Return a generator yielding id, record tuples with
         files content (whole file) as records and file name as ids
+
         :param limit: return only the first limit records
         :return:
         """
@@ -333,6 +328,7 @@ class FileInput(ProbeInput):
 
     def finalize_record(self, record_id):
         """Delete the file containing the record (the file name is passed as record_id)
+
         :param record_id: file name of the record
         :return: True if the record is found and the action performed
         """

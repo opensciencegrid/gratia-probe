@@ -8,66 +8,68 @@ import gratia.common.Gratia as Gratia
 
 from gratia.common2.meter import GratiaMeter
 from gratia.common2.pgpinput import PgInput
-from gratia.common2.checkpoint import DateTransactionAuxCheckpoint
 import gratia.common2.timeutil as timeutil
 
 
 class _EnstoreTransferInputStub:
     """Stub class, needs to be defined before the regular one, to avoid NameError
 
-    Query: accounting=> select * from xfer_by_day where date>'2014-08-25';
-    date    | storage_group |   read    |    write     | n_read | n_write
-------------+---------------+-----------+--------------+--------+---------
- 2014-08-26 | ANM           |         0 | 115070377984 |      0 |    7377
- 2014-08-27 | ANM           |  11535362 |            0 |      3 |       0
- 2014-08-28 | ANM           |  94470144 |            0 |      3 |       0
- 2014-08-29 | ALEX          | 900096000 |            0 |      3 |       0
+    Query providing the records loaded in the arrays:
+::
+    accounting=> select * from xfer_by_day where date>'2014-08-25';
+        date    | storage_group |   read    |    write     | n_read | n_write
+    ------------+---------------+-----------+--------------+--------+---------
+     2014-08-26 | ANM           |         0 | 115070377984 |      0 |    7377
+     2014-08-27 | ANM           |  11535362 |            0 |      3 |       0
+     2014-08-28 | ANM           |  94470144 |            0 |      3 |       0
+     2014-08-29 | ALEX          | 900096000 |            0 |      3 |       0
 
- accounting=> select * from encp_xfer where date > '2014-08-27';
-        date         |       node       |  pid  | username |                                                              src                                                               |
-                                           dst                                                       |   size    | rw | overall_rate | network_rate | drive_rate |                      volume
-             |      mover      |  drive_id   |  drive_sn  |    elapsed    |     media_changer      | mover_interface |   driver   | storage_group |    encp_ip    |               encp_id
-| disk_rate | transfer_rate |          encp_version          |   file_family    | wrapper  |  library
----------------------+------------------+-------+----------+--------------------------------------------------------------------------------------------------------------------------------+-----------
------------------------------------------------------------------------------------------------------+-----------+----+--------------+--------------+------------+--------------------------------------
--------------+-----------------+-------------+------------+---------------+------------------------+-----------------+------------+---------------+---------------+-------------------------------------
-+-----------+---------------+--------------------------------+------------------+----------+------------
- 2014-08-27 13:58:15 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1MB_002        | /dev/null
-                                                                                                     |   1048577 | r  |        14636 |      9150443 |     810559 | TST066
-             | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 | 72.5509800911 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165822-7770-0
-|   9150443 |       4533208 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
- 2014-08-27 13:58:23 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/10MB_002       | /dev/null
-                                                                                                     |  10485761 | r  |      1571134 |      7546562 |    7455045 | TST066
-             | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 |  7.6930038929 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165895-7770-1
-|   7546562 |       4215884 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
- 2014-08-27 13:58:24 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1KB_001        | /dev/null
-                                                                                                     |      1024 | r  |          783 |     12341860 |      55531 | TST066
-             | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 | 1.61123895645 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165903-7770-2
-|  12341860 |           914 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
- 2014-08-28 16:04:53 | dmsen03.fnal.gov |  8583 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-08-26T17:20:35.959Z.tar              | /volumes/a
-ggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-26T17:20:35.959Z.tar |  74547200 | r  |       421630 |     60217146 |   39859591 | TST084
-             | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 487.945667982 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409259405-8583-0
-|  67758717 |      34457635 | v3_11c CVS $Revision$ encp.pyc | FF1_NEW          | cpio_odc | LTO4GS
- 2014-08-28 16:04:55 | dmsen06.fnal.gov | 20374 | enstore  | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/7/dmsen06_f2f6cda82d6e11e4af4700304831518c.data | /dev/null
-                                                                                                     |  10485760 | r  |        21336 |     76052612 |   77875300 | common1:ANM.FF1_NEW.cpio_odc:2013-07-
-02T14:33:50Z | disk5.mover     | Unknown     | 0          | 492.506582975 | UNKNOWN                | dmsen03         | DiskDriver | ANM           | 131.225.13.37 | dmsen06.fnal.gov-1409259403-20374-0
-|  76052612 |      58762140 | v3_11c CVS $Revision$ encp     | FF1_NEW          | cpio_odc | diskSF_NEW
- 2014-08-28 16:07:06 | dmsen06.fnal.gov | 20733 | enstore  | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/4/dmsen06_e8ea85a22d6e11e4a6bc00304831518c.data | /dev/null
-                                                                                                     |   9437184 | r  |     41230225 |     79026540 |   88431780 | common1:ANM.FF1_NEW.cpio_odc:2013-07-
-02T14:33:50Z | disk7.mover     | Unknown     | 0          | 1.27875304222 | UNKNOWN                | dmsen03         | DiskDriver | ANM           | 131.225.13.37 | dmsen06.fnal.gov-1409260025-20733-0
-|  79026540 |      61668401 | v3_11c CVS $Revision$ encp     | FF1_NEW          | cpio_odc | diskSF_NEW
- 2014-08-29 19:59:27 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:21:25.77Z.tar          | /dev/null
-                                                                                                     | 300032000 | r  |      2096428 |    112118327 |  135221272 | TST083
-             | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 144.629033089 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360223-11611-0
-| 112118327 |     107459278 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
- 2014-08-29 20:00:34 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:27:56.844Z.tar         | /dev/null
-                                                                                                     | 300032000 | r  |      4526877 |     80136089 |   85963956 | TST083
-             | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 67.3343689442 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360367-11611-1
-|  80136089 |      77746704 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
- 2014-08-29 20:02:16 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T18:58:22.864Z.tar         | /dev/null
-                                                                                                     | 300032000 | r  |      2987800 |    111891277 |  135991153 | TST083
-             | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 101.175196171 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360435-11611-2
-| 111891277 |     107261667 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
+::
+    accounting=> select * from encp_xfer where date > '2014-08-27';
+            date         |       node       |  pid  | username |                                                              src                                                               |
+                                               dst                                                       |   size    | rw | overall_rate | network_rate | drive_rate |                      volume
+                 |      mover      |  drive_id   |  drive_sn  |    elapsed    |     media_changer      | mover_interface |   driver   | storage_group |    encp_ip    |               encp_id
+    | disk_rate | transfer_rate |          encp_version          |   file_family    | wrapper  |  library
+    ---------------------+------------------+-------+----------+--------------------------------------------------------------------------------------------------------------------------------+-----------
+    -----------------------------------------------------------------------------------------------------+-----------+----+--------------+--------------+------------+--------------------------------------
+    -------------+-----------------+-------------+------------+---------------+------------------------+-----------------+------------+---------------+---------------+-------------------------------------
+    +-----------+---------------+--------------------------------+------------------+----------+------------
+     2014-08-27 13:58:15 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1MB_002        | /dev/null
+                                                                                                         |   1048577 | r  |        14636 |      9150443 |     810559 | TST066
+                 | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 | 72.5509800911 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165822-7770-0
+    |   9150443 |       4533208 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
+     2014-08-27 13:58:23 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/10MB_002       | /dev/null
+                                                                                                         |  10485761 | r  |      1571134 |      7546562 |    7455045 | TST066
+                 | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 |  7.6930038929 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165895-7770-1
+    |   7546562 |       4215884 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
+     2014-08-27 13:58:24 | dmsen03.fnal.gov |  7770 | root     | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/tape/encp_test_for_enstore/file_clerk3/test_files_for_enstore/1KB_001        | /dev/null
+                                                                                                         |      1024 | r  |          783 |     12341860 |      55531 | TST066
+                 | LTO4_022.mover  | ULTRIUM-TD4 | 1310249035 | 1.61123895645 | SL8500GS.media_changer | enmvr022        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409165903-7770-2
+    |  12341860 |           914 | v3_11c CVS $Revision$ encp.pyc | volume_read_test | cpio_odc | LTO4GS
+     2014-08-28 16:04:53 | dmsen03.fnal.gov |  8583 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ANM.FF1_NEW.cpio_odc/TST084/package-M1W-2014-08-26T17:20:35.959Z.tar              | /volumes/a
+    ggread/cache/tmp_stage/package-M1W-2014-08-26T17:20:35.959Z/package-M1W-2014-08-26T17:20:35.959Z.tar |  74547200 | r  |       421630 |     60217146 |   39859591 | TST084
+                 | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 487.945667982 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ANM           | 131.225.13.26 | dmsen03.fnal.gov-1409259405-8583-0
+    |  67758717 |      34457635 | v3_11c CVS $Revision$ encp.pyc | FF1_NEW          | cpio_odc | LTO4GS
+     2014-08-28 16:04:55 | dmsen06.fnal.gov | 20374 | enstore  | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/7/dmsen06_f2f6cda82d6e11e4af4700304831518c.data | /dev/null
+                                                                                                         |  10485760 | r  |        21336 |     76052612 |   77875300 | common1:ANM.FF1_NEW.cpio_odc:2013-07-
+    02T14:33:50Z | disk5.mover     | Unknown     | 0          | 492.506582975 | UNKNOWN                | dmsen03         | DiskDriver | ANM           | 131.225.13.37 | dmsen06.fnal.gov-1409259403-20374-0
+    |  76052612 |      58762140 | v3_11c CVS $Revision$ encp     | FF1_NEW          | cpio_odc | diskSF_NEW
+     2014-08-28 16:07:06 | dmsen06.fnal.gov | 20733 | enstore  | /pnfs/fs/usr/data2/file_aggregation/LTO4/moibenko/torture_test/new_lib/dmsen06/4/dmsen06_e8ea85a22d6e11e4a6bc00304831518c.data | /dev/null
+                                                                                                         |   9437184 | r  |     41230225 |     79026540 |   88431780 | common1:ANM.FF1_NEW.cpio_odc:2013-07-
+    02T14:33:50Z | disk7.mover     | Unknown     | 0          | 1.27875304222 | UNKNOWN                | dmsen03         | DiskDriver | ANM           | 131.225.13.37 | dmsen06.fnal.gov-1409260025-20733-0
+    |  79026540 |      61668401 | v3_11c CVS $Revision$ encp     | FF1_NEW          | cpio_odc | diskSF_NEW
+     2014-08-29 19:59:27 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:21:25.77Z.tar          | /dev/null
+                                                                                                         | 300032000 | r  |      2096428 |    112118327 |  135221272 | TST083
+                 | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 144.629033089 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360223-11611-0
+    | 112118327 |     107459278 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
+     2014-08-29 20:00:34 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T19:27:56.844Z.tar         | /dev/null
+                                                                                                         | 300032000 | r  |      4526877 |     80136089 |   85963956 | TST083
+                 | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 67.3343689442 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360367-11611-1
+    |  80136089 |      77746704 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
+     2014-08-29 20:02:16 | dmsen03.fnal.gov | 11611 | root     | /pnfs/fs/usr/data2/file_aggregation/packages/ALEX.TestClone_7.cpio_odc/TST083/package-M2W-2014-07-30T18:58:22.864Z.tar         | /dev/null
+                                                                                                         | 300032000 | r  |      2987800 |    111891277 |  135991153 | TST083
+                 | LTO4_021B.mover | ULTRIUM-TD4 | 1310206564 | 101.175196171 | SL8500GS.media_changer | enmvr021        | FTTDriver  | ALEX          | 131.225.13.26 | dmsen03.fnal.gov-1409360435-11611-2
+    | 111891277 |     107261667 | v3_11c CVS $Revision$ encp.pyc | TestClone_7      | cpio_odc | LTO4GS
     """
 
     value_matrix_summ = [['2014-08-26', 'ANM', 0, 115070377984, 0, 7377],
@@ -185,59 +187,65 @@ class EnstoreTransferInput(PgInput):
 
     def get_records(self, limit=None):
         """Select the transfer records from the transfer table
-        accounting=> \d encp_xfer;
-                Table "public.encp_xfer"
-    Column      |            Type             | Modifiers
------------------+-----------------------------+-----------
-date            | timestamp without time zone | not null - StartTime
-node            | character varying           | not null - hostname?
-pid             | integer                     | not null
-username        | character varying(32)       | not null - LocalUser
-src             | text                        | not null +- FileName (depending on direction)
-dst             | text                        | not null +
-size            | bigint                      | not null - size in Network
-rw              | character(1)                | not null - isNew r->0, w->1
-overall_rate    | bigint                      | not null
-network_rate    | bigint                      | not null
-drive_rate      | bigint                      | not null
-volume          | character varying           | not null
-mover           | character varying(32)       | not null
-drive_id        | character varying(16)       | not null
-drive_sn        | character varying(16)       | not null
-elapsed         | double precision            | not null
-media_changer   | character varying(32)       | not null
-mover_interface | character varying(32)       | not null
-driver          | character varying(16)       | not null
-storage_group   | character varying(16)       | not null
-encp_ip         | character varying(16)       | not null
-encp_id         | character varying(64)       | not null
-disk_rate       | bigint                      |
-transfer_rate   | bigint                      |
-encp_version    | character varying(48)       |
-file_family     | character varying           |
-wrapper         | character varying           |
-library         | character varying           |
-Indexes:
-    "encp_error_library_idx" btree (library)
-    "encp_xfer_library_idx" btree (library)
-    "xfr_date_idx" btree (date)
-    "xfr_file_family_idx" btree (file_family)
-    "xfr_media_changer_idx" btree (media_changer)
-    "xfr_mover_idx" btree (mover)
-    "xfr_node_idx" btree (node)
-    "xfr_oid_idx" btree (oid)
-    "xfr_pid_idx" btree (pid)
-    "xfr_storage_group_idx" btree (storage_group)
-    "xfr_user_idx" btree (username)
-    "xfr_volume_idx" btree (volume)
-    "xfr_wrapper_idx" btree (wrapper)
 
-encp data:
-file - file in enstore (depends from read/write)
-node is the client, the other is enstore interface
-mover_interface (default   .fnal.gov)
-encp_id - unique ID
-put NULL on duration if overall_rate is 0 (skip the value)
+Database table:
+::
+    accounting=> \d encp_xfer;
+                    Table "public.encp_xfer"
+        Column      |            Type             | Modifiers
+    -----------------+-----------------------------+-----------
+    date            | timestamp without time zone | not null - StartTime
+    node            | character varying           | not null - hostname?
+    pid             | integer                     | not null
+    username        | character varying(32)       | not null - LocalUser
+    src             | text                        | not null +- FileName (depending on direction)
+    dst             | text                        | not null +
+    size            | bigint                      | not null - size in Network
+    rw              | character(1)                | not null - isNew r->0, w->1
+    overall_rate    | bigint                      | not null
+    network_rate    | bigint                      | not null
+    drive_rate      | bigint                      | not null
+    volume          | character varying           | not null
+    mover           | character varying(32)       | not null
+    drive_id        | character varying(16)       | not null
+    drive_sn        | character varying(16)       | not null
+    elapsed         | double precision            | not null
+    media_changer   | character varying(32)       | not null
+    mover_interface | character varying(32)       | not null
+    driver          | character varying(16)       | not null
+    storage_group   | character varying(16)       | not null
+    encp_ip         | character varying(16)       | not null
+    encp_id         | character varying(64)       | not null
+    disk_rate       | bigint                      |
+    transfer_rate   | bigint                      |
+    encp_version    | character varying(48)       |
+    file_family     | character varying           |
+    wrapper         | character varying           |
+    library         | character varying           |
+    Indexes:
+        "encp_error_library_idx" btree (library)
+        "encp_xfer_library_idx" btree (library)
+        "xfr_date_idx" btree (date)
+        "xfr_file_family_idx" btree (file_family)
+        "xfr_media_changer_idx" btree (media_changer)
+        "xfr_mover_idx" btree (mover)
+        "xfr_node_idx" btree (node)
+        "xfr_oid_idx" btree (oid)
+        "xfr_pid_idx" btree (pid)
+        "xfr_storage_group_idx" btree (storage_group)
+        "xfr_user_idx" btree (username)
+        "xfr_volume_idx" btree (volume)
+        "xfr_wrapper_idx" btree (wrapper)
+
+Notes about encp (enstore copy) data and record handling:
+ - file - file in enstore (depends from read/write)
+ - node is the client, the other is enstore interface
+ - mover_interface (default   .fnal.gov)
+ - encp_id - unique ID
+ - Put NULL on duration if overall_rate is 0 (skip the value)
+
+:param limit: maximum number of hours to include in the query
+:yield:   record for the probe
         """
         checkpoint = self.checkpoint
         where_clauses = []
@@ -309,22 +317,26 @@ put NULL on duration if overall_rate is 0 (skip the value)
 
     def get_records_summary(self, limit=None):
         """Select the transfer records from the daily summary table. CHECKPOINT NEEDS TO BE FIXED BEFORE USING THIS.
+
+        :param limit: maximum number of hours to include in the query
+        :yield r: record for the probe
+
+Database table:
+::
         accounting=> \d xfer_by_day;
-         Table "public.xfer_by_day"
-    Column     |       Type        | Modifiers
----------------+-------------------+-----------
- date          | date              | not null
- storage_group | character varying | not null
- read          | bigint            |
- write         | bigint            |
- n_read        | bigint            |
- n_write       | bigint            |
-Indexes:
-    "xfer_by_date_pkey" PRIMARY KEY, btree (date, storage_group)
+             Table "public.xfer_by_day"
+        Column     |       Type        | Modifiers
+    ---------------+-------------------+-----------
+     date          | date              | not null
+     storage_group | character varying | not null
+     read          | bigint            |
+     write         | bigint            |
+     n_read        | bigint            |
+     n_write       | bigint            |
+    Indexes:
+        "xfer_by_date_pkey" PRIMARY KEY, btree (date, storage_group)
+
 Daily summary pre-calculated by trigger in the enstore DB
-
-We are interested in
-
         """
         # TODO: is daily summary OK or detailed values are needed?
 
@@ -378,6 +390,8 @@ We are interested in
 
 
 class EnstoreTransferProbe(GratiaMeter):
+    """Probe collecting enstore transfer information
+    """
 
     PROBE_NAME = 'enstore-transfer'
     # dCache, xrootd, Enstore
@@ -393,18 +407,6 @@ class EnstoreTransferProbe(GratiaMeter):
         GratiaMeter.__init__(self, self.PROBE_NAME)
         self._probeinput = EnstoreTransferInput()
 
-    #def get_storage_element(self, unique_id, site, name, parent_id=None, timestamp=None):
-    #    return gse
-
-    #def get_storage_element_record(self, unique_id, timestamp=None):
-    #    return gser
-
-    #def input_to_gsrs(self, inrecord, selement, serecord):
-    #    """Add input values to storage element and storage element record
-    #    Return the tuple VO,tot,free,used,f_tot,f_used to allow cumulative counters
-    #    """
-    #    return inrecord['storage_group'], total, total-used, used, 0, inrecord['active_files']
-
     def get_usage_record(self):
         r = Gratia.UsageRecord("Storage")
         r.AdditionalInfo("Protocol", "enstore")
@@ -413,13 +415,9 @@ class EnstoreTransferProbe(GratiaMeter):
         r.Status(0)
         return r
 
-    #def url2host(self, urltoparse):
-    #    tmp = urlparse(urltoparse)
-    #    if tmp.hostname:
-    #        return tmp.hostname
-    #    return self.get_hostname()
-
     def main(self):
+        """main loop: go over all records and send them to gratia
+        """
         # Initialize the probe and the input
         self.start()
         DebugPrint(4, "Enstore transfer probe started")

@@ -32,6 +32,7 @@ class ProbeInput(object):
 
     def add_checkpoint(self, fname=None, min_val=None, default_val=None, fullname=False):
         """Add a simple checkpoint - subclasses may have more elaborate ones
+
         :param fname: file name with checkpoint info (or target)
         :param min_val: min value of the checkpoint
         :param default_val: default value if none is provided (e.g.there is no target)
@@ -109,7 +110,8 @@ class ProbeInput(object):
 
     @staticmethod
     def parse_config_boolean(value):
-        """Evaluates to True if lowercase value matches "true", False otherwise
+        """Evaluates to True if lowercase value matches "true", False otherwise.
+
         :param value: input string
         :return: True/False
         """
@@ -156,8 +158,10 @@ class ProbeInput(object):
     # Main functions, implemented by the child class
     def get_records(self, limit=None):
         """Return one iterator with all the records from the checkpoint on.
+
         The implementation may fetch one record at the time
         or fetch all records and use yield to return them one at the time.
+
         :param limit: limits the maximum number of records (default: None, no limit)
                 may be useful when record retrieval is expensive
         :return:
@@ -166,11 +170,13 @@ class ProbeInput(object):
 
     def get_named_records(self, limit=None):
         """Return one iterator with all the (record_id, record) tuples from the checkpoint on.
+
         The implementation may fetch one record at the time
         or fetch all records and use yield to return them one at the time.
         Whenever a record is returned an unique ID associated with the record is provided.
         The ID can be used to trigger at a later time actions connected with the record
         (e.g. delete a file, update a DB record, ...).
+
         :param limit: limits the maximum number of records (default: None, no limit)
                 may be useful when record retrieval is expensive
         :return: record_id, record
@@ -179,11 +185,13 @@ class ProbeInput(object):
 
     def get_selected_records(self, start=None, end=None, limit=None):
         """Retrieve all records in the selected time interval. Ignore the checkpoint.
+
         Similar to get_records but with the added constraint on the records returned.
         The records must be sortable according to the attribute.
         E.g. records may have a timestamp and start and end are datetime objects representing
         the start and end time. Or they could be record IDs
         The specific subclass will implement the criteria to select the records and the type of start and end.
+
         :param start: start of the interval
         :param end: end of the interval
         :param limit: limits the maximum number of records (default: None, no limit)
@@ -193,10 +201,11 @@ class ProbeInput(object):
         return None
 
     def finalize_record(self, record_id):
-        """Callback connected with a specific record ID
-        Can be used in combination with get_named_record
+        """Callback connected with a specific record ID.
+        Can be used in combination with get_named_record.
         E.g. can be used to remove files or update database records once the consumer (Gratia probe)
         completed some asynchronous processing.
+
         :param record_id: record ID as returned by get_named_record (first element of the tuple)
         :return: True is the record was found and the action performed, False otherwise
         """
@@ -286,6 +295,7 @@ class DbInput(ProbeInput):
 
     def add_checkpoint(self, fname=None, max_val=None, default_val=None, fullname=False):
         """Add a checkpoint, default file name is cfp-INPUT_NAME
+
         :param fname: checkpoint file name (considered as prefix unless fullname=True)
                 file name is fname-INPUT_NAME
         :param max_val: trim value for the checkpoint
@@ -306,6 +316,7 @@ class DbInput(ProbeInput):
 
     def start(self, static_info):
         """start: initialize adding values coming form the config file and connect to the database
+
         :param static_info: dictionary with configuration information
         :return:
         """

@@ -1,17 +1,16 @@
 
 #!/usr/bin/python
-# /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 
 ###########################################################################
-#
+# Base classes for Gratia probes
 #
 ###########################################################################
 
 # Standard libraries
-import sys, os, stat
+import sys
+import os
+import stat
 import time
-#import datetime
-#import calendar
 import random
 import pwd, grp
 import socket   # to get hostname
@@ -34,10 +33,9 @@ from gratia.common.debug import DebugPrint, LogFileName
 #from gratia.common.Gratia import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
-from gratia.common2 import timeutil
-
+# in same package gratia.common2
+import timeutil
 from probeinput import ProbeInput
-#from checkpoint import DateTransactionCheckpoint
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
@@ -203,7 +201,7 @@ class GratiaProbe(object):
     #### Alarm to notify user and signal handling
 
     def set_alarm(self):
-        # Set up an alarm to send an email if the program terminates.
+        """Set up an alarm to send an email if the program terminates."""
         subject = "%s probe is going down unexpectedly" % self.probe_name
         message = "The Gratia probe %s has terminated unexpectedly.\nPlease check the logfile\n   %s\n" \
                   "for the cause.\n" % (self.probe_name, LogFileName())
@@ -229,6 +227,7 @@ class GratiaProbe(object):
     @staticmethod
     def parse_config_boolean(value):
         """Evaluates to True if lowercase value matches "true", False otherwise
+
         :param value: input string
         :return: True/False
         """
@@ -240,8 +239,10 @@ class GratiaProbe(object):
         return False
 
     def get_config_attribute(self, attr, default=None, mandatory=False):
-        """Return the value of the requested parameter
+        """Return the value of the requested parameter.
+
         Note that parameters are strings: use "True"/"False" and self.parse_config_boolean for booleans
+
         :param attr: name of the parameter
         :param default: if not None, default used if the value evaluates to False (None, empty string, ...)
         :param mandatory: if mandatory is True ValueError is risen if the attribute is not in the configuration
@@ -261,6 +262,7 @@ class GratiaProbe(object):
 
     def get_config_att_list(self, param_list, mandatory=False):
         """Return a dictionary containing the values of a list of parameters
+
         :param param_list: list of parameter names
         :param mandatory: if mandatory is True ValueError is risen if an attribute is not in the configuration
             (evaluates to false)
@@ -291,8 +293,10 @@ class GratiaProbe(object):
 
     def get_input_max_length(self):
         """Return the max number of input records. 0 (or anything different form a positive integer) for no limit.
+
         Uses the DataLengthMax attribute in the configuration.
         E.g. this is used for the LIMIT clause in inputs with SQL queries.
+
         :return: the value of DataLengthMax, None if it is missing or not a positive integer
         """
         try:
@@ -427,7 +431,8 @@ class GratiaProbe(object):
 
     def register_gratia(self):
         """Register in Gratia the Reporter (gratia probe), ReporterLibrary (Gratia library version)
-        and the Service (in
+        and the Service (input)
+
         :return:
         """
         Gratia.RegisterReporter(self.probe_name, "%s (tag %s)" % (prog_revision, prog_version))
@@ -543,10 +548,12 @@ Command line usage: %prog
         return test_list
 
     def _check_start_end_times(self, start_time=None, end_time=None, assume_local=False):
-        """Parse and verify the validity of the time interval parameters
+        """Parse and verify the validity of the time interval parameters.
+
         Both or none of the times have to be present. Start time has to be in the past,
         end time is after start time
         Time strings have to be in ISO8601 or other format compatible w/ timeutil.parse_datetime
+
         :param start_time: Start time
         :param end_time: End time
         :param assume_local: if False (default) naive time values are assumed UTC, if True they are assumed local

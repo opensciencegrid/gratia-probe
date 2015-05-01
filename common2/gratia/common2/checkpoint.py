@@ -330,8 +330,8 @@ class DateTransactionCheckpoint(Checkpoint):
         """
         Saves the specified primary key string as the new checkpoint.
         The Checkpoint value is a dictionary {'date': date, 'transaction': txn}
-            date - datetime.datetime object in UTC (or a consistent time zone)
-            txn - integer (can be None)
+         - date - datetime.datetime object in UTC (or a consistent time zone)
+         - txn - integer (can be None)
         """
         #TODO: Verify best option. Be more strict and accept only datestamp values?
         datestamp = val['date']
@@ -448,9 +448,9 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
     Extension of @DateTransactionCheckpoint (see for more implementation info)
 
     The checkpoint value is a dictionary {'date': date, 'transaction': txn, 'aux': aux}
-            date - datetime.datetime object in UTC (or a consistent time zone)
-            txn - integer (can be None)
-            aux - arbitrary pickable object or dictionary (can be None)
+     - date - datetime.datetime object in UTC (or a consistent time zone)
+     - txn - integer (can be None)
+     - aux - arbitrary pickable object or dictionary (can be None)
     """
     def __init__(self, target, max_age=-1, default_age=30, full_precision=True):
         if not target:
@@ -487,9 +487,9 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
         """
         Saves the specified primary key string as the new checkpoint.
         The Checkpoint value is a dictionary {'date': date, 'transaction': txn}
-            date - datetime.datetime object in UTC (or a consistent time zone)
-            txn - integer (can be None)
-            aux - arbitrary pickable object (dictionary? can be None)
+         - date - datetime.datetime object in UTC (or a consistent time zone)
+         - txn - integer (can be None)
+         - aux - arbitrary pickable object (dictionary? can be None)
         """
         #TODO: see DateTransactionCheckpoint - maybe merge the 2 functions (factor out common part)
         datestamp = val['date']

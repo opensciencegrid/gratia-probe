@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-
 import sys
 import traceback
 
@@ -14,37 +13,35 @@ except ImportError:
     import uuid_replacement as uuid
 
 from gratia.common.Gratia import DebugPrint
-
 from probeinput import DbInput
 
 
 class PgInput(DbInput):
-    """PostgreSQL input
+    """PostgreSQL input.
     Database name, host, user are mandatory parameters. Port (5432) and password are optional
 
-    Type conversion is done by psycopg2:
-    http://initd.org/psycopg/docs/usage.html
+    Type conversion is done by psycopg2 (http://initd.org/psycopg/docs/usage.html)::
 
-    *Python	*PostgreSQL
-    None	NULL
-    bool	bool
-    float   real, double
-    int     smallint
-    long    integer, bigint
-    Decimal numeric
-    str     varchar
-    unicode text
-    buffer, memoryview, bytearray, bytes, Buffer protocol   bytea
-    date	date
-    time	time
-    datetime    timestamp, timestamptz
-    timedelta	interval
-    list	ARRAY
-    tuple, namedtuple   Composite types
-    dict	hstore
-    Psycopg's Range	range
-    Anything(TM)	json
-    uuid	uuid
+        *Python	*PostgreSQL
+        None	NULL
+        bool	bool
+        float   real, double
+        int     smallint
+        long    integer, bigint
+        Decimal numeric
+        str     varchar
+        unicode text
+        buffer, memoryview, bytearray, bytes, Buffer protocol   bytea
+        date	date
+        time	time
+        datetime    timestamp, timestamptz
+        timedelta	interval
+        list	ARRAY
+        tuple, namedtuple   Composite types
+        dict	hstore
+        Psycopg's Range	range
+        Anything(TM)	json
+        uuid	uuid
     """
 
     def __init__(self, conn=None):
@@ -165,7 +162,8 @@ class PgInput(DbInput):
             retv = "%s (%s/%s)" % (retv, trans_status, trans_string)
         
     def query(self, sql):
-        """Generator returning one row at the time as pseudo-dictionary (DictCursor)
+        """Generator returning one row at the time as pseudo-dictionary (DictCursor).
+
         psycopg2.extras.DictCursor is a tuple, accessible by indexes and returned as
         values, not keys, in a loop (for i in row) but row.keys() lists the columns
         and row['column_name'] accesses the column.

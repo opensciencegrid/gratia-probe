@@ -34,8 +34,8 @@ except ImportError:
 
 # TODO: how are fractional system/user times handled?
 def total_seconds(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
+    """Returns the total number of seconds in a time interval
+
     :param td: time interval (datetime.timedelta)
     :param positive: if True return only positive values (or 0) - default: False
     :return: number of seconds (int)
@@ -49,8 +49,8 @@ def total_seconds(td, positive=True):
 
 
 def total_seconds_precise(td, positive=True):
-    """
-    Returns the total number of seconds in a time interval
+    """Returns the total number of seconds in a time interval
+
     :param td: time interval (datetime.timedelta)
     :param positive: if True return only positive values (or 0) - default: False
     :return: number of seconds (float)
@@ -67,7 +67,8 @@ try:
     from string import Formatter
 
     def strfdelta(tsec, format_str="P", format_no_day="PT{H}H{M}M{S}S", format_zero="PT0S"):
-        """Formatting the time duration
+        """Formatting the time duration.
+
         Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
         Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
         0 duration is PT0S
@@ -111,7 +112,8 @@ try:
 except ImportError:
     # pre 2.6
     def strfdelta(tsec, format_str="P", format_no_day="PT%(H)dH%(M)dM%(S)dS", format_zero="PT0S"):
-        """Formatting the time duration
+        """Formatting the time duration.
+
         Duration ISO8601 format (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
         Choosing the format P[nD]TnHnMnS where days is the total number of days (if not 0), 0 values may be omitted,
         0 duration is PT0S
@@ -244,9 +246,9 @@ except ImportError:
 
 
 def datetime_to_utc(dt_in, assume_local=True, naive=False):
-    """
-    Get a datetime and convert it to
-    If no timezone is set assume that it is local
+    """Get a datetime and convert it to UTC.
+    If no timezone is set in dt_in, assume that it is local or UTC depending on assume_local
+
     :param dt_in: datetime.datetime object (naive, UTC or some other time zone)
     :param assume_local: assume that an unbound datetime is local (default is True). UTC is assumed if set False.
     :param naive: if true return a naive timestamp (the value is still the UTC time but the time zone is not set)
@@ -270,7 +272,8 @@ def datetime_to_utc(dt_in, assume_local=True, naive=False):
 ## Parse and format dates
 
 def parse_datetime(date_string_in, return_seconds=False, assume_local=False):
-    """Parse date/time string and return datetime object
+    """Parse date/time string and return datetime object.
+
     This function provides only limited support of the iso8601 format
     e.g. Time zone specifications (different from Z for UTC) are not supported
     Can raise ValueError is the format is not valid
@@ -339,11 +342,13 @@ def parse_datetime(date_string_in, return_seconds=False, assume_local=False):
 
 
 def format_datetime(date_in, iso8601=True):
-    """
-    Format the date as iso8601 or %Y-%m-%d %H:%M:%S. iso8601 datetime is %Y-%m-%dT%H:%M:%SZ for UTC, Z is omitted for
+    """Format the date as iso8601 or %Y-%m-%d %H:%M:%S.
+
+    iso8601 datetime is %Y-%m-%dT%H:%M:%SZ for UTC, Z is omitted for
     naive time (only if date_in is a datetime object), +HH:MM is added for other time zones.
     Gratia service (collector) expects timestamps with T and Z.
     Can rise exceptions if times are out of range.
+
     :param date_in: date in seconds from the Epoch (float), time-tuple, or datetime object.
         The first 2 and naive datetime objects are assumed in UTC time.
         None is considered now.
@@ -389,8 +394,8 @@ def format_datetime(date_in, iso8601=True):
 
 
 def format_interval(time_interval):
-    """
-    Format time interval as Duration ISO8601 (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+    """Format time interval as Duration ISO8601 (PnYnMnDTnHnMnS): http://en.wikipedia.org/wiki/ISO_8601
+
     :param time_interval: time interval in seconds
     :return: formatted ISO8601 time interval
     """
@@ -398,8 +403,8 @@ def format_interval(time_interval):
 
 
 def datetime_to_unix_time(time_in):
-    """
-    Convert datetime to seconds from the epoch (keeping the provided precision)
+    """Convert datetime to seconds from the epoch (keeping the provided precision)
+
     http://en.wikipedia.org/wiki/Unix_time
     dts.strftime("%s.%f")  # datetime to unix_time, not all OS have %s,%f
 
@@ -420,8 +425,8 @@ def datetime_timedelta_to_seconds(delta):
 ## Truncating functions
 
 def at_minute(ds):
-    """
-    Truncate the datetime timestamp at the beginning of the minute
+    """Truncate the datetime timestamp at the beginning of the minute
+
     :param ds: input datetime timestamp
     :return: output datetime timestamp where seconds are set to 0
     """
@@ -429,8 +434,8 @@ def at_minute(ds):
 
 
 def at_hour(ds):
-    """
-    Truncate the datetime timestamp at the beginning of the hour
+    """Truncate the datetime timestamp at the beginning of the hour
+
     :param ds: input datetime timestamp
     :return: output datetime timestamp where minutes and seconds are set to 0
     """
@@ -438,8 +443,8 @@ def at_hour(ds):
 
 
 def at_day(ds):
-    """
-    Truncate the datetime timestamp at the beginning of the day
+    """Truncate the datetime timestamp at the beginning of the day
+
     :param ds: input datetime timestamp
     :return: output datetime timestamp where time is set to 0 (only date is kept)
     """
@@ -449,9 +454,10 @@ def at_day(ds):
 ## Increment functions
 
 def wind_time(dtin, days=0, hours=0, minutes=0, seconds=0, backward=True):
-    """
-    (Re) wind the time backward or forward.
+    """(Re) wind the time backward or forward.
+
     All the values are added. e.g. 1 day, 25 hours, 62 minutes is 2days, 2hours, 2 minutes
+
     :param dtin: Initial time
     :param days: Number of days to subtract/add
     :param hours: Number of hours to subtract/add
@@ -473,6 +479,7 @@ def conditional_increment(dtin, dt_condition, seconds=1, microseconds=0):
     then the increment is added to dtin, otherwise dtin is returned.
     1 second gap is chosen because it is the time resolution of this module (timeutil).
     It may change once Python 2.4 is no more supported
+
     :param dtin: input datetime object
     :param dt_condition: condition time (datetime or UNIX timestamp)
     :param seconds: number of seconds (int) to add to dtin
