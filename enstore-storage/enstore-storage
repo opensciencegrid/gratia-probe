@@ -243,7 +243,7 @@ date cannot be null
         #end_time = timeutil.at_minute(datetime.datetime.now())
         end_time = None
         # Give to the end time a 60 seconds delay. To allow for enstore DB processing time
-        if limit:
+        if limit > 0:
             end_time = timeutil.wind_time(start_time, hours=limit, backward=False)
             end_time = min(end_time, timeutil.wind_time(datetime.datetime.now(), seconds=60))
         else:

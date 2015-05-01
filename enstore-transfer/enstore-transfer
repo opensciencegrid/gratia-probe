@@ -251,9 +251,9 @@ put NULL on duration if overall_rate is 0 (skip the value)
             if self.rollback > 0:
                 start_time = timeutil.wind_time(start_time, seconds=self.rollback)
             where_clauses.append("date >= '%s'" % timeutil.format_datetime(start_time, iso8601=False))
-        if limit:
+        if limit > 0:
             end_time = timeutil.wind_time(start_time, hours=limit, backward=False)
-            # If limit is 0, check that the end_time is not in the future
+            # If input_delay is 0, check that the end_time is not in the future
             end_time = min(end_time, timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay))
         else:
             end_time = timeutil.wind_time(datetime.datetime.now(), seconds=self.input_delay)
@@ -308,7 +308,7 @@ put NULL on duration if overall_rate is 0 (skip the value)
             checkpoint.set_date_transaction(end_time)
 
     def get_records_summary(self, limit=None):
-        """Select the transfer records from the daily summary table
+        """Select the transfer records from the daily summary table. CHECKPOINT NEEDS TO BE FIXED BEFORE USING THIS.
         accounting=> \d xfer_by_day;
          Table "public.xfer_by_day"
     Column     |       Type        | Modifiers
