@@ -394,7 +394,8 @@ Records are selected and transformed for the probe consumption.
                         # skip i for checkpoint consideration
                         DebugPrint(2,
                                    "Warning, reached DataLengthMax while the first mount record is still not matched.\n"
-                                   "Sending a fake dismount record and advancing the checkpoint past it")
+                                   "Sending oktosend, a fake dismount record and advancing the checkpoint past it")
+                        yield OK_TO_SEND_RECORD
                         yield self.get_dismount_mount_record(first_record, end_time)
 
             if first_unresolved_mount == end_time:
