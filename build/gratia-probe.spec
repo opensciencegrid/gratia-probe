@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.14.2
-Release:            3%{?dist}
+Release:            4%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -1004,6 +1004,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue May 26 2015 Carl Edquist <edquist@cs.wisc.edu> - 1.14.2-4
+- slurm probe fix for mysql/mariadb 5.5 (goc/24516)
+
 * Tue May 26 2015 Carl Edquist <edquist@cs.wisc.edu> - 1.14.2-3
 - rename gratia-probe-dCache-storagegroup to all-lowercase
 - include common2 library in gratia-probe-common
