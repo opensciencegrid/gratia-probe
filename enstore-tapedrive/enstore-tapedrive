@@ -109,6 +109,7 @@ class EnstoreTapeDriveInput(PgInput):
     """
 
     VERSION_ATTRIBUTE = 'EnstoreVersion'
+    OK_TO_SEND_RECORD = {'state': 'oktosend', 'volume': 'oktosend'}
 
     def __init__(self, conn=None):
         PgInput.__init__(self, conn)
@@ -199,7 +200,6 @@ class EnstoreTapeDriveInput(PgInput):
                 'volume': r['volume'],
                 'type': r['type'],
                 'logname': r['logname'],
-                'volume': r['volume'],
                 'start': start_time,
                 'finish': timeutil.wind_time(start_time, seconds=20, backward=False),
                 'storage_group': 'PROBE_UTILITY',
@@ -250,7 +250,7 @@ Records are selected and transformed for the probe consumption.
 :param limit: maximum number of hours to include in the query
 :yield: record for the probe
         """
-        OK_TO_SEND_RECORD = {'state': 'oktosend', 'volume': 'oktosend'}
+        #OK_TO_SEND_RECORD = {'state': 'oktosend', 'volume': 'oktosend'}
         checkpoint = self.checkpoint
         where_clauses = []
         # DB uses local time -> checkpoint and all timestamps are in local time
@@ -271,7 +271,7 @@ Records are selected and transformed for the probe consumption.
                 # NO interval, OK to send from the beginning
                 DebugPrint(4, "Sending OK_TO_SEND - no interval in checkpoint (%s/%s)" %
                            (start_time, checkpoint_interval))
-                yield OK_TO_SEND_RECORD
+                yield EnstoreTapeDriveInput.OK_TO_SEND_RECORD
             else:
                 estimated_previous_end_time = timeutil.wind_time(start_time, seconds=checkpoint_interval,
                                                                  backward=False)
@@ -288,7 +288,7 @@ Records are selected and transformed for the probe consumption.
         else:
             # NO Checkpoint - OK to send from the beginning
             DebugPrint(4, "Sending OK_TO_SEND - no checkpoint")
-            yield OK_TO_SEND_RECORD
+            yield EnstoreTapeDriveInput.OK_TO_SEND_RECORD
 
         if limit > 0:
             end_time = timeutil.wind_time(start_time, hours=limit, backward=False)
@@ -359,7 +359,7 @@ Records are selected and transformed for the probe consumption.
                 if r['start'] >= ok_to_send_time:
                     # send also the current record (yield is after)
                     # Time intervals are closed on the left (start) and open on the right (end)
-                    yield OK_TO_SEND_RECORD
+                    yield EnstoreTapeDriveInput.OK_TO_SEND_RECORD
                     # to send the record OK_TO_SEND_RECORD only once
                     ok_to_send_time = None
             yield r
@@ -395,7 +395,7 @@ Records are selected and transformed for the probe consumption.
                         DebugPrint(2,
                                    "Warning, reached DataLengthMax while the first mount record is still not matched.\n"
                                    "Sending oktosend, a fake dismount record and advancing the checkpoint past it")
-                        yield OK_TO_SEND_RECORD
+                        yield EnstoreTapeDriveInput.OK_TO_SEND_RECORD
                         yield self.get_dismount_mount_record(first_record, end_time)
 
             if first_unresolved_mount == end_time:
@@ -410,13 +410,14 @@ Records are selected and transformed for the probe consumption.
         """get_records replacement for tests: records are from a pre-filled array
         limit is ignored"""
         DebugPrint(4, "Stub function: ignoring checkpoint and limit")
+        yield EnstoreTapeDriveInput.OK_TO_SEND_RECORD
         for i in _EnstoreTapeDriveInputStub.get_records():
             yield i
         # To test checkpoint saving
         checkpoint = self.checkpoint
         if checkpoint:
             DebugPrint(4, "Stub function, saving checkpoint with same date: %s" % checkpoint.date())
-            checkpoint.set_date_transaction(checkpoint.date())
+            checkpoint.set_date_transaction_aux(checkpoint.date())
 
     def do_test(self, static_info=None):
         """Test with pre-arranged DB query results
@@ -604,7 +605,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                                                                       estimated=True, max_duration=max_mount_time,
                                                                       min_duration=min_mount_time)
                     else:
-                        DebugPrint(5, "Not sending duplicate record: %s, %s" % (mounts[t_volume], srecord['start']))
+                        DebugPrint(4, "Not sending duplicate record: %s, %s" % (mounts[t_volume], srecord['start']))
                     # del not needed here because is reassigned right after anyway
                     # del mounts[t_volume]
                 # update the record
@@ -623,7 +624,7 @@ class EnstoreTapeDriveProbe(GratiaMeter):
                                                                           estimated=True, max_duration=max_mount_time,
                                                                           min_duration=min_mount_time)
                         else:
-                            DebugPrint(5, "Not sending duplicate record: %s, %s" % (mounts[t_volume], srecord['start']))
+                            DebugPrint(4, "Not sending duplicate record: %s, %s" % (mounts[t_volume], srecord['start']))
                         del mounts[t_volume]
                 except KeyError:
                     pass
