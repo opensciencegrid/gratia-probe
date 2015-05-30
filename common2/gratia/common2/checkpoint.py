@@ -492,9 +492,15 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
          - aux - arbitrary pickable object (dictionary? can be None)
         """
         #TODO: see DateTransactionCheckpoint - maybe merge the 2 functions (factor out common part)
+        txn = None
+        aux = None
         datestamp = val['date']
-        txn = val['transaction']
-        aux = val['aux']
+        try:
+            # This could be called by a function where txn or aux are not defined (set_date_transaction)
+            txn = val['transaction']
+            aux = val['aux']
+        except KeyError:
+            pass
         # date must be defined, transaction can be None
         if datestamp is None:
             raise IOError("Checkpoint.createPending was passed null values for date")
