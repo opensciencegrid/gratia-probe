@@ -2,7 +2,7 @@
 
 import cPickle
 import os
-import re
+import random
 import sys
 import time
 import optparse
@@ -13,7 +13,8 @@ import gratia.common.GratiaWrapper as GratiaWrapper
 from gratia.services.StorageElement import StorageElement
 from gratia.services.StorageElementRecord import StorageElementRecord
 
-def  parse_opts():
+
+def parse_opts():
 
     parser = optparse.OptionParser(usage="""%prog [options] file """)
     parser.add_option("-c", "--gratia_config",
@@ -34,7 +35,6 @@ This reduces the load on the Gratia collector.""",
         dest="sleep",
         default=0, type="int")
 
-
     parser.add_option("-v", "--verbose",
         help="Enable verbose logging to stdout.",
         default=False, action="store_true", dest="verbose")
@@ -51,8 +51,6 @@ This reduces the load on the Gratia collector.""",
 
     return opts, args
 
-	
-
 
 def sendRecords(fn):
 
@@ -62,20 +60,20 @@ def sendRecords(fn):
     storage_groups={}
     totals_by_sg={}
     for pg,item1 in user_space.iteritems():
-        storage_groups[pg]={}
+        storage_groups[pg] = {}
         for pool, item2 in item1.iteritems():
             for sg, value in item2.iteritems():
-                storage_groups[pg][sg]=storage_groups[pg].get(sg,0)+long(value/1024/1024)
-                totals_by_sg[sg]=totals_by_sg.get(sg,0)+long(value/1024/1024)
-                                        
+                # All probes report bytes. This one should too (value instead of value/1024/1024)
+                storage_groups[pg][sg] = storage_groups[pg].get(sg, 0) + long(value)
+                totals_by_sg[sg] = totals_by_sg.get(sg, 0) + long(value)
 
-    site=GratiaCore.Config.getConfigAttribute("SiteName")
-    version="1.2.3"
-    status="Production"
+    site = GratiaCore.Config.getConfigAttribute("SiteName")
+    version = "1.2.3"
+    status = "Production"
     timestamp = time.time()
 
     for pg, value in storage_groups.iteritems():
-        sa  = StorageElement()
+        sa = StorageElement()
         sar = StorageElementRecord()
         parent_id = '%s:SE:%s' % (site, site)
         unique_id = '%s:PoolGroup:%s' % (site, pg)
@@ -93,8 +91,8 @@ def sendRecords(fn):
         sar.MeasurementType('logical')
         sar.StorageType('disk')
         sar.UsedSpace(sum(value.values()))
-    	Gratia.Send(sa)
-    	Gratia.Send(sar)
+        Gratia.Send(sa)
+        Gratia.Send(sar)
         for sg, used_space in value.iteritems():
             sa = StorageElement()
             sar = StorageElementRecord()
@@ -116,32 +114,32 @@ def sendRecords(fn):
             sar.UsedSpace(used_space)
             Gratia.Send(sa)
             Gratia.Send(sar)
-                           
+
+
 def main():
-   try:
+    try:
         opts, dirs = parse_opts()
-   except SystemExit:
+    except SystemExit:
         raise
-   except KeyboardInterrupt:
+    except KeyboardInterrupt:
         raise
-   except Exception, e:
+    except Exception, e:
         print >> sys.stderr, str(e)
         sys.exit(1)
 
-   # Sanity checks for the probe's runtime environment.
-   GratiaWrapper.CheckPreconditions()
+    # Sanity checks for the probe's runtime environment.
+    GratiaWrapper.CheckPreconditions()
 
-
-   if opts.sleep:
+    if opts.sleep:
         rnd = random.randint(1, int(opts.sleep))
         DebugPrint(2, "Sleeping for %d seconds before proceeding." % rnd)
         time.sleep(rnd)
 
-   # Make sure we have an exclusive lock for this probe.
-   GratiaWrapper.ExclusiveLock()
+    # Make sure we have an exclusive lock for this probe.
+    GratiaWrapper.ExclusiveLock()
 
-   GratiaCore.Initialize(opts.gratia_config)
-   sendRecords(opts.storage_group)
+    GratiaCore.Initialize(opts.gratia_config)
+    sendRecords(opts.storage_group)
      
 
 if __name__ == '__main__':
