@@ -309,7 +309,7 @@ class SlurmAcct(object):
             , SUM(CASE WHEN j.time_end < j.time_start + j.time_suspended
                        THEN 0
                        ELSE j.time_end - j.time_start - j.time_suspended
-                  END CASE) AS wall_time
+                  END) AS wall_time
             , a.acct
             , a.user
             , ( SELECT MAX(s.max_rss)
