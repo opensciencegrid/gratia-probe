@@ -55,6 +55,6 @@ class cpuUtilization:
 		if len(datapoints)==1:
 			datapoint=datapoints[0]
 			average=datapoint['Average']
-		print average
-		return average
+			print average
+			return average
 
