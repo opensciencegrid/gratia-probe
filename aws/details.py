@@ -22,13 +22,13 @@ for reservation in resv:
 	#pprint(reservation)
 	instances=reservation['Instances']
 	for instance in instances:
-		print instance['InstanceId']
-		print instance['InstanceType']
+		#print instance['InstanceId']
+		#print instance['InstanceType']
 		tags=instance['Tags']
-		print "the tags are"
+		#print "the tags are"
 		for tag in tags:
-			print tag['Key'],
-			print tag['Value']
+			#print tag['Key'],
+			#print tag['Value']
 		response=cwatch.list_metrics()
 		#pprint(response)
 		response1 = cwatch.get_metric_statistics(
@@ -45,7 +45,7 @@ for reservation in resv:
     		Statistics=['Average'],
     		Unit='Percent'
 		)
-		pprint(response1)
+		#pprint(response1)
 		
 	break
 

@@ -8,6 +8,17 @@ import boto3;
 #AWS_ACCESS_KEY_ID = 'XXXXXXXXXXXXXXXXXX'
 #AWS_SECRET_ACCESS_KEY = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 
+ec2=boto3.client('ec2',region_name='us-west-2')
+response = ec2.describe_instances()
+#pprint(response)
+resv=response['Reservations']
+for reservation in resv:
+	#pprint(reservation)
+	instances=reservation['Instances']
+	for instance in instances:
+		#pprint(instance)
+		print instance['InstanceId']
+
 '''
 ec2conn = ec2.connect_to_region("us-west-2")
 reservations = ec2conn.get_all_instances()
@@ -44,7 +55,7 @@ met2 = cw.get_metric_statistics(
         dimensions={'InstanceId':['i-fe3b7509']}
    )
 #pprint(met2)
-
+'''
 '''
 instid='i-3ff241f7';
 ec2=boto3.client('ec2',region_name='us-west-2')
@@ -88,6 +99,6 @@ response = cw.get_metric_statistics(
     Statistics=['Average','Minimum','Maximum'],
     Unit='Percent')
 pprint(response)
-
+'''
 
 

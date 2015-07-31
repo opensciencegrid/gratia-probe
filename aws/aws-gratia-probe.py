@@ -28,21 +28,34 @@ class Awsgratiaprobe:
 			#pprint(reservation)
 			instances=reservation['Instances']
 			for instance in instances:
-				pprint(instance)
+				#pprint(instance)
 				print instance['InstanceId']
-				print instance['InstanceType']
-				tags=instance['Tags']
-				print "the tags are"
-				for tag in tags:
-					print tag['Key'],
-					print tag['Value']
-					
+				#print instance['InstanceType']
 				r = Gratia.UsageRecord()
 				user="aws account user"
-				for tag in tags:
-					if tag['Key'].lower() == 'user'.lower():
-			                	user=tag['Value']	
+				project="aws-no project name given"
+				try:
+					tags=instance['Tags']
+					print "the tags are"
+					for tag in tags:
+						print tag['Key'],
+						print tag['Value']
+					for tag in tags:
+                                                if tag['Key'].lower() == 'user'.lower():
+                                                        user=tag['Value']
+					for tag in tags:
+                                                if tag['Key'].lower() == 'name'.lower():
+                                                        r.JobName(tag['Value'])
+					for tag in tags:
+                                                if tag['Key'].lower() == 'project'.lower():
+                                                        project=tag['Value']
+
+
+				except KeyError:
+                                        print 'no tags'                                       	
 				r.LocalUserId(user)
+				r.ProjectName(project)
+
 		                #Public Ip address is retrieved if instance is running"
 				try:
 					ipaddr=instance['PublicIpAddress']
@@ -53,14 +66,17 @@ class Awsgratiaprobe:
 
 		                r.LocalJobId(instance['InstanceId'])
 		                r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
-				print 'hello1'
-				for tag in tags:
-					if tag['Key'].lower() == 'name'.lower():               
-						r.JobName(tag['Value'])
+				#print 'hello1'
+				try:
+					for tag in tags:
+						if tag['Key'].lower() == 'name'.lower():               
+							r.JobName(tag['Value'])
+				except KeyError:      
+                                        print 'no tags'
 				#status,description=recs[i].getStatus()
 				
 				state=instance['State']
-				print state['Name']
+				#print state['Name']
 				status=1
 				if state['Name']=="running":
 					print status
@@ -68,11 +84,11 @@ class Awsgratiaprobe:
 				else:
 					status=1
 				#print 'hello'
-				print status
+				#print status
 				pprint(r)
-				print instance['StateTransitionReason']
+				#print instance['StateTransitionReason']
 				description=instance['StateTransitionReason']	
-		                print description
+		                #print description
 				r.Status(status,description)
 				
 				#r.ProcessorDescription(instance['InstanceType'])
@@ -84,25 +100,18 @@ class Awsgratiaprobe:
 					r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])	
 				except KeyError:
 					r.SubmitHost("no Private ip as instance has been terminated")
-				except Exception as e:
-					print e
-				print 'setting site name'
+				#print 'setting site name'
 				
 				#GratiaCore.Config.setSiteName('aws'+instance['Placement']['AvailabilityZone'])
-				print 'done setting'
+				#print 'done setting'
 				#r.ReportedSiteName('aws'+instance['Placement']		['AvailabilityZone'])
 				r.ResourceType('aws')
-				project="aws-no project name given"
-				for tag in tags:
-					if tag['Key'].lower() == 'project'.lower():               
-						project=tag['Value']		
-				r.ProjectName(project)
-		                r.Njobs(1,"The no of jobs running at a time")
+				r.Njobs(1,"The no of jobs running at a time")
 		                r.NodeCount(1) # default to total
 				hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
 				instdet=inst_hardware.insthardware(hardwdet)
 				types=instdet.gettypedetails()
-				pprint(types)
+				#pprint(types)
 				processor='1'
 				memory=''
 				price=0.0
@@ -111,52 +120,52 @@ class Awsgratiaprobe:
 						processor=t['vcpu']
 						memory=t['ram']
 						price=t['price']
-				print memory," the value of memory"	
+				#print memory," the value of memory"	
 				cpu=float(processor)
 		                r.Processors(cpu,0,"total",instance['InstanceType'])
 		               	r.Memory(float(memory))
 		                # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
-				print instance['InstanceId']
+				#print instance['InstanceId']
 				if "'SpotInstanceRequestId" in instance.keys():
 					sp=spot_price.spot_price()
 					value=sp.get_price(instance['InstanceId'])
-					print value
+					#print value
 					price=value
 				r.Charge(str(price),"$","$/instance hr","The spot price charged in last hour corresponding to launch time")
 				# The Time period for which the spot price and other values are calculated is noted down
 				launchtime=instance['LaunchTime']
-				print launchtime.hour
-				print 'hello3'
+				#print launchtime.hour
+				#print 'hello3'
 				minu=launchtime.minute
-				print minu
+				#print minu
 				
 				currtime=time.time()
 			
 								
 				EndTime=datetime.datetime.now()
-				print type(EndTime)
+				#print type(EndTime)
 				EndTime=EndTime.replace(minute=minu)
 				StartTime=EndTime.replace(hour=(EndTime.hour-1))
-				print StartTime
-				print EndTime
-				print 'starttime'
+				#print StartTime
+				#print EndTime
+				#print 'starttime'
 				t=StartTime.date()
 				#print GratiaCore.TimeToString(time.mktime(t.timetuple()))
-				print 'convert'
+				#print 'convert'
 				stime=time.mktime(StartTime.timetuple())
 		                r.StartTime(stime)
 		                
 		                et=EndTime.date()
 				etime=time.mktime(EndTime.timetuple())
 				r.EndTime(etime)
-				print 'hello123'
-				print etime-stime," the diff"
+				#print 'hello123'
+				#print etime-stime," the diff"
 		                r.WallDuration(etime-stime)
 				Cpu=cpuutil.cpuUtilization()
 				aver=Cpu.getUtilPercent(instance['InstanceId'])
-				print aver," average in percentage"
-				print type(aver)
-				print type(cpu)
+				#print aver," average in percentage"
+				#print type(aver)
+				#print type(cpu)
 				if aver is None:
 					cpuUtil=0.0
 					print "The CPU Utilization value is NULL as the instance was not running in the last hour"
@@ -168,7 +177,7 @@ class Awsgratiaprobe:
 		                r.ResourceType("AWSVM")
 				r.AdditionalInfo("Version","1.0")
 		
-				print r
+				#print r
 				print 'done'	
 				Gratia.Send(r)
 				

@@ -14,22 +14,22 @@ class cpuUtilization:
 		cw = boto3.client('cloudwatch',region_name='us-west-2')
 		resp=ec2.describe_instances(InstanceIds=[instid])
 		#pprint(resp)
-		print 'hello'
+		#print 'hello'
 		resv=resp['Reservations']
 		for reservation in resv:
 			#pprint(reservation)
 			instances=reservation['Instances']
 			for instance in instances:
-				pprint(instance)
-				print instance['LaunchTime']
+				#pprint(instance)
+				#print instance['LaunchTime']
 				launchtime=instance['LaunchTime']
 				zone=instance['Placement']['AvailabilityZone']
-				print zone
+				#print zone
 				inst_type=instance['InstanceType']
 				print inst_type
-		print launchtime.hour
+		#print launchtime.hour
 		minu=launchtime.minute
-		print minu
+		#print minu
 		EndTime=datetime.datetime.utcnow()
 		EndTime=EndTime.replace(minute=minu)
 		StartTime=EndTime.replace(hour=(EndTime.hour-1))
@@ -50,11 +50,11 @@ class cpuUtilization:
 		    Period=3600,
 		    Statistics=['Average','Minimum','Maximum'],
 		    Unit='Percent')
-		pprint(response)
+		#pprint(response)
 		datapoints=response['Datapoints']
 		if len(datapoints)==1:
 			datapoint=datapoints[0]
 			average=datapoint['Average']
-			print average
+			#print average
 			return average
 

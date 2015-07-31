@@ -13,28 +13,28 @@ class insthardware:
 		infile = open(self.fileloc,'r')
 		firstline = infile.readline()
 		fields=firstline.split("\t")
-		print fields
+		#print fields
 		for f in fields:
 			#print f
 			if f == "\n":
 				fields.remove(f)
 	
-			print fields
+			#print fields
 		lines= infile.readlines()
-		print firstline
+		#print firstline
 		for i in lines:
-			print i	
+			#print i	
 			values=i.split("\t")
 			values.remove("\n")
-			print values
+			#print values
 			x=0
 			repo={}
 			while x<len(fields):
 				repo[fields[x]]=values[x]
 				x+=1
-			print repo
+			#print repo
 			types.append(repo)
-		pprint(types)
+		#pprint(types)
 		return types
 
 	#module = ''.join(i.split(',')[:-1])
