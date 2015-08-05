@@ -34,6 +34,7 @@ class Awsgratiaprobe:
 				r = Gratia.UsageRecord()
 				user="aws account user"
 				project="aws-no project name given"
+				voname="fermi"
 				try:
 					tags=instance['Tags']
 					print "the tags are"
@@ -49,7 +50,7 @@ class Awsgratiaprobe:
 					for tag in tags:
                                                 if tag['Key'].lower() == 'project'.lower():
                                                         project=tag['Value']
-
+							voname=tag['Value']
 
 				except KeyError:
                                         print 'no tags'                                       	
@@ -104,11 +105,16 @@ class Awsgratiaprobe:
 				
 				#GratiaCore.Config.setSiteName('aws'+instance['Placement']['AvailabilityZone'])
 				#print 'done setting'
-				#r.ReportedSiteName('aws'+instance['Placement']		['AvailabilityZone'])
+				#r.ReportedSiteName('aws'+instance['Placement']['AvailabilityZone'])
 				r.ResourceType('aws')
 				r.Njobs(1,"The no of jobs running at a time")
 		                r.NodeCount(1) # default to total
-				hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
+				try:
+					hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
+				Except e:
+					
+				else:
+					hardwdet="/usr/lib/python2.6/site-packages/gratia/awsvm/hardwareinst"
 				instdet=insthardware(hardwdet)
 				types=instdet.gettypedetails()
 				#pprint(types)
@@ -124,6 +130,7 @@ class Awsgratiaprobe:
 				cpu=float(processor)
 		                r.Processors(cpu,0,"total",instance['InstanceType'])
 		               	r.Memory(float(memory))
+				chargedesc=""
 		                # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
 				#print instance['InstanceId']
 				if "'SpotInstanceRequestId" in instance.keys():
@@ -131,7 +138,9 @@ class Awsgratiaprobe:
 					value=sp.get_price(instance['InstanceId'])
 					#print value
 					price=value
-				r.Charge(str(price),"$","$/instance hr","The spot price charged in last hour corresponding to launch time")
+					chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
+				chargedesc="The spot price charged in last hour corresponding to launch time"
+				r.Charge(str(price),"$","$/instance hr",chargedesc)
 				# The Time period for which the spot price and other values are calculated is noted down
 				launchtime=instance['LaunchTime']
 				#print launchtime.hour
