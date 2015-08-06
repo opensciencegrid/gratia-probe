@@ -1,7 +1,4 @@
-from pprint import pprint
-from boto import ec2
-#from boto import cloudwatch
-import boto.ec2.cloudwatch
+#!/usr/bin/env python
 import datetime;
 import boto3;
 import sys

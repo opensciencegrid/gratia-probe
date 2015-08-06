@@ -34,7 +34,7 @@ class Awsgratiaprobe:
 				r = Gratia.UsageRecord()
 				user="aws account user"
 				project="aws-no project name given"
-				voname="fermi"
+				voname="fermilab"
 				try:
 					tags=instance['Tags']
 					print "the tags are"
@@ -111,8 +111,8 @@ class Awsgratiaprobe:
 		                r.NodeCount(1) # default to total
 				try:
 					hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
-				Except e:
-					
+				Except Exception as e:
+					print "The File for hardware details is not present. Pls check config file Hardware details value."
 				else:
 					hardwdet="/usr/lib/python2.6/site-packages/gratia/awsvm/hardwareinst"
 				instdet=insthardware(hardwdet)
