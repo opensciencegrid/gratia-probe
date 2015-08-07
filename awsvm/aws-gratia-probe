@@ -139,7 +139,7 @@ class Awsgratiaprobe:
 					#print value
 					price=value
 					chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
-				if status==1
+				if status==1:
 					price=0
 				chargedesc="The spot price charged in last hour corresponding to launch time"
 				r.Charge(str(price),"$","$/instance hr",chargedesc)
