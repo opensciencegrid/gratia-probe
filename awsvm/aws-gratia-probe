@@ -114,7 +114,7 @@ class Awsgratiaprobe:
 				except Exception as e:
 					print "The File for hardware details is not present. Pls check config file Hardware details value."
 				else:
-					hardwdet="/usr/lib/python2.6/site-packages/gratia/awsvm/hardwareinst"
+					hardwdet="/etc/gratia/awsvm/hardwareinst"
 				instdet=insthardware(hardwdet)
 				types=instdet.gettypedetails()
 				#pprint(types)
