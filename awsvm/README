@@ -1,0 +1,64 @@
+Steps to install AWS-gratia-probe:
+
+1.	First you need to get the rpm file from the osg site. The rpm name being 
+	gratia-probe-awsvm-(% VERSION).el6.noarch.rpm
+2.	Install the rpm - this will prompt u to install also its dependency 
+	gratia-probe-common-(% VERSION).el6.noarch.rpm 
+A)	This will again prompt you to install PyOpenSSL
+	yum install PyOpenSSL
+3.	It will also prompt you to install pip and boto3
+A)	download the rpm for pip using
+	rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+B)  	and yum install it
+	yum install -y python-pip
+C)	Next install the boto3 package using pip
+	pip install boto3
+4.	Boto3 needs the aws credentials file containing the IAM Access ID and Key inorder to access the AWS console.
+A)	create a ".aws" directory 
+	mkdir ~/.aws
+B)	create file named credentials 
+	vi ~/.aws/credentials
+c)	And put the access id and key in the format
+	[default]
+	aws_access_key_id = AKIXXXXXXXXXXXXXXCOA
+	aws_secret_access_key = bFSXXXXXXXXXXXXXXXXXXXXXXXXXX3ey
+5.	Next modify the ProbeConfig file
+	vi /etc/gratia/awsvm/ProbeConfig 
+A)	Modify the host name and ports to point to the gratia server like below
+	CollectorHost="fermicloud054.fnal.gov:8880"
+    	SSLHost="fermicloud054.fnal.gov:8443"
+   	SSLRegistrationHost="fermicloud054.fnal.gov:8080"
+B)	Also enable the probe by setting below to one
+	EnableProbe="1"
+c)	Also enable Excempt duplicates in order to prevent probe from sending records more than once per hour using
+	ExcemptDuplicates="1"
+	Save the changes to config file
+6.	Next we need to add the probe's cron to the system cron and enable it
+A)	add the cron
+	chkconfig --add gratia-probes-cron
+B)	Enable the cron
+	chkconfig gratia-probes-cron on
+c)	Check its status
+	chkconfig --list gratia-probes-cron
+D)	also start the service
+	service gratia-probes-cron start
+7.	The aws-gratia-probe is started and will run every one hour 
+	we can check the logs in 
+	vi /var/logs/gratia/(%date).log
+
+
+
+ALSO INCASE ANY ERRORS ARE THROWN BY THE PROBE DURING RUNTIME
+OR IF THE PROBE DOESNT EXECUTE PROPERLY
+1.	IF the excempt duplicates is set and the filelock throws erros 
+	check whether the filelock file exists at
+	/var/lib/gratia/filelock
+	and also where it is set properly in ProbeConfig file
+	DuplicateFilelock="/var/lib/gratia/filelock"
+2.	If it says hardwareinst doesnt exist check whether the file exists and the value is it properly in probe
+	HardwareDetails="/usr/lib/python2.6/site-packages/gratia/awsvm/hardwareinst"
+3.	If u need to add or update the values to the table in hardwareinst plf follow the syntax
+	instance-type(\tab)vcpu(\tab)ram(\tab)price(\tab)(\newline)
+	value1(\tab)value2(\tab)value3(\tab)value4(\tab)(\newline)
+	eg : m3.medium(\tab)1(\tab)3.75(\tab)0.067(\tab)(\newline)
+
