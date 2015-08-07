@@ -56,7 +56,7 @@ class Awsgratiaprobe:
                                         print 'no tags'                                       	
 				r.LocalUserId(user)
 				r.ProjectName(project)
-
+				r.VOName(voname)
 		                #Public Ip address is retrieved if instance is running"
 				try:
 					ipaddr=instance['PublicIpAddress']
@@ -111,7 +111,7 @@ class Awsgratiaprobe:
 		                r.NodeCount(1) # default to total
 				try:
 					hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
-				Except Exception as e:
+				except Exception as e:
 					print "The File for hardware details is not present. Pls check config file Hardware details value."
 				else:
 					hardwdet="/usr/lib/python2.6/site-packages/gratia/awsvm/hardwareinst"
@@ -139,6 +139,8 @@ class Awsgratiaprobe:
 					#print value
 					price=value
 					chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
+				if status==1
+					price=0
 				chargedesc="The spot price charged in last hour corresponding to launch time"
 				r.Charge(str(price),"$","$/instance hr",chargedesc)
 				# The Time period for which the spot price and other values are calculated is noted down
@@ -195,7 +197,7 @@ class Awsgratiaprobe:
 
 if __name__ == '__main__':
 	try:
-	    	Gratia.Initialize('/etc/gratia/onevm/ProbeConfig')
+	    	Gratia.Initialize('/etc/gratia/awsvm/ProbeConfig')
 		GratiaWrapper.CheckPreconditions()
 		vmProbe=Awsgratiaprobe()
 		Filelock="filelock"

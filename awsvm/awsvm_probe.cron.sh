@@ -1,1 +1,1 @@
-python aws-gratia-probe
+python /usr/share/gratia/awsvm/aws-gratia-probe
