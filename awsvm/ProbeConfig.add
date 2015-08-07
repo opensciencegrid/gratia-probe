@@ -1,3 +1,3 @@
     ExemptDuplicates="False"
     DuplicateFilelock="/var/lib/gratia/filelock"
-    HardwareDetails="/etc/gratia/awsvm/hardwareinst"
+    HardwareDetails="/usr/share/gratia/awsvm/hardwareinst"

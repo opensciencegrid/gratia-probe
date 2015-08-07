@@ -54,7 +54,7 @@ OR IF THE PROBE DOESNT EXECUTE PROPERLY
 	and also where it is set properly in ProbeConfig file
 	DuplicateFilelock="/var/lib/gratia/filelock"
 2.	If it says hardwareinst doesnt exist check whether the file exists and the value is it properly in probe
-	HardwareDetails="/etc/gratia/awsvm/hardwareinst"
+	HardwareDetails="/usr/share/gratia/awsvm/hardwareinst"
 3.	If u need to add or update the values to the table in hardwareinst plf follow the syntax
 	instance-type(\tab)vcpu(\tab)ram(\tab)price(\tab)(\newline)
 	value1(\tab)value2(\tab)value3(\tab)value4(\tab)(\newline)

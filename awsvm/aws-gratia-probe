@@ -114,7 +114,7 @@ class Awsgratiaprobe:
 				except Exception as e:
 					print "The File for hardware details is not present. Pls check config file Hardware details value."
 				else:
-					hardwdet="/etc/gratia/awsvm/hardwareinst"
+					hardwdet="/usr/share/gratia/awsvm/hardwareinst"
 				instdet=insthardware(hardwdet)
 				types=instdet.gettypedetails()
 				#pprint(types)
@@ -133,7 +133,7 @@ class Awsgratiaprobe:
 				chargedesc=""
 		                # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
 				#print instance['InstanceId']
-				if "'SpotInstanceRequestId" in instance.keys():
+				if "SpotInstanceRequestId" in instance.keys():
 					sp=spot_price.spot_price()
 					value=sp.get_price(instance['InstanceId'])
 					#print value
