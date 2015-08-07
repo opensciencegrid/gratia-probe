@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.14.2
-Release:            4%{?dist}
+Release:            6%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -61,7 +61,9 @@ Source21: %{name}-enstore-storage-%{version}.tar.bz2
 Source22: %{name}-enstore-tapedrive-%{version}.tar.bz2
 Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
 Source24:  %{name}-lsf-%{version}.tar.bz2
+Source25: %{name}-awsvm-%{version}.tar.bz2
 
+Patch0: slurm-safe-unsigned.patch
 
 ########################################################################
 
@@ -99,6 +101,9 @@ Prefix: /etc
 %setup -q -D -T -a 22
 %setup -q -D -T -a 23
 %setup -q -D -T -a 24
+%setup -q -D -T -a 25
+
+%patch0 -p1
 
 %build
 %ifnarch noarch
@@ -117,7 +122,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %ifarch noarch
   # Obtain files
 
-%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
+%define noarch_packs common condor psacct sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf awsvm
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -148,7 +153,12 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
-
+    
+    # Moving the awsvm/hardwareinst file to buildroot for packaging
+    if [ $probe == "awsvm" ]; then
+      install -m 644 $probe/hardwareinst $RPM_BUILD_ROOT%{_sysconfdir}/gratia/awsvm/hardwareinst
+    fi
+    
     ## Probe-specific customizations
     # Probe template addon lines in ProbeConfig.add (in probe directory) added before @PROBE_SPECIFIC_DATA@ tag
     if [ -e "$probe/ProbeConfig.add" ]; then
@@ -836,6 +846,30 @@ Gratia OSG accounting system probe for providing VM accounting.
 %post onevm
 %customize_probeconfig -d onevm
 
+%package awsvm
+Summary: Gratia OSG accounting system probe for AWS VM accounting.
+Group:Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+License: See LICENSE.
+
+%description awsvm
+Gratia OSG accounting system probe for providing VM accounting in aws.
+
+%files awsvm
+%defattr(-,root,root,-)
+%{default_prefix}/gratia/awsvm/awsvm_probe.cron.sh
+%dir %{default_prefix}/gratia/awsvm
+%{default_prefix}/gratia/awsvm/ProbeConfig
+%{python_sitelib}/gratia/awsvm
+%{default_prefix}/gratia/awsvm/aws-gratia-probe
+%{_sysconfdir}/gratia/awsvm/hardwareinst
+%{default_prefix}/gratia/awsvm/README
+
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/awsvm/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-awsvm.cron
+
+%post awsvm
+%customize_probeconfig -d awsvm
 
 %package slurm
 Summary: A SLURM probe
@@ -1004,6 +1038,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Jun 11 2015 Carl Edquist <edquist@cs.wisc.edu> - 1.14.2-6
+- slurm probe bugfix for previous patch (goc/25834)
+
 * Tue May 26 2015 Carl Edquist <edquist@cs.wisc.edu> - 1.14.2-4
 - slurm probe fix for mysql/mariadb 5.5 (goc/24516)
 
