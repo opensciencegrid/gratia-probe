@@ -131,7 +131,7 @@ build/package-probe "${version}" common condor pbs-lsf psacct sge glexec \
                                  metric services hadoop-storage condor-events \
                                  dCache-transfer gridftp-transfer \
                                  dCache-storage xrootd-transfer xrootd-storage \
-                                 bdii-status onevm slurm \
+                                 bdii-status onevm awsvm slurm \
                                  common2 \
                                  dCache-storagegroup \
                                  enstore-storage enstore-tapedrive enstore-transfer \
