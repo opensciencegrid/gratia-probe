@@ -12,246 +12,246 @@ import time
 import sys
 from gratia.awsvm.spot_price_multi import spot_price
 from gratia.awsvm.cpuutil_multi import cpuUtilization
-from gratia.awsvm.inst_hardware import insthardware
 from gratia.awsvm.get_account_id_multi import get_account_id
+from gratia.awsvm.demand_price import AwsDemandPrice
 import os
 
 class Awsgratiaprobe:
-	def __init__(self):
-		GratiaCore.Config.set_DebugLevel(5)
-	        
-	
-	def process(self):
-         #  should make account/profile list and region list configurable in ProbeConfig
-		for account in ( 'rnd', 'cms', 'nova', 'fermilab' ):
-			session = Session(profile_name = account)
-			for region in ( 'us-west-2','us-west-1','us-east-1'):
-				print "starting account/region combo"
-				print account,region
-				ec2=session.client('ec2',region_name=region)
-                		mygacid=get_account_id(account,region)
-                		owneracct=mygacid.get_id()
-				print owneracct
-				response = ec2.describe_instances()
-				#pprint(response)
-				resv=response['Reservations']
-				for reservation in resv:
-					#pprint(reservation)
-					instances=reservation['Instances']
-					for instance in instances:
-						#pprint(instance)
-						print instance['InstanceId']
-						#print instance['InstanceType']
-						r = Gratia.UsageRecord()
-                                                # set the defaults
-						user="aws account user"
-						project="aws-no project name given"
-						#voname="fermilab"
-						voname=account
-						try:
-							tags=instance['Tags']
-							print "the tags are"
-							for tag in tags:
-								print tag['Key'],
-								print tag['Value']
-							for tag in tags:
-                                                		if tag['Key'].lower() == 'user'.lower():
-                                                        		user=tag['Value']
-							for tag in tags:
-                                                		if tag['Key'].lower() == 'name'.lower():
-                                                        		r.JobName(tag['Value'])
-							for tag in tags:
-                                                		if tag['Key'].lower() == 'project'.lower():
-                                                        		project=tag['Value']
-							for tag in tags:
-								if tag['Key'].lower() == 'vo'.lower() or tag['Key'].lower() == 'voname'.lower():
-									voname=tag['Value']
-						except KeyError:
-                                        		print 'no tags'                                       	
-						r.LocalUserId(user)
-                                		r.GlobalUsername(owneracct)
-						r.ProjectName(project)
-						r.VOName(voname)
-                                		r.ReportableVOName(voname)
-		               			 #Public Ip address is retrieved if instance is running"
-						try:
-							ipaddr=instance['PublicIpAddress']
-							r.MachineName(instance['PublicIpAddress'],instance['ImageId'])	
-						except KeyError:
-							r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
+    def __init__(self):
+        GratiaCore.Config.set_DebugLevel(5)
+            
+    
+    def process(self):
+        #  should make account/profile list and region list configurable in ProbeConfig
+        for account in ( 'rnd', 'cms', 'nova', 'fermilab' ):
+            session = Session(profile_name = account)
+            for region in ( 'us-west-2','us-west-1','us-east-1'):
+                print "starting account/region combo"
+                print account,region
+                ec2=session.client('ec2',region_name=region)
+                        mygacid=get_account_id(account,region)
+                        owneracct=mygacid.get_id()
+                print owneracct
+                response = ec2.describe_instances()
+                #pprint(response)
+                resv=response['Reservations']
+                for reservation in resv:
+                    #pprint(reservation)
+                    instances=reservation['Instances']
+                    for instance in instances:
+                        #pprint(instance)
+                        print instance['InstanceId']
+                        #print instance['InstanceType']
+                        r = Gratia.UsageRecord()
+                        # set the defaults
+                        user="aws account user"
+                        project="aws-no project name given"
+                        #voname="fermilab"
+                        voname=account
+                        try:
+                            tags=instance['Tags']
+                            print "the tags are"
+                            for tag in tags:
+                                print tag['Key'],
+                                print tag['Value']
+                            for tag in tags:
+                                if tag['Key'].lower() == 'user'.lower():
+                                    user=tag['Value']
+                            for tag in tags:
+                                if tag['Key'].lower() == 'name'.lower():
+                                    r.JobName(tag['Value'])
+                            for tag in tags:
+                                if tag['Key'].lower() == 'project'.lower():
+                                    project=tag['Value']
+                            for tag in tags:
+                                if tag['Key'].lower() == 'vo'.lower() or tag['Key'].lower() == 'voname'.lower():
+                                    voname=tag['Value']
+                        except KeyError:
+                            print 'no tags'                                           
+                        r.LocalUserId(user)
+                        r.GlobalUsername(owneracct)
+                        r.ProjectName(project)
+                        r.VOName(voname)
+                        r.ReportableVOName(voname)
+                        #Public Ip address is retrieved if instance is running"
+                        try:
+                            ipaddr=instance['PublicIpAddress']
+                            r.MachineName(instance['PublicIpAddress'],instance['ImageId'])    
+                        except KeyError:
+                            r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
 
 
-		                		r.LocalJobId(instance['InstanceId'])
-		                		r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
-#						try:
-#							for tag in tags:
-#								if tag['Key'].lower() == 'name'.lower():               
-#									r.JobName(tag['Value'])
-#						except KeyError:      
-#                                        		print 'no tags'
-						#status,description=recs[i].getStatus()
-				
-						state=instance['State']
-						#print state['Name']
-						#set the default status
-						status=1
-						if state['Name']=="running":
-							print status
-							status=0
-						else:
-							status=1
-						#print 'hello'
-						#print status
-						pprint(r)
-						#print instance['StateTransitionReason']
-						description=instance['StateTransitionReason']	
-		                		#print description
-						r.Status(status,description)
-				
-		#				r.ProcessorsDescription(instance['InstanceType'])
-						#r.MachineNameDescription(instance['ImageId'])
-				
-						try:
-							ipaddr=instance['PrivateIpAddress']
-							r.Host(instance['PrivateIpAddress'],False,instance['Placement']['AvailabilityZone'])
-							r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])	
-						except KeyError:
-							r.SubmitHost("no Private ip as instance has been terminated")
-						#print 'setting site name'
-				
-						#GratiaCore.Config.setSiteName('aws'+instance['Placement']['AvailabilityZone'])
-						#print 'done setting'
-						#r.ReportedSiteName('aws'+instance['Placement']['AvailabilityZone'])
-						r.ResourceType('aws')
-						r.Njobs(1,"The no of jobs running at a time")
-		                		r.NodeCount(1) # default to total
-						try:
-							hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
-						except Exception as e:
-							print "The File for hardware details is not present. Pls check config file Hardware details value."
-						else:
-							hardwdet="/usr/share/gratia/awsvm/hardwareinst"
-						instdet=insthardware(hardwdet)
-						types=instdet.gettypedetails()
-#						pprint(types)
-						processor='1'
-						memory=''
-						price=0.0
-						for t in types:
-#                                        		print t['instance-type'], instance['InstanceType']
-							if t['instance-type'] == instance['InstanceType']:
-#								pprint (t)
-								processor=t['vcpu']
-								memory=t['ram']
-								price=t['price']
-#                                                		print processor,memory,price
-								#print memory," the value of memory"	
-								cpu=float(processor)
-#                                				print cpu
-		                				r.Processors(int(cpu),0,"total",instance['InstanceType'])
-		               					r.Memory(float(memory))
-								chargedesc=""
-		                				# Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
-								#print instance['InstanceId']
-						if "SpotInstanceRequestId" in instance.keys():
-							sp=spot_price(account,region)
-							value=sp.get_price(instance['InstanceId'])
-							#print value
-							price=value
-							chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
-						if status==1:
-							price=0
-							chargedesc="The spot price charged in last hour corresponding to launch time"
-						r.Charge(str(price),"$","$/instance hr",chargedesc)
-						# The Time period for which the spot price and other values are calculated is noted down
-						launchtime=instance['LaunchTime']
-						#print launchtime.hour
-						minu=launchtime.minute
-						#print minu
-				
-						currtime=time.time()
-			
-								
-						EndTime=datetime.datetime.now()
-						EndTime=EndTime.replace(minute=minu)
-						StartTime=EndTime.replace(hour=(EndTime.hour-1))
-						#print 'starttime'
-						t=StartTime.date()
-						#print GratiaCore.TimeToString(time.mktime(t.timetuple()))
-						#print 'convert'
-						stime=time.mktime(StartTime.timetuple())
-		                		r.StartTime(stime)
-		                
-		               			et=EndTime.date()
-						etime=time.mktime(EndTime.timetuple())
-						r.EndTime(etime)
-		                		r.WallDuration(etime-stime)
-						Cpu=cpuUtilization(account,region)
-						aver=Cpu.getUtilPercent(instance['InstanceId'])
-						#print aver," average in percentage"
-						#print type(aver)
-						#print type(cpu)
-						if aver is None:
-							cpuUtil=0.0
-							print "The CPU Utilization value is NULL as the instance was not running in the last hour"
-							r.CpuDuration(0,'user')
-						else:
-							cpuUtil=aver
-							r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
-							r.CpuDuration(0,'system')
-		                		r.ResourceType("AWSVM")
-						r.AdditionalInfo("Version","1.0")
-			
-						#print r
-						print 'done'	
-						Gratia.Send(r)
-				
-			
+                            r.LocalJobId(instance['InstanceId'])
+                            r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
+#                        try:
+#                            for tag in tags:
+#                                if tag['Key'].lower() == 'name'.lower():               
+#                                    r.JobName(tag['Value'])
+#                        except KeyError:      
+#                                                print 'no tags'
+                        #status,description=recs[i].getStatus()
+                
+                        state=instance['State']
+                        #print state['Name']
+                        #set the default status
+                        status=1
+                        if state['Name']=="running":
+                            print status
+                            status=0
+                        else:
+                            status=1
+                        #print 'hello'
+                        #print status
+                        pprint(r)
+                        #print instance['StateTransitionReason']
+                        description=instance['StateTransitionReason']    
+                        #print description
+                        r.Status(status,description)
+                
+                        #r.ProcessorsDescription(instance['InstanceType'])
+                        #r.MachineNameDescription(instance['ImageId'])
+                
+                        try:
+                            ipaddr=instance['PrivateIpAddress']
+                            r.Host(instance['PrivateIpAddress'],False,instance['Placement']['AvailabilityZone'])
+                            r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])    
+                        except KeyError:
+                            r.SubmitHost("no Private ip as instance has been terminated")
+                        #print 'setting site name'
+                
+                        #GratiaCore.Config.setSiteName('aws'+instance['Placement']['AvailabilityZone'])
+                        #print 'done setting'
+                        #r.ReportedSiteName('aws'+instance['Placement']['AvailabilityZone'])
+                        r.ResourceType('aws')
+                        r.Njobs(1,"The no of jobs running at a time")
+                        r.NodeCount(1) # default to total
+                        try:
+                            hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
+                        except Exception as e:
+                            print "The File for hardware details is not present. Pls check config file Hardware details value."
+                        else:
+                            hardwdet="/usr/share/gratia/awsvm/hardwareinst"
+                        instdet=insthardware(hardwdet)
+                        types=instdet.gettypedetails()
+                        #pprint(types)
+                        processor='1'
+                        memory=''
+                        price=0.0
+                        for t in types:
+                            #print t['instance-type'], instance['InstanceType']
+                            if t['instance-type'] == instance['InstanceType']:
+                                #pprint (t)
+                                processor=t['vcpu']
+                                memory=t['ram']
+                                price=t['price']
+                                #print processor,memory,price
+                                #print memory," the value of memory"    
+                                cpu=float(processor)
+                                #print cpu
+                                r.Processors(int(cpu),0,"total",instance['InstanceType'])
+                                r.Memory(float(memory))
+                                chargedesc=""
+                                # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
+                                #print instance['InstanceId']
+                        if "SpotInstanceRequestId" in instance.keys():
+                            sp=spot_price(account,region)
+                            value=sp.get_price(instance['InstanceId'])
+                            #print value
+                            price=value
+                            chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
+                        if status==1:
+                            price=0
+                            chargedesc="The spot price charged in last hour corresponding to launch time"
+                        r.Charge(str(price),"$","$/instance hr",chargedesc)
+                        # The Time period for which the spot price and other values are calculated is noted down
+                        launchtime=instance['LaunchTime']
+                        #print launchtime.hour
+                        minu=launchtime.minute
+                        #print minu
+                
+                        currtime=time.time()
+            
+                                
+                        EndTime=datetime.datetime.now()
+                        EndTime=EndTime.replace(minute=minu)
+                        StartTime=EndTime.replace(hour=(EndTime.hour-1))
+                        #print 'starttime'
+                        t=StartTime.date()
+                        #print GratiaCore.TimeToString(time.mktime(t.timetuple()))
+                        #print 'convert'
+                        stime=time.mktime(StartTime.timetuple())
+                        r.StartTime(stime)
+                        
+                        et=EndTime.date()
+                        etime=time.mktime(EndTime.timetuple())
+                        r.EndTime(etime)
+                        r.WallDuration(etime-stime)
+                        Cpu=cpuUtilization(account,region)
+                        aver=Cpu.getUtilPercent(instance['InstanceId'])
+                        #print aver," average in percentage"
+                        #print type(aver)
+                        #print type(cpu)
+                        if aver is None:
+                            cpuUtil=0.0
+                            print "The CPU Utilization value is NULL as the instance was not running in the last hour"
+                            r.CpuDuration(0,'user')
+                        else:
+                            cpuUtil=aver
+                            r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
+                            r.CpuDuration(0,'system')
+                            r.ResourceType("AWSVM")
+                        r.AdditionalInfo("Version","1.0")
+            
+                        #print r
+                        print 'done'    
+                        Gratia.Send(r)
+                
+            
 
 
 if __name__ == '__main__':
-	try:
-	    	Gratia.Initialize('/etc/gratia/awsvm/ProbeConfig')
-		GratiaWrapper.CheckPreconditions()
-		vmProbe=Awsgratiaprobe()
-		Filelock="filelock"
-		conf=GratiaCore.Config
-		duplicatelock=conf.getConfigAttribute("ExemptDuplicates")
-		filelock=conf.getConfigAttribute("DuplicateFilelock")
-		if  duplicatelock == "True":
-	    		if os.path.isfile(Filelock):
-        			fl=open(Filelock, 'r+')
-	        		date=datetime.datetime.now()
-	        		line=fl.readline()
-	        		print line
-	        		prevdate = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S.%f")
-	        		print prevdate
-	        		currtime=time.mktime(date.timetuple())
-	        		prevtime=time.mktime(prevdate.timetuple())
-	        		diff=currtime-prevtime
-        			print diff
-	        		if diff>=3599.0:
-	                		fl.seek(0, 0)
-        	        		fl.truncate()
-	                		fl.write(str(date));
-	                		t = os.path.getmtime(Filelock)
-	                		print t
-	                		print datetime.datetime.fromtimestamp(t)
-	                		fl.close()
-					vmProbe.process()	
-	        		else:
-			                print "hour is not over yet"
-			                fl.close()
-			else:
-			        fl=open(Filelock,'w+')
-			        date=str(datetime.datetime.now())
-			        fl.write(date);
-			        fl.close()
-				vmProbe.process()
-		else:
-			vmProbe.process()
-	except Exception, e:
-	      	print >> sys.stderr, str(e)
-	        sys.exit(1)
-	sys.exit(0)	
+    try:
+        Gratia.Initialize('/etc/gratia/awsvm/ProbeConfig')
+        GratiaWrapper.CheckPreconditions()
+        vmProbe=Awsgratiaprobe()
+        Filelock="filelock"
+        conf=GratiaCore.Config
+        duplicatelock=conf.getConfigAttribute("ExemptDuplicates")
+        filelock=conf.getConfigAttribute("DuplicateFilelock")
+        if  duplicatelock == "True":
+            if os.path.isfile(Filelock):
+                fl=open(Filelock, 'r+')
+                date=datetime.datetime.now()
+                line=fl.readline()
+                print line
+                prevdate = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S.%f")
+                print prevdate
+                currtime=time.mktime(date.timetuple())
+                prevtime=time.mktime(prevdate.timetuple())
+                diff=currtime-prevtime
+                print diff
+                if diff>=3599.0:
+                    fl.seek(0, 0)
+                    fl.truncate()
+                    fl.write(str(date));
+                    t = os.path.getmtime(Filelock)
+                    print t
+                    print datetime.datetime.fromtimestamp(t)
+                    fl.close()
+                    vmProbe.process()    
+                else:
+                    print "hour is not over yet"
+                    fl.close()
+            else:
+                fl=open(Filelock,'w+')
+                date=str(datetime.datetime.now())
+                fl.write(date);
+                fl.close()
+                vmProbe.process()
+        else:
+            vmProbe.process()
+    except Exception, e:
+        print >> sys.stderr, str(e)
+        sys.exit(1)
+    sys.exit(0)    
 
