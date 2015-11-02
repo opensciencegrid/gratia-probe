@@ -1,4 +1,4 @@
     Title9="Probe specific parameters"
 
-    UnixIdListFileName="/etc/gratia/dCache-transfer/unix.uid.list"
+    UnixGidListFileName="/etc/gratia/dCache-transfer/group"
       Comments91="File containing a map user to group, used for the VO mapping"
