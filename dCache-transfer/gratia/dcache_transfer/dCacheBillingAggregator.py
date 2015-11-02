@@ -30,7 +30,7 @@ from DCacheAggregator import DCacheAggregator, sleep_check
 
 ProgramName = "dCacheBillingAggregator"
 
-UNIX_ID_LIST_FILE_NAME_DEFAULT = "/etc/gratia/dCache-transfer/unix.uid.list"
+UNIX_GID_LIST_FILE_NAME_DEFAULT = "/etc/gratia/dCache-transfer/group"
 
 class dCacheProbeConfig(ProbeConfiguration):
     """
@@ -132,10 +132,10 @@ class dCacheProbeConfig(ProbeConfiguration):
         else:
             return logging.DEBUG
 
-    def get_UnixIdListFileName(self):
-        fname = self.getConfigAttribute('UnixIdListFileName')
+    def get_UnixGidListFileName(self):
+        fname = self.getConfigAttribute('UnixGidListFileName')
         if not fname:
-            return UNIX_ID_LIST_FILE_NAME_DEFAULT
+            return UNIX_GID_LIST_FILE_NAME_DEFAULT
         return fname
 
 # end class dCacheProbeConfig
