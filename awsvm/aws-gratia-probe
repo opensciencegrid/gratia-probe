@@ -12,7 +12,6 @@ import time
 import sys
 from gratia.awsvm.spot_price_multi import spot_price
 from gratia.awsvm.cpuutil_multi import cpuUtilization
-from gratia.awsvm.get_account_id_multi import get_account_id
 from gratia.awsvm.demand_data import AwsDemandData
 import os
 import ConfigParser
@@ -102,12 +101,10 @@ class Awsgratiaprobe:
         DebugPrint(3,"AWS regions: %s"%regions)
         for region in regions:
             ec2=session.client('ec2',region_name=region)
-            mygacid=get_account_id(session.profile_name,region)
-            owneracct=mygacid.get_id()
-            DebugPrint(4,"owneracct: %s"%owneracct)
             response = ec2.describe_instances()
             resv=response['Reservations']
             for reservation in resv:
+                owneracct=reservation['OwnerId']
                 instances=reservation['Instances']
                 for instance in instances:
                     DebugPrint(4,"processing instance %s"% instance['InstanceId'])
@@ -116,9 +113,10 @@ class Awsgratiaprobe:
                     user="aws account user"
                     project="aws-no project name given"
                     if session.profile_name.lower() != "default":
-                        voname= session.profile_name
+                        acctname= session.profile_name
                     else:
-                        voname="fermilab"
+                        acctname="fermilab"
+                    voname = acctname
                     try:
                         tags=instance['Tags']
                         DebugPrint(4,"the tags are")
@@ -135,7 +133,7 @@ class Awsgratiaprobe:
                     except KeyError:
                         DebugPrint(4, 'no tags')
                     r.LocalUserId(user)
-                    r.GlobalUsername(owneracct)
+                    r.GlobalUsername("%s-%s"%(acctname,owneracct))
                     r.ProjectName(project)
                     r.VOName(voname)
                     r.ReportableVOName(voname)
