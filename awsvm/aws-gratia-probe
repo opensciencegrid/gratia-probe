@@ -15,14 +15,17 @@ from gratia.awsvm.cpuutil_multi import cpuUtilization
 from gratia.awsvm.get_account_id_multi import get_account_id
 from gratia.awsvm.demand_data import AwsDemandData
 import os
+import ConfigParser
 
 class Awsgratiaprobe:
     def __init__(self):
-        GratiaCore.Config.set_DebugLevel(5)
+        self._load_instance_data()
+        self._load_profiles()
 
-        self._load_static()
-
-    def _load_static(self):
+    def _load_instance_data(self):
+        """
+        Load AWS On-demand instance prices and attributes (cpu, memory, disk)
+        """
         self.instance_details = AwsDemandData()
         url=GratiaCore.Config.getConfigAttribute("HardwareDetailsURL")
         if url != "":
@@ -39,142 +42,167 @@ class Awsgratiaprobe:
             DebugPrint(3,"Loading AWS instance details and pricing from file %s"%hardwdet)
             self.instance_details.load_file(hardwdet)
         except:
-            Error("unable to load instance data")
+            DebugPrint(-1,"unable to load AWS instance data. Check that HardwareDetailsFile ",
+                "is defined in ProbeConfig and exists")
+            sys.exit(1)
 
+    def _load_profiles(self):
+        """
+        Load profiles from AWS credentials file. These, by convention, correspond to VO name.
+        """
+        cred = GratiaCore.Config.getConfigAttribute("AWSCredentialsFile") or "~/.aws/credentials"
+        cfg = ConfigParser.SafeConfigParser()
+        if len(cfg.read(os.path.expanduser(cred))) > 0:
+            profiles = [vo for vo in cfg.sections() if vo.lower() != "default"]
+            DebugPrint(3,"Loaded AWS credentials file %s, profiles: %s"%(cred,profiles))
+        else:
+            DebugPrint(2,"Unable to load profiles from AWS credentials file %s"%cred,
+                    ". Check that AWSCredentialsFile is defined in ProbeConfig and ",
+                    "exsits. Attempting to continue with default profile.")
+            profiles = []
+        self.profiles = profiles
 
     def process(self):
-        #  should make account/profile list and region list configurable in ProbeConfig
-        for account in ( 'rnd', 'cms', 'nova', 'fermilab' ):
-            session = Session(profile_name = account)
-            for region in ( 'us-west-2','us-west-1','us-east-1'):
-                DebugPrint(4,"starting account/region combo")
-                DebugPrint(4,"%s/%s"%(account,region))
-                ec2=session.client('ec2',region_name=region)
-                mygacid=get_account_id(account,region)
-                owneracct=mygacid.get_id()
-                DebugPrint(4,"owneracct: %s"%owneracct)
-                response = ec2.describe_instances()
-                resv=response['Reservations']
-                for reservation in resv:
-                    instances=reservation['Instances']
-                    for instance in instances:
-                        DebugPrint(4,"processing instance %s"% instance['InstanceId'])
-                        r = Gratia.UsageRecord()
-                        # set the defaults
-                        user="aws account user"
-                        project="aws-no project name given"
-                        #voname="fermilab"
-                        voname=account
-                        try:
-                            tags=instance['Tags']
-                            DebugPrint(4,"the tags are")
-                            for tag in tags:
-                                DebugPrint(4,"%s: %s"%(tag['Key'],tag['Value']))
-                                if tag['Key'].lower() == 'user':
-                                    user=tag['Value']
-                                elif tag['Key'].lower() == 'name':
-                                    r.JobName(tag['Value'])
-                                elif tag['Key'].lower() == 'project':
-                                    project=tag['Value']
-                                elif tag['Key'].lower() in ['vo', 'voname']:
-                                    voname=tag['Value']
-                        except KeyError:
-                            DebugPrint(4, 'no tags')
-                        r.LocalUserId(user)
-                        r.GlobalUsername(owneracct)
-                        r.ProjectName(project)
-                        r.VOName(voname)
-                        r.ReportableVOName(voname)
-                        #Public Ip address is retrieved if instance is running"
-                        try:
-                            r.MachineName(instance['PublicIpAddress'],instance['ImageId'])    
-                        except KeyError:
-                            r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
+        if len(self.profiles) == 0:
+            DebugPrint(3,"Querying AWS with default profile")
+            session = Session()
+            self.process_session(session)
+        else:
+            for account in self.profiles:
+                DebugPrint(3,"Querying AWS with profile %s"%account)
+                session = Session(profile_name = account)
+                self.process_session(session)
+
+    def process_session(self, session):
+        for region in ( 'us-west-2','us-west-1','us-east-1'):
+            ec2=session.client('ec2',region_name=region)
+            mygacid=get_account_id(session.profile_name,region)
+            owneracct=mygacid.get_id()
+            DebugPrint(4,"owneracct: %s"%owneracct)
+            response = ec2.describe_instances()
+            resv=response['Reservations']
+            for reservation in resv:
+                instances=reservation['Instances']
+                for instance in instances:
+                    DebugPrint(4,"processing instance %s"% instance['InstanceId'])
+                    r = Gratia.UsageRecord()
+                    # set the defaults
+                    user="aws account user"
+                    project="aws-no project name given"
+                    if session.profile_name.lower() != "default":
+                        voname= session.profile_name
+                    else:
+                        voname="fermilab"
+                    try:
+                        tags=instance['Tags']
+                        DebugPrint(4,"the tags are")
+                        for tag in tags:
+                            DebugPrint(4,"%s: %s"%(tag['Key'],tag['Value']))
+                            if tag['Key'].lower() == 'user':
+                                user=tag['Value']
+                            elif tag['Key'].lower() == 'name':
+                                r.JobName(tag['Value'])
+                            elif tag['Key'].lower() == 'project':
+                                project=tag['Value']
+                            elif tag['Key'].lower() in ['vo', 'voname']:
+                                voname=tag['Value']
+                    except KeyError:
+                        DebugPrint(4, 'no tags')
+                    r.LocalUserId(user)
+                    r.GlobalUsername(owneracct)
+                    r.ProjectName(project)
+                    r.VOName(voname)
+                    r.ReportableVOName(voname)
+                    #Public Ip address is retrieved if instance is running"
+                    try:
+                        r.MachineName(instance['PublicIpAddress'],instance['ImageId'])    
+                    except KeyError:
+                        r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
 
 
-                        r.LocalJobId(instance['InstanceId'])
-                        r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
-                
-                        state=instance['State']
-                        #set the default status
+                    r.LocalJobId(instance['InstanceId'])
+                    r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
+            
+                    state=instance['State']
+                    #set the default status
+                    status=1
+                    if state['Name']=="running":
+                        status=0
+                    else:
                         status=1
-                        if state['Name']=="running":
-                            status=0
-                        else:
-                            status=1
-                        description=instance['StateTransitionReason']    
-                        r.Status(status,description)
-                
-                        try:
-                            r.Host(instance['PrivateIpAddress'],False,instance['Placement']['AvailabilityZone'])
-                            r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])    
-                        except KeyError:
-                            r.SubmitHost("no Private ip as instance has been terminated")
-                        r.ResourceType('aws')
-                        r.Njobs(1,"The no of jobs running at a time")
-                        r.NodeCount(1) # default to total
+                    description=instance['StateTransitionReason']    
+                    r.Status(status,description)
+            
+                    try:
+                        r.Host(instance['PrivateIpAddress'],False,instance['Placement']['AvailabilityZone'])
+                        r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])    
+                    except KeyError:
+                        r.SubmitHost("no Private ip as instance has been terminated")
+                    r.ResourceType('aws')
+                    r.Njobs(1,"The no of jobs running at a time")
+                    r.NodeCount(1) # default to total
 
 
-                        processor='1'
-                        memory=''
-                        price=0.0
-                        try:
-                            i = self.instance_details.instance_data(region,instance['InstanceType'])
-                        except KeyError:
-                            DebugPrint(1,"instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
-                            processor=0
-                            memory=0
-                            price=0
-                        else:
-                            processor=i['cpu']
-                            memory=i['memory']
-                            price=i['price']
-                        cpu=float(processor)
-                        r.Processors(int(cpu),0,"total",instance['InstanceType'])
-                        r.Memory(float(memory))
-                        chargedesc=""
-                        # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
-                        if "SpotInstanceRequestId" in instance.keys():
-                            sp=spot_price(account,region)
-                            value=sp.get_price(instance['InstanceId'])
-                            price=value
-                            chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
-                        if status==1:
-                            price=0
-                            chargedesc="The spot price charged in last hour corresponding to launch time"
-                        r.Charge(str(price),"$","$/instance hr",chargedesc)
-                        # The Time period for which the spot price and other values are calculated is noted down
-                        launchtime=instance['LaunchTime']
-                        minu=launchtime.minute
-                
-                        currtime=time.time()
+                    processor='1'
+                    memory=''
+                    price=0.0
+                    try:
+                        i = self.instance_details.instance_data(region,instance['InstanceType'])
+                    except KeyError:
+                        DebugPrint(1,"instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
+                        processor=0
+                        memory=0
+                        price=0
+                    else:
+                        processor=i['cpu']
+                        memory=i['memory']
+                        price=i['price']
+                    cpu=float(processor)
+                    r.Processors(int(cpu),0,"total",instance['InstanceType'])
+                    r.Memory(float(memory))
+                    chargedesc=""
+                    # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
+                    if "SpotInstanceRequestId" in instance.keys():
+                        sp=spot_price(session.profile_name,region)
+                        value=sp.get_price(instance['InstanceId'])
+                        price=value
+                        chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
+                    if status==1:
+                        price=0
+                        chargedesc="The spot price charged in last hour corresponding to launch time"
+                    r.Charge(str(price),"$","$/instance hr",chargedesc)
+                    # The Time period for which the spot price and other values are calculated is noted down
+                    launchtime=instance['LaunchTime']
+                    minu=launchtime.minute
             
-                                
-                        EndTime=datetime.datetime.now()
-                        EndTime=EndTime.replace(minute=minu)
-                        StartTime=EndTime.replace(hour=(EndTime.hour-1))
-                        t=StartTime.date()
-                        stime=time.mktime(StartTime.timetuple())
-                        r.StartTime(stime)
-                        
-                        et=EndTime.date()
-                        etime=time.mktime(EndTime.timetuple())
-                        r.EndTime(etime)
-                        r.WallDuration(etime-stime)
-                        Cpu=cpuUtilization(account,region)
-                        aver=Cpu.getUtilPercent(instance['InstanceId'])
-                        if aver is None:
-                            cpuUtil=0.0
-                            DebugPrint(4, "The CPU Utilization value is NULL as the instance was not running in the last hour")
-                            r.CpuDuration(0,'user')
-                        else:
-                            cpuUtil=aver
-                            r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
-                            r.CpuDuration(0,'system')
-                            r.ResourceType("AWSVM")
-                        r.AdditionalInfo("Version","1.0")
-            
-                        Gratia.Send(r)
+                    currtime=time.time()
+        
+                            
+                    EndTime=datetime.datetime.now()
+                    EndTime=EndTime.replace(minute=minu)
+                    StartTime=EndTime.replace(hour=(EndTime.hour-1))
+                    t=StartTime.date()
+                    stime=time.mktime(StartTime.timetuple())
+                    r.StartTime(stime)
+                    
+                    et=EndTime.date()
+                    etime=time.mktime(EndTime.timetuple())
+                    r.EndTime(etime)
+                    r.WallDuration(etime-stime)
+                    Cpu=cpuUtilization(session.profile_name,region)
+                    aver=Cpu.getUtilPercent(instance['InstanceId'])
+                    if aver is None:
+                        cpuUtil=0.0
+                        DebugPrint(4, "The CPU Utilization value is NULL as the instance was not running in the last hour")
+                        r.CpuDuration(0,'user')
+                    else:
+                        cpuUtil=aver
+                        r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
+                        r.CpuDuration(0,'system')
+                        r.ResourceType("AWSVM")
+                    r.AdditionalInfo("Version","1.0")
+        
+                    Gratia.Send(r)
                 
             
 
