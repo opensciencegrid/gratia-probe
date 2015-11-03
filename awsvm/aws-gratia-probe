@@ -13,14 +13,35 @@ import sys
 from gratia.awsvm.spot_price_multi import spot_price
 from gratia.awsvm.cpuutil_multi import cpuUtilization
 from gratia.awsvm.get_account_id_multi import get_account_id
-from gratia.awsvm.inst_hardware import insthardware
+from gratia.awsvm.demand_data import AwsDemandData
 import os
 
 class Awsgratiaprobe:
     def __init__(self):
         GratiaCore.Config.set_DebugLevel(5)
-            
-    
+
+        self._load_static()
+
+    def _load_static(self):
+        self.instance_details = AwsDemandData()
+        url=GratiaCore.Config.getConfigAttribute("HardwareDetailsURL")
+        if url != "":
+            try:
+                DebugPrint(3,"Loading AWS instance details and pricing from URL %s"%url)
+                self.instance_details.load_url(url)
+            except:
+                DebugPrint(2,"unable to load AWS instance details from URL, trying file")
+            else:
+                return
+
+        hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetailsFile")
+        try:
+            DebugPrint(3,"Loading AWS instance details and pricing from file %s"%hardwdet)
+            self.instance_details.load_file(hardwdet)
+        except:
+            Error("unable to load instance data")
+
+
     def process(self):
         #  should make account/profile list and region list configurable in ProbeConfig
         for account in ( 'rnd', 'cms', 'nova', 'fermilab' ):
@@ -71,8 +92,8 @@ class Awsgratiaprobe:
                             r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
 
 
-                            r.LocalJobId(instance['InstanceId'])
-                            r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
+                        r.LocalJobId(instance['InstanceId'])
+                        r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
                 
                         state=instance['State']
                         #set the default status
@@ -92,24 +113,26 @@ class Awsgratiaprobe:
                         r.ResourceType('aws')
                         r.Njobs(1,"The no of jobs running at a time")
                         r.NodeCount(1) # default to total
-                        try:
-                            hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetails")
-                        except Exception as e:
-                            Error("The File for hardware details is not present. Please check config file HardwareDetails value.")
-                        instdet=insthardware(hardwdet)
-                        types=instdet.gettypedetails()
+
+
                         processor='1'
                         memory=''
                         price=0.0
-                        for t in types:
-                            if t['instance-type'] == instance['InstanceType']:
-                                processor=t['vcpu']
-                                memory=t['ram']
-                                price=t['price']
-                                cpu=float(processor)
-                                r.Processors(int(cpu),0,"total",instance['InstanceType'])
-                                r.Memory(float(memory))
-                                chargedesc=""
+                        try:
+                            i = self.instance_details.instance_data(region,instance['InstanceType'])
+                        except KeyError:
+                            DebugPrint(1,"instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
+                            processor=0
+                            memory=0
+                            price=0
+                        else:
+                            processor=i['cpu']
+                            memory=i['memory']
+                            price=i['price']
+                        cpu=float(processor)
+                        r.Processors(int(cpu),0,"total",instance['InstanceType'])
+                        r.Memory(float(memory))
+                        chargedesc=""
                         # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
                         if "SpotInstanceRequestId" in instance.keys():
                             sp=spot_price(account,region)
