@@ -3,3 +3,5 @@
     HardwareDetailsURL=""
     HardwareDetailsFile="/usr/share/gratia/awsvm/aws_demand_data_20151102.json"
     AWSCredentialsFile="~/.aws/credentials"
+    AWSRegions="us-east-1,us-west-1,us-west-2"
+        Comments91="Leave blank to obtain complete region list from AWS"

@@ -62,6 +62,30 @@ class Awsgratiaprobe:
             profiles = []
         self.profiles = profiles
 
+    def _get_regions(self, session):
+        """
+        Get list of regions to query. Regions can be set in ProbeConfig as AWSRegions, comma-separated.
+        If not specified, try to query the US regions to get a list of all regions.
+        """
+        regions = GratiaCore.Config.getConfigAttribute("AWSRegions").split(",")
+        if regions[0] == "":
+            regions = []
+        if len(regions) == 0:
+            bootstrap_regions = ["us-west-1","us-west-2","us-east-1"]
+            for rgn in bootstrap_regions:
+                try:
+                    ec2 = session.client("ec2",rgn)
+                    regions = [rgn['RegionName'] for rgn in ec2.describe_regions()['Regions']]
+                    assert len(regions) > 0
+                except:
+                    DebugPrint(2,"unable to get list of regions from %s"%rgn)
+                else:
+                    break
+            if len(regions) == 0:
+                DebugPrint(-1,"ERROR: unable to get list of AWS regions. Try setting AWSRegions in ProbeConfig.")
+                sys.exit(1)
+        return regions
+
     def process(self):
         if len(self.profiles) == 0:
             DebugPrint(3,"Querying AWS with default profile")
@@ -74,7 +98,9 @@ class Awsgratiaprobe:
                 self.process_session(session)
 
     def process_session(self, session):
-        for region in ( 'us-west-2','us-west-1','us-east-1'):
+        regions = self._get_regions(session)
+        DebugPrint(3,"AWS regions: %s"%regions)
+        for region in regions:
             ec2=session.client('ec2',region_name=region)
             mygacid=get_account_id(session.profile_name,region)
             owneracct=mygacid.get_id()
