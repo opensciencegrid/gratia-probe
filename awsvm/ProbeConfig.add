@@ -1,4 +1,4 @@
-    ExemptDuplicates="False"
+    ExemptDuplicates="0"
     DuplicateFilelock="/var/lib/gratia/filelock"
     HardwareDetailsURL=""
     HardwareDetailsFile="/usr/share/gratia/awsvm/aws_demand_data_20151102.json"

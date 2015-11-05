@@ -11,7 +11,7 @@ from time import mktime
 import time
 import sys
 from gratia.awsvm.spot_price_multi import spot_price
-from gratia.awsvm.cpuutil_multi import cpuUtilization
+from gratia.awsvm.cpuutil import CpuUtilization
 from gratia.awsvm.demand_data import AwsDemandData
 import os
 import ConfigParser
@@ -41,7 +41,7 @@ class Awsgratiaprobe:
             DebugPrint(3,"Loading AWS instance details and pricing from file %s"%hardwdet)
             self.instance_details.load_file(hardwdet)
         except:
-            DebugPrint(-1,"unable to load AWS instance data. Check that HardwareDetailsFile ",
+            DebugPrint(-1,"ERROR: unable to load AWS instance data. Check that HardwareDetailsFile ",
                 "is defined in ProbeConfig and exists")
             sys.exit(1)
 
@@ -55,7 +55,7 @@ class Awsgratiaprobe:
             profiles = [vo for vo in cfg.sections() if vo.lower() != "default"]
             DebugPrint(3,"Loaded AWS credentials file %s, profiles: %s"%(cred,profiles))
         else:
-            DebugPrint(2,"Unable to load profiles from AWS credentials file %s"%cred,
+            DebugPrint(2,"WARNING: Unable to load profiles from AWS credentials file %s"%cred,
                     ". Check that AWSCredentialsFile is defined in ProbeConfig and ",
                     "exsits. Attempting to continue with default profile.")
             profiles = []
@@ -102,6 +102,8 @@ class Awsgratiaprobe:
         for region in regions:
             ec2=session.client('ec2',region_name=region)
             response = ec2.describe_instances()
+            cpu_util=CpuUtilization(session,region)
+
             resv=response['Reservations']
             for reservation in resv:
                 owneracct=reservation['OwnerId']
@@ -173,7 +175,7 @@ class Awsgratiaprobe:
                     try:
                         i = self.instance_details.instance_data(region,instance['InstanceType'])
                     except KeyError:
-                        DebugPrint(1,"instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
+                        DebugPrint(1,"ERROR: instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
                         processor=0
                         memory=0
                         price=0
@@ -213,8 +215,7 @@ class Awsgratiaprobe:
                     etime=time.mktime(EndTime.timetuple())
                     r.EndTime(etime)
                     r.WallDuration(etime-stime)
-                    Cpu=cpuUtilization(session.profile_name,region)
-                    aver=Cpu.getUtilPercent(instance['InstanceId'])
+                    aver=cpu_util.getUtilPercent(instance['InstanceId'])
                     if aver is None:
                         cpuUtil=0.0
                         DebugPrint(4, "The CPU Utilization value is NULL as the instance was not running in the last hour")
@@ -222,8 +223,8 @@ class Awsgratiaprobe:
                     else:
                         cpuUtil=aver
                         r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
-                        r.CpuDuration(0,'system')
                         r.ResourceType("AWSVM")
+                    r.CpuDuration(0,'system')
                     r.AdditionalInfo("Version","1.0")
         
                     Gratia.Send(r)
@@ -236,13 +237,12 @@ if __name__ == '__main__':
         Gratia.Initialize('/etc/gratia/awsvm/ProbeConfig')
         GratiaWrapper.CheckPreconditions()
         vmProbe=Awsgratiaprobe()
-        Filelock="filelock"
         conf=GratiaCore.Config
-        duplicatelock=conf.getConfigAttribute("ExemptDuplicates")
+        duplicatelock=(conf.getConfigAttribute("ExemptDuplicates")=="1")
         filelock=conf.getConfigAttribute("DuplicateFilelock")
-        if  duplicatelock == "True":
-            if os.path.isfile(Filelock):
-                fl=open(Filelock, 'r+')
+        if  duplicatelock:
+            if os.path.isfile(filelock):
+                fl=open(filelock, 'r+')
                 date=datetime.datetime.now()
                 line=fl.readline()
                 prevdate = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S.%f")
@@ -253,14 +253,14 @@ if __name__ == '__main__':
                     fl.seek(0, 0)
                     fl.truncate()
                     fl.write(str(date));
-                    t = os.path.getmtime(Filelock)
+                    t = os.path.getmtime(filelock)
                     fl.close()
                     vmProbe.process()    
                 else:
-                    DebugPrint(1, "probe was run less than one hour ago, please wait %d s"%(3600-diff))
+                    DebugPrint(1, "ERROR: probe was run less than one hour ago, please wait %d s"%(3600-diff))
                     fl.close()
             else:
-                fl=open(Filelock,'w+')
+                fl=open(filelock,'w+')
                 date=str(datetime.datetime.now())
                 fl.write(date);
                 fl.close()
