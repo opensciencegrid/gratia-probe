@@ -183,14 +183,14 @@ class Awsgratiaprobe:
                         processor=i['cpu']
                         memory=i['memory']
                         price=i['price']
-                        chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
+                        chargedesc="on-demand price"
                     cpu=float(processor)
                     r.Processors(int(cpu),0,"total",instance['InstanceType'])
                     r.Memory(float(memory))
                     # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
                     if "SpotInstanceRequestId" in instance:
                         price=ec2_util.spot_price(instance['InstanceId'])
-                        chargedesc="The spot price charged in last hour corresponding to launch time"
+                        chargedesc="spot price"
                         if status==1:
                             reason = instance.get("StateReason",{})
                             if reason.get("Code","") == "Server.SpotInstanceTermination":
