@@ -10,8 +10,7 @@ import datetime
 from time import mktime
 import time
 import sys
-from gratia.awsvm.spot_price_multi import spot_price
-from gratia.awsvm.cpuutil import CpuUtilization
+from gratia.awsvm.ec2_util import Ec2Util
 from gratia.awsvm.demand_data import AwsDemandData
 import os
 import ConfigParser
@@ -102,7 +101,7 @@ class Awsgratiaprobe:
         for region in regions:
             ec2=session.client('ec2',region_name=region)
             response = ec2.describe_instances()
-            cpu_util=CpuUtilization(session,region)
+            ec2_util=Ec2Util(session,region)
 
             resv=response['Reservations']
             for reservation in resv:
@@ -179,23 +178,24 @@ class Awsgratiaprobe:
                         processor=0
                         memory=0
                         price=0
+                        chargedesc='unable to get instance price'
                     else:
                         processor=i['cpu']
                         memory=i['memory']
                         price=i['price']
+                        chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
                     cpu=float(processor)
                     r.Processors(int(cpu),0,"total",instance['InstanceType'])
                     r.Memory(float(memory))
-                    chargedesc=""
                     # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
-                    if "SpotInstanceRequestId" in instance.keys():
-                        sp=spot_price(session.profile_name,region)
-                        value=sp.get_price(instance['InstanceId'])
-                        price=value
-                        chargedesc="The instance is a on-demand instance hence charge is fixed per hour"
-                    if status==1:
-                        price=0
+                    if "SpotInstanceRequestId" in instance:
+                        price=ec2_util.spot_price(instance['InstanceId'])
                         chargedesc="The spot price charged in last hour corresponding to launch time"
+                        if status==1:
+                            reason = instance.get("StateReason",{})
+                            if reason.get("Code","") == "Server.SpotInstanceTermination":
+                                price=0
+                                chargedesc = "Spot Instance was terminated due to an increase in the market price"
                     r.Charge(str(price),"$","$/instance hr",chargedesc)
                     # The Time period for which the spot price and other values are calculated is noted down
                     launchtime=instance['LaunchTime']
@@ -206,7 +206,7 @@ class Awsgratiaprobe:
                             
                     EndTime=datetime.datetime.now()
                     EndTime=EndTime.replace(minute=minu)
-                    StartTime=EndTime.replace(hour=(EndTime.hour-1))
+                    StartTime=EndTime - datetime.timedelta(hours=1)
                     t=StartTime.date()
                     stime=time.mktime(StartTime.timetuple())
                     r.StartTime(stime)
@@ -215,7 +215,7 @@ class Awsgratiaprobe:
                     etime=time.mktime(EndTime.timetuple())
                     r.EndTime(etime)
                     r.WallDuration(etime-stime)
-                    aver=cpu_util.getUtilPercent(instance['InstanceId'])
+                    aver=ec2_util.cpu_utilization(instance['InstanceId'])
                     if aver is None:
                         cpuUtil=0.0
                         DebugPrint(4, "The CPU Utilization value is NULL as the instance was not running in the last hour")
