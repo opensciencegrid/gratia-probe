@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.14.2
-Release:            6%{?dist}
+Release:            7%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -63,8 +63,6 @@ Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
 Source24:  %{name}-lsf-%{version}.tar.bz2
 Source25: %{name}-awsvm-%{version}.tar.bz2
 
-Patch0: slurm-safe-unsigned.patch
-
 ########################################################################
 
 # Build settings.
@@ -102,8 +100,6 @@ Prefix: /etc
 %setup -q -D -T -a 23
 %setup -q -D -T -a 24
 %setup -q -D -T -a 25
-
-%patch0 -p1
 
 %build
 %ifnarch noarch
@@ -154,10 +150,10 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
     
-    # Moving the awsvm/hardwareinst file to buildroot for packaging
-    if [ $probe == "awsvm" ]; then
-      install -m 644 $probe/hardwareinst $RPM_BUILD_ROOT%{_sysconfdir}/gratia/awsvm/hardwareinst
-    fi
+    ## Moving the awsvm/hardwareinst file to buildroot for packaging
+    #if [ $probe == "awsvm" ]; then
+    #  install -m 644 $probe/aws_demand_data_20151102.json $RPM_BUILD_ROOT%{_sysconfdir}/gratia/awsvm/aws_demand_data_20151102.json
+    #fi
     
     ## Probe-specific customizations
     # Probe template addon lines in ProbeConfig.add (in probe directory) added before @PROBE_SPECIFIC_DATA@ tag
@@ -862,7 +858,7 @@ Gratia OSG accounting system probe for providing VM accounting in aws.
 %{default_prefix}/gratia/awsvm/ProbeConfig
 %{python_sitelib}/gratia/awsvm
 %{default_prefix}/gratia/awsvm/aws-gratia-probe
-%{_sysconfdir}/gratia/awsvm/hardwareinst
+%{default_prefix}/gratia/awsvm/aws_demand_data_20151102.json
 %{default_prefix}/gratia/awsvm/README
 
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/awsvm/ProbeConfig
