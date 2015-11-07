@@ -196,6 +196,9 @@ class Awsgratiaprobe:
                             if reason.get("Code","") == "Server.SpotInstanceTermination":
                                 price=0
                                 chargedesc = "Spot Instance was terminated due to an increase in the market price"
+                    elif status==1:
+                        price = 0
+                        chargedesc=""
                     r.Charge(str(price),"$","$/instance hr",chargedesc)
                     # The Time period for which the spot price and other values are calculated is noted down
                     launchtime=instance['LaunchTime']
