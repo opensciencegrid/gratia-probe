@@ -158,11 +158,14 @@ class Awsgratiaprobe:
                     description=instance['StateTransitionReason']    
                     r.Status(status,description)
             
-                    try:
-                        r.Host(instance['PrivateIpAddress'],False,instance['Placement']['AvailabilityZone'])
-                        r.SubmitHost(instance['PrivateIpAddress'],instance['Placement']['AvailabilityZone'])    
-                    except KeyError:
-                        r.SubmitHost("no Private ip as instance has been terminated")
+                    private_ip = instance.get('PrivateIpAddress','unknown')
+                    if "Placement" in instance:
+                        az = instance['Placement'].get('AvailabilityZone','unknown')
+                    else:
+                        az = "unknown"
+                    r.Host(private_ip,False,az)
+                    r.SubmitHost(private_ip,az)
+
                     r.ResourceType('aws')
                     r.Njobs(1,"The no of jobs running at a time")
                     r.NodeCount(1) # default to total
