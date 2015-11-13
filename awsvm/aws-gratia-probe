@@ -166,7 +166,6 @@ class Awsgratiaprobe:
                     r.Host(private_ip,False,az)
                     r.SubmitHost(private_ip,az)
 
-                    r.ResourceType('aws')
                     r.Njobs(1,"The no of jobs running at a time")
                     r.NodeCount(1) # default to total
 
@@ -229,7 +228,7 @@ class Awsgratiaprobe:
                     else:
                         cpuUtil=aver
                         r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
-                        r.ResourceType("AWSVM")
+                    r.ResourceType("AWSVM")
                     r.CpuDuration(0,'system')
                     r.AdditionalInfo("Version","1.0")
         
