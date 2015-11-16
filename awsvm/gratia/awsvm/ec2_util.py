@@ -102,3 +102,15 @@ class Ec2Util(object):
             sph=sphs[0]
             spotprice=sph['SpotPrice']
         return spotprice
+
+    def bid_price(self, sir_id):
+        try:
+            sirs = self.ec2_client.describe_spot_instance_requests()['SpotInstanceRequests']
+        except:
+            DebugPrint(1,'ERROR: Error getting spot instance requests, omitting bid price')
+        else:
+            for sir in sirs:
+                if sir['SpotInstanceRequestId'] == sir_id:
+                    return sir['SpotPrice']
+        return None
+

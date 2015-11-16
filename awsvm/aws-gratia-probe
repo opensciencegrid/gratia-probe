@@ -193,11 +193,14 @@ class Awsgratiaprobe:
                     if "SpotInstanceRequestId" in instance:
                         price=ec2_util.spot_price(instance['InstanceId'])
                         chargedesc="spot price"
+                        bid_price = ec2_util.bid_price(instance['SpotInstanceRequestId'])
+                        if bid_price is not None:
+                            r.Resource("BidPrice",bid_price)
                         if status==1:
                             reason = instance.get("StateReason",{})
                             if reason.get("Code","") == "Server.SpotInstanceTermination":
                                 price=0
-                                chargedesc = "Spot Instance was terminated due to an increase in the market price"
+                                chargedesc = "no charge"
                     elif status==1:
                         price = 0
                         chargedesc=""
