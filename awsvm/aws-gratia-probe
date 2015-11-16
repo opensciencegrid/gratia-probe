@@ -167,7 +167,6 @@ class Awsgratiaprobe:
                     r.SubmitHost(private_ip,az)
 
                     r.Njobs(1,"The no of jobs running at a time")
-                    r.NodeCount(1) # default to total
 
 
                     processor='1'
@@ -189,8 +188,10 @@ class Awsgratiaprobe:
                     cpu=float(processor)
                     r.Processors(int(cpu),0,"total",instance['InstanceType'])
                     r.Memory(float(memory))
+                    node_type="on-demand"
                     # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
                     if "SpotInstanceRequestId" in instance:
+                        node_type="spot"
                         price=ec2_util.spot_price(instance['InstanceId'])
                         chargedesc="spot price"
                         bid_price = ec2_util.bid_price(instance['SpotInstanceRequestId'])
@@ -205,6 +206,7 @@ class Awsgratiaprobe:
                         price = 0
                         chargedesc=""
                     r.Charge(str(price),"$","$/instance hr",chargedesc)
+                    r.NodeCount(1,"total",node_type)
                     # The Time period for which the spot price and other values are calculated is noted down
                     launchtime=instance['LaunchTime']
                     minu=launchtime.minute
