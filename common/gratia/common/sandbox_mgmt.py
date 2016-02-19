@@ -196,21 +196,6 @@ def RemoveOldFiles(nDays=31, globexp=None, req_maxsize=0):
                 return
 
 
-def RemoveOldBackups(nDays=31):
-#
-# Remove old backups
-#
-# Remove any backup older than the request number of days
-#
-# Parameters
-#   nDays - remove file older than 'nDays' (default 31)
-#
-
-    backupDir = Config.get_PSACCTBackupFileRepository()
-    DebugPrint(1, ' Removing Gratia data backup files older than ', nDays, ' days from ', backupDir)
-    RemoveOldFiles(nDays, os.path.join(backupDir, '*.log'))
-
-
 def RemoveOldLogs(nDays=31):
     logDir = Config.get_LogFolder()
     DebugPrint(1, 'Removing log files older than ', nDays, ' days from ', logDir)

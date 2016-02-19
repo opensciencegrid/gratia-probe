@@ -383,15 +383,6 @@ class ProbeConfiguration:
     def get_LogFileName(self):
         return self.__getConfigAttribute('LogFileName')
 
-    def get_PSACCTFileRepository(self):
-        return self.__getConfigAttribute('PSACCTFileRepository')
-
-    def get_PSACCTBackupFileRepository(self):
-        return self.__getConfigAttribute('PSACCTBackupFileRepository')
-
-    def get_PSACCTExceptionsRepository(self):
-        return self.__getConfigAttribute('PSACCTExceptionsRepository')
-
     def get_CertInfoLogPattern(self):
         if self.__CertInfoLogPattern:
             return self.__CertInfoLogPattern
