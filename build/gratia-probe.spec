@@ -78,7 +78,6 @@ Prefix: /etc
 %prep
 %setup -q -c
 %setup -q -D -T -a 1
-%setup -q -D -T -a 2
 %if 0%{?rhel} == 7 || %_arch != noarch
 %setup -q -D -T -a 3
 %endif
