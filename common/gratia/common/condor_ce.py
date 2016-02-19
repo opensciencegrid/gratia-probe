@@ -17,6 +17,7 @@ import xml.dom.minidom
 import gratia.common.config as config
 import gratia.common.sandbox_mgmt as sandbox_mgmt
 import gratia.common.file_utils as file_utils
+import gratia.common.certinfo
 
 from gratia.common.debug import DebugPrint, DebugPrintTraceback
 
@@ -24,6 +25,7 @@ Config = config.ConfigProxy()
 
 hasProcessed = False
 
+knownJobManagers = set(gratia.common.certinfo.jobManagers)
 
 def gridJobIdToId(val):
     """
@@ -124,6 +126,9 @@ def createCertinfoXML(classad):
     else:
         DebugPrint(3, "GridJobId was not parsed correctly: '%s'" % job_info_str)
         return None, None
+
+    if bm not in knownJobManagers:
+        bm = 'batch'
 
     dom = xml.dom.minidom.Document()
     batchManager = dom.createElement("BatchManager")

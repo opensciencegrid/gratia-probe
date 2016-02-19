@@ -3,6 +3,7 @@ import os
 import re
 import glob
 import string
+import fnmatch
 import xml.dom.minidom
 
 import gratia.common.config as config
@@ -58,7 +59,7 @@ def removeCertInfoFile(xmlDoc, userIdentityNode, namespace):
     # Use _findCertinfoFile(localJobId, probeName) to look for more files with globbing if the exact matck
     # is not found (gratia_certinfo_*_localJobId*)
     DebugPrint(4, 'DEBUG: call _findCertinfoFile(' + str(localJobId) + r', ' + str(probeName) + ')')
-    certinfo_touple = _findCertinfoFile(localJobId, probeName, static={'glob_files':False})
+    certinfo_touple = _findCertinfoFile(localJobId, probeName)
     if not certinfo_touple:
         # matching certinfo file not found
         DebugPrint(4, 'DEBUG: unable to find and remove  certinfo file')
@@ -189,7 +190,15 @@ def readCertInfoLog(localJobId):
     DebugPrint(0, 'Warning: unable to find valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern)
     return None
 
-def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files':True}):
+# update this list as new job managers are added
+jobManagers = ['batch', 'condor', 'sge', 'slurm', 'pbs', 'lsf']
+
+def _bumpJobManager(i):
+    # move jobManager[i] to the front of the list
+    if i > 0:
+        jobManagers.insert(0, jobManagers.pop(i))
+
+def _findCertinfoFile(localJobId, probeName):
     ''' Look for cert info file if present.'''
     certinfo_files = []
     
@@ -204,13 +213,6 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
         if match:
             lrms = string.lower(match.group('Type'))
             DebugPrint(4, 'findCertInfoFile: obtained LRMS type ' + lrms + ' from ProbeName')
-        elif len(jobManagers) == 0:
-            DebugPrint(0,
-                       'WARNING: unable to ascertain LRMS to match against multiple certinfo entries and no other possibilities found yet -- may be unable to resolve ambiguities'
-                       )
-    if lrms and len(jobManagers) == 0: # why not append any value not already there? it may be missing it in the loop below
-        jobManagers.append(lrms)  # Useful default
-        DebugPrint(4, 'findCertInfoFile: added default LRMS type ' + lrms + ' to search list')
 
     # Ascertain local job ID
 
@@ -223,41 +225,20 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
 
     DebugPrint(4, 'findCertInfoFile: continuing to process')
 
-    for jobManager in jobManagers:
+    for i,jobManager in enumerate(jobManagers):
         filestem = os.path.join(Config.get_DataFolder(), 'gratia_certinfo' + r'_' + jobManager + r'_' + localJobId)
         DebugPrint(4, 'findCertInfoFile: looking for ' + filestem)
         if os.path.exists(filestem):
             certinfo_files.append(filestem)
+            _bumpJobManager(i)
             break
         elif os.path.exists(filestem + '.0.0'):
             certinfo_files.append(filestem + '.0.0')
+            _bumpJobManager(i)
             break
 
     if len(certinfo_files) == 1:
         DebugPrint(4, 'findCertInfoFile: found certinfo files %s' % (certinfo_files))
-    elif static['glob_files']:
-        DebugPrint(4, 'findCertInfoFile: globbing for certinfo file')
-        certinfo_files = glob.glob(os.path.join(Config.get_DataFolder(), 'gratia_certinfo_*_' + localJobId + '*'))
-        if certinfo_files == None or len(certinfo_files) == 0:
-            DebugPrint(4, 'findCertInfoFile: could not find certinfo files matching localJobId ' + str(localJobId))
-            static['glob_files'] = False
-            DebugPrint(4, 'findCertInfoFile: could not find certinfo files, disabling globbing')
-            DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId + '. Globbing disabled.')
-            return None  # No files
-
-        if len(certinfo_files) == 1:
-            fileMatch = __certinfoJobManagerExtractor.search(certinfo_files[0])
-            if fileMatch:
-                if fileMatch.group(1) in jobManagers:
-                    # we're already checking for this jobmanager so future globbing won't help
-                    static['glob_files'] = False
-                    DebugPrint(4, 'findCertInfoFile: (1) jobManager ' + fileMatch.group(1)
-                           + 'already being checked, disabling globbing')
-                    
-                else:
-                    jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
-                    DebugPrint(4, 'findCertInfoFile: (1) saving jobManager ' + fileMatch.group(1)
-                           + ' for future reference')
 
     for certinfo in certinfo_files:
         found = 0  # Keep track of whether to return info for this file.
@@ -287,12 +268,6 @@ def _findCertinfoFile(localJobId, probeName, jobManagers=[], static={'glob_files
                 DebugPrint(4, 'findCertInfoFile: want LRMS ' + lrms + ': found ' + certinfo_lrms)
                 if certinfo_lrms == lrms:  # Match
                     found = 1
-                    fileMatch = __certinfoJobManagerExtractor.search(certinfo)
-                    if fileMatch:
-                        jobManagers.insert(0, fileMatch.group(1))  # Save to short-circuit glob next time
-                        DebugPrint(4, 'findCertInfoFile: saving jobManager ' + fileMatch.group(1)
-                                   + ' for future reference')
-                        # should globbung be disabled here?
 
             if found == 1:
                 DebugPrint(4, 'findCertInfoFile: found certinfo ' + str(certinfo))
