@@ -1,0 +1,1 @@
+0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/htcondor-ce/ProbeConfig && /usr/share/gratia/htcondor-ce/condor_meter -f /etc/gratia/htcondor-ce/ProbeConfig -s 900

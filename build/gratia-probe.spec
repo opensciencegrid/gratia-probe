@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.15.0
+Version:            1.16.0
 Release:            1%{?dist}
 
 License:            GPL
@@ -266,8 +266,18 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
   install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
   install -m 644 condor/99_gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-gwms.conf
+
+  # Install the htcondor-ce configuration
+  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
+  install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
+  install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
+  install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
+  install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
+  # Copy the condor configuration
+  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
+  install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
@@ -830,6 +840,30 @@ The SLURM probe for the Gratia OSG accounting system.
 
 %post slurm
 %customize_probeconfig -d slurm
+
+%package htcondor-ce
+Summary: A HTCondor-CE probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: htcondor-ce
+BuildRequires: python-devel
+License: See LICENSE.
+
+%description htcondor-ce
+The HTCondor-CE probe for the Gratia OSG accounting system.
+
+%files htcondor-ce
+%defattr(-,root,root,-)
+%dir %{default_prefix}/gratia/htcondor-ce
+%{default_prefix}/gratia/htcondor-ce/condor_meter
+%config(noreplace) %{_sysconfdir}/condor-ce/config.d/99_gratia.conf
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
+
+%post htcondor-ce
+%customize_probeconfig -d htcondor-ce
+
+
 
 # lsf probe, following the new format
 

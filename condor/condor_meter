@@ -708,6 +708,10 @@ def classadToJUR(classad):
         if classad['JobUniverse'] == 7 or classad['JobUniverse'] == 12:
             r.Grid("Local", "Local execution based on job universe")
 
+    # Jobs that are routed to other jobs should be considered local
+    if 'RoutedToJobId' in classad:
+        r.Grid("Local", "Source of routed job")
+
     if 'logfile' in classad:
         r.AddTransientInputFile(classad["logfile"])
 
