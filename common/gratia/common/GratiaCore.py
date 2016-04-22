@@ -92,6 +92,8 @@ def __disconnect_at_exit__():
     DebugPrint(0, '                          outstanding records tar files: ' + str(sandbox_mgmt.outstandingStagedTarCount))
     DebugPrint(1, 'End-of-execution disconnect ...')
 
+def Disconnect():
+    __disconnect_at_exit__()
 
 def Initialize(customConfig='ProbeConfig'):
     '''This function initializes the Gratia metering engine'''

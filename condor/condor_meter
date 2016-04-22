@@ -8,15 +8,28 @@ import os
 import re
 import sys
 import time
+import types
+import signal
 import random
 import os.path
 import optparse
 import subprocess
 
 from gratia.common.Gratia import DebugPrint
+from gratia.common.debug import DebugPrintTraceback
 import gratia.common.GratiaCore as GratiaCore
 import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
+import gratia.common.file_utils as file_utils
+import gratia.common.config as config
+
+g_has_classad = True
+try:
+    import classad as classadLib
+except ImportError:
+    g_has_classad = False
+g_alternate_records = {}
+g_probe_config = None
 
 prog_version = "%%%RPMVERSION%%%"
 prog_revision = '$Revision$'
@@ -237,6 +250,8 @@ def main():
 
     register_gratia()
     GratiaCore.Initialize(opts.gratia_config)
+    global g_probe_config
+    g_probe_config = opts.gratia_config
 
     # setup htcondor environment 
     setup_environment()
@@ -333,6 +348,7 @@ def register_gratia():
 def process_history_dirs(dirs):
     submit_count = 0
     found_count = 0
+    alternate_count = 0
     logs_found = 0
     logfile_errors = 0
     # Note we are not ordering logfiles by type, as we don't want to
@@ -344,8 +360,8 @@ def process_history_dirs(dirs):
         # Make sure the filename is in a reasonable format
         m = condor_history_re.match(logfile)
         if m:
-            cnt_submit, cnt_found = process_history_file(log)
-            if cnt_submit == cnt_found and cnt_submit > 0:
+            cnt_submit, cnt_found, cnt_alternate = process_history_file(log)
+            if cnt_submit + cnt_alternate == cnt_found and (cnt_submit > 0 or cnt_alternate > 0):
                 DebugPrint(5, "Processed %i ClassAds from file %s" % (cnt_submit, log))
             else:
                 DebugPrint(2, "Unable to process ClassAd from file (will add to quarantine): %s.  Submit count %d; found count %d" % (log, cnt_submit, cnt_found))
@@ -353,16 +369,20 @@ def process_history_dirs(dirs):
                 logfile_errors += 1
             submit_count += cnt_submit
             found_count += cnt_found
+            alternate_count += cnt_alternate
         else:
             DebugPrint(2, "Ignoring history file with invalid name: %s" % log)
 
     DebugPrint(2, "Number of logfiles processed: %d" % logs_found)
     DebugPrint(2, "Number of logfiles with errors: %d" % logfile_errors)
     DebugPrint(2, "Number of usage records submitted: %d" % submit_count)
+    DebugPrint(2, "Number of alternate site name usage records: %d" % alternate_count)
     DebugPrint(2, "Number of usage records found: %d" % found_count)
+    send_alternate_records(g_alternate_records)
 
 def process_history_file(logfile):
 
+    count_alternate = 0
     count_submit = 0
     count_found = 0
     try:
@@ -380,7 +400,7 @@ def process_history_file(logfile):
             continue
 
         if not added_transient:
-            classad['logfile'] = logfile
+            classad['logfile'] = str(logfile)
             added_transient = True
         try:
             r = classadToJUR(classad)
@@ -406,11 +426,17 @@ def process_history_file(logfile):
                 str(classad.get('CompletionDate', 'MISSING')), min_start_time))
             continue
 
+        if r.GetProbeName() != GratiaCore.Config.get_ProbeName():
+            count_alternate += 1
+            alt_info = g_alternate_records.setdefault((r.GetProbeName(), r.GetSiteName()), [])
+            alt_info.append(r)
+            continue
+
         response = GratiaCore.Send(r)
         if response[:2] == 'OK':
             count_submit += 1
 
-    return count_submit, count_found
+    return count_submit, count_found, count_alternate
 
 def process_condor_history(start_time=None, end_time=None):
     hist_command = None
@@ -422,7 +448,7 @@ def process_condor_history(start_time=None, end_time=None):
         hist_command = "condor_history -l"
     DebugPrint(-1, "RUNNING: %s" % hist_command)
     fd = os.popen(hist_command)
-    submit_count, found_count = process_history_fd(fd)
+    submit_count, found_count, alternate_count = process_history_fd(fd)
     if fd.close():
         DebugPrint(-1, "condor_meter --history ERROR: Call to condor_history " \
                        "failed: %s" % hist_command)
@@ -431,6 +457,9 @@ def process_condor_history(start_time=None, end_time=None):
                    "%d" % submit_count)
     DebugPrint(-1, "condor_meter --history: Usage records found: " \
                    "%d" % found_count)
+    DebugPrint(-1, "condor_meter --history: Alternate-site-name usage records" \
+                   " found: %d" % alternate_count)
+    send_alternate_records(g_alternate_records)
 
 def process_history_fd(fd):
     """
@@ -440,6 +469,7 @@ def process_history_fd(fd):
     """
     count_submit = 0
     count_found = 0
+    count_alternate = 0
     for classad in fd_to_classad(fd):
         count_found += 1
         if not classad:
@@ -470,11 +500,17 @@ def process_history_fd(fd):
                 str(classad.get('CompletionDate', 'MISSING')), min_start_time))
             continue
 
+        if r.GetSiteName() != GratiaCore.Config.get_SiteName():
+            count_alternate += 1
+            alt_info = g_alternate_records.setdefault((r.GetProbeName(), r.GetSiteName()), [])
+            alt_info.append(r)
+            continue
+
         response = GratiaCore.Send(r)
         if response[:2] == 'OK':
             count_submit += 1
 
-    return count_submit, count_found
+    return count_submit, count_found, count_alternate
 
 def setIfExists(func, classad, attr, comment=None, setstr=False):
     if attr in classad:
@@ -570,7 +606,7 @@ def classadToJUR(classad):
     if cmd == "condor_dagman":
         if 'logfile' in classad:
             DebugPrint(1, 'Deleting transient condor_dagman input file: '+classad["logfile"])
-            Gratia.RemoveFile(classad["logfile"])
+            file_utils.RemoveFile(classad["logfile"])
         raise IgnoreClassadException("Ignoring classad for condor_dagman monitor.")
 
     resource_type = "Batch"
@@ -655,7 +691,11 @@ def classadToJUR(classad):
     r.CpuDuration(classad['UserCpuTotal'], "user", "Was entered in seconds")
 
     if 'CompletionDate' in classad and classad['CompletionDate'] > 0:
-        r.EndTime(classad['CompletionDate'], "Was entered in seconds")
+        DebugPrint(5, "Current completion time: %s" % classad.eval('CompletionDate'))
+        if hasattr(classad, 'eval'):
+            r.EndTime(classad.eval('CompletionDate'), "Was entered in seconds")
+        else:
+            r.EndTime(classad['CompletionDate'], "Was entered in seconds")
 
     setIfExists(r.StartTime, classad, 'JobStartDate', "Was entered in seconds")
 
@@ -717,6 +757,12 @@ def classadToJUR(classad):
 
     setIfExists(r.ProjectName, classad, 'ProjectName', 'As specified in Condor submit file', True)
 
+    if 'GratiaSiteName' in classad and hasattr(classad, 'lookup'):
+        evaluated = classad.lookup('GratiaSiteName').eval()
+        if isinstance(evaluated, types.StringType):
+            r.SiteName(evaluated)
+            r.ProbeName('%s-%s' % (r.GetProbeName(), evaluated))
+
     networkPhaseUnit = classad.get('RemoteWallClockTime', '')
     total_network = 0
     for attr, val in classad.items():
@@ -733,9 +779,22 @@ classad_double_re = re.compile("^(\w{1,255}) = ([+-]? *(?:\d{1,30}\.?\d{0,30}|\.
 classad_string_re = re.compile("^(\S+) = \"(.*)\"$")
 classad_catchall_re = re.compile("^(\S+) = (.*)$")
 def fd_to_classad(fd):
-    classad = caselessDict()
-    for line in fd.readlines():
-        line = line.strip()
+    if g_has_classad:
+        buffer = ''
+    else:
+        classad = caselessDict()
+    for lineOrig in fd.readlines():
+        line = lineOrig.strip()
+        if g_has_classad:
+           if not line:
+               if hasattr(classadLib, 'parseOne'):
+                   yield add_unique_id(classadLib.parseOne(buffer))
+               else:
+                   yield add_unique_id(classadLib.parseOld(buffer))
+               buffer = ''
+           else:
+               buffer += lineOrig
+           continue
         m = classad_bool_re.match(line)
         if m:
             attr, val = m.groups()
@@ -770,7 +829,13 @@ def fd_to_classad(fd):
             continue
         DebugPrint(2, "Invalid line in ClassAd: %s" % line)
 
-    yield add_unique_id(classad)
+    if g_has_classad:
+        if hasattr(classadLib, 'parseOne'):
+            yield add_unique_id(classadLib.parseOne(buffer))
+        else:
+            yield add_unique_id(classadLib.parseOld(buffer))
+    else:
+        yield add_unique_id(classad)
         
 def add_unique_id(classad):
     if 'GlobalJobId' in classad:
@@ -859,6 +924,73 @@ def check_gratia():
                        "will not be processed correctly")
         valid = False
     return valid
+
+
+def send_alternate_records(gratia_info):
+    """
+    For any accumulated records with an alternate probe/site name, send in a sub-process.
+    """
+    if not gratia_info:
+        return
+    GratiaCore.Disconnect()
+    for info, records in gratia_info.items():
+        pid = os.fork()
+        if pid == 0: # I am the child
+            try:
+                signal.alarm(5*60)
+                send_alternate_records_child(info, records)
+            except Exception, e:
+                DebugPrint(2, "Failed to send alternate records: %s" % str(e))
+                DebugPrintTraceback(2)
+                os._exit(0)
+            os._exit(0)
+        else: # I am parent
+            try:
+                os.waitpid(pid, 0)
+            except:
+                raise
+
+
+def send_alternate_records_child(info, record_list):
+    probe, site = info
+
+    try:
+        GratiaCore.Initialize(g_probe_config)
+    except Exception, e:
+        DebugPrint(2, "Failed to send alternate records: %s" % str(e))
+        DebugPrintTraceback(2)
+        raise
+    config.Config.setSiteName(site)
+    config.Config.setMeterName(probe)
+    GratiaCore.Handshake()
+    try:
+        GratiaCore.SearchOutstandingRecord()
+    except Exception, e:
+        DebugPrint(2, "Failed to send alternate records: %s" % str(e)) 
+        DebugPrintTraceback(2)
+        raise
+    GratiaCore.Reprocess()
+
+    DebugPrint(2, "Sending alternate records for probe %s / site %s." % (probe, site))
+    DebugPrint(2, "Gratia collector to use: %s" % GratiaCore.Config.get_SOAPHost())
+
+    count_found = 0
+    count_submit = 0
+    for record in record_list:
+        count_found += 1
+        record.ProbeName(probe)
+        record.SiteName(site)
+        response = GratiaCore.Send(record)
+        if response[:2] == 'OK':
+            count_submit += 1
+        DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
+            (probe, site, response))
+
+    DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
+    DebugPrint(2, "Number of usage records found: %d" % count_found)
+
+    os._exit(0)
+
 
 if __name__ == "__main__":
     main()

@@ -149,9 +149,17 @@ class Record(object):
         else:
             return r''
 
+    def GetProbeName(self):
+        '''Returns the current site name for the record'''
+        return self.__ProbeName
+
     def ProbeName(self, value, description=r''):
         self.__ProbeName = value
         self.__ProbeNameDescription = description
+
+    def GetSiteName(self):
+        '''Returns the current site name for the record'''
+        return self.__SiteName
 
     def SiteName(self, value, description=r''):
         ''' Indicates which site the service accounted for belong to'''
