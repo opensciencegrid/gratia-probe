@@ -1005,6 +1005,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Apr 22 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.16.0-1
+- modify condor probe for HTCondor-CE (SOFTWARE-2257)
+- filter results by probe name in condor_meter (GRATIA-188)
+
 * Thu Feb 18 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.15.0-1
 - drop psacct probe (GRATIA-184)
 - fix GridJobId parsing in condor_ce.py (GRATIA-185)
