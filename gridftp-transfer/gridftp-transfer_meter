@@ -1,0 +1,420 @@
+#!/usr/bin/python
+
+import os
+import re
+import sys
+import glob
+import json
+import math
+import time
+import random
+import socket
+import hashlib
+import datetime
+import optparse
+import tempfile
+
+import pytz
+
+import gratia.common.GratiaCore as GratiaCore
+import gratia.common.Gratia as Gratia
+import gratia.common.GratiaWrapper as GratiaWrapper
+
+
+def get_file_digest(fp):
+    offset = fp.tell()
+    try:
+        fp.seek(0)
+        digest_obj = hashlib.sha256()
+        digest_obj.update(fp.read(1024))
+        digest = digest_obj.hexdigest()
+    finally:
+        fp.seek(offset)
+    return digest
+
+
+def get_last_time(log_fp):
+    """
+    Return information about where we left off for this logfile.
+
+    Returns the checkpoint timestamp.  In the case where we can't
+    determine the last timestamp, 0 is returned
+    """
+    fname = os.path.join(GratiaCore.Config.getConfigAttribute("WorkingFolder"), "GridftpProbeCheckpoint")
+    log_digest = get_file_digest(log_fp)
+    try:
+        if not os.path.exists(fname):
+            return 0
+        with open(fname, "r") as fp:
+            if os.fstat(fp.fileno()).st_size == 0:
+                return 0
+            checkpoint = json.load(fp)
+            if checkpoint.get('digest') != log_digest:
+                return 0
+            return checkpoint.get('timestamp', 0)
+    except Exception, e:
+        GratiaCore.DebugPrint(1, "Failed to parse checkpoint file: %s", str(e))
+        return 0
+
+
+def save_last_time(fp, timestamp):
+    """
+    Atomic write of the checkpoint information.
+
+    Note we don't make the checkpoint file durable: in the case of FS corruption, we can
+    simply reprocess all available logs.
+    """
+    digest = get_file_digest(fp)
+    output_dict = {'timestamp': timestamp, 'digest': digest}
+    fname = os.path.join(GratiaCore.Config.getConfigAttribute("WorkingFolder"), "GridftpProbeCheckpoint")
+    fd, tname = tempfile.mkstemp(dir=GratiaCore.Config.getConfigAttribute("WorkingFolder"), prefix="GridftpProbeCheckpoint")
+    with os.fdopen(fd, "w") as fp:
+        json.dump(output_dict, fp)
+    os.rename(tname, fname)
+
+
+def resolve(addr):
+    if addr.startswith('['):
+        addr = addr[1:]
+    else:
+        return addr
+    if addr.endswith(']'):
+        addr = addr[:-1]
+    else:
+        return addr
+    try:
+        return socket.gethostbyaddr(addr)[0]
+    except:
+        return addr
+
+
+def send_to_gratia(event):
+    """
+    Given a dictionary corresponding to a single transfer, convert to a gratia record (and send).
+    """
+    GratiaCore.DebugPrint(3, "Processing GridFTP event: %s" % str(event))
+
+    if 'HOST' not in event:
+        GratiaCore.DebugPrint(3, "Ignoring record as HOST is missing.")
+        return
+
+    isNew = False
+    if event.get('TYPE') == 'RETR':
+        srcHost = event['HOST']
+        destHost = resolve(event['DEST'])
+    else:
+        srcHost = resolve(event['DEST'])
+        destHost = event['HOST']
+        isNew = True
+
+    duration = None
+    if ('start' in event) and ('end' in event):
+        duration = int(math.ceil(event['end'] - event['start']))
+        duration = 'PT%dS' % duration
+
+    errorcode = event.get('CODE', '220')
+    if errorcode and errorcode[0] == '2':
+        errorcode = '0'
+
+    id_obj = hashlib.sha256()
+    id_obj.update(event.get('START', ''))
+    id_obj.update(event.get('DATE', ''))
+    id_obj.update(event.get('FILE', ''))
+    id_obj.update(event.get('USER', ''))
+    id_obj.update(str(event.get('pid', '')))
+    uniq_id = id_obj.hexdigest()
+
+    r = Gratia.UsageRecord('Storage')
+    r.AdditionalInfo('Source', srcHost)
+    r.AdditionalInfo('Destination', destHost)
+    r.AdditionalInfo('IsNew', int(isNew))
+    r.AdditionalInfo('Protocol', 'gsiftp')
+    if 'start' in event:
+        r.StartTime(event['start'])
+    if duration:
+        if 'NBYTES' in event:
+            r.Network(event['NBYTES'], 'b', duration, 'total', 'transfer')
+        r.WallDuration(duration)
+    if 'dn' in event:
+        r.DN(event['dn'])
+    r.SubmitHost(event['HOST'])
+    r.Status(errorcode)
+    if 'USER' in event:
+        r.LocalUserId(event['USER'])
+    r.LocalJobId(uniq_id)
+    if 'fqan' in event:
+        r.VOName(event['fqan'])
+    if 'vo' in event:
+        r.ReportableVOName(event['vo'])
+
+    GratiaCore.Send(r)
+
+
+_zone_re = re.compile('\s*ZONE\s*=\s*\"([-+0-9/A-Za-z]+)\"')
+def get_timezone():
+    if os.path.exists("/etc/sysconfig/clock"):
+        with open("/etc/sysconfig/clock") as fp:
+            for line in fp:
+                match = _zone_re.match(line)
+                if match:
+                    return pytz.timezone(match.group(1).replace(" ", "_"))
+    if os.path.exists("/etc/localtime") and os.path.islink("/etc/localtime"):
+        tzpath = os.path.realpath("/etc/localtime")
+        start = tzpath.find("/")+1
+        while start is not 0:
+            tzpath = tzpath[start:]
+            try:
+                return pytz.timezone(tzpath)
+            except pytz.UnknownTimeZoneError:
+                pass
+            start = tzpath.find("/")+1
+    raise pytz.UnknownTimeZoneError("Unable to determine system Olson timezone")
+
+
+def total_seconds(td):
+    return td.days * 86400 + td.seconds
+
+
+# Example log line:
+# [142748] Tue Aug  2 21:35:02 2016 :: User foo successfully authorized
+_pytz = get_timezone()
+_epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
+_prefix_re = re.compile(r"\[(\d+)\] ([A-Z][a-z]{2,2} [A-Z][a-z]{2,2}\s{1,2}\d+ \d{2,2}:\d{2,2}:\d{2,2} \d{4,4}) :: (.*)")
+def process_line_prefix(line):
+    """
+    Process the prefix of a line; if it's appropriately formatted, return a tuple of
+    the PID, timestamp, and message contents.
+    """
+    m = _prefix_re.match(line)
+    if not m:
+        return None
+
+    pid, time_formatted, msg = m.groups()
+    pid = int(pid)
+    ts = time.strptime(time_formatted, "%a %b  %d %H:%M:%S %Y")
+    dt = _pytz.localize(datetime.datetime(*ts[:6]))
+    stamp = total_seconds(dt-_epoch)
+    return pid, stamp, msg
+
+
+# Example: 20160720011611.014245
+def gftp_to_stamp(gftp):
+    year = int(gftp[:4])
+    month = int(gftp[4:6])
+    day = int(gftp[6:8])
+    hour = int(gftp[8:10])
+    minute = int(gftp[10:12])
+    second = float(gftp[12:])
+    return time.mktime((year, month, day, hour, minute, int(second), 0, 0, 0))
+
+
+_start_re = re.compile("Server started")
+_start_daemon_re = re.compile("Server started in daemon mode")
+_shutdown_re = re.compile("Server is shutting down")
+_finish_re = re.compile("Closed connection")
+_transfer_re = re.compile("Transfer stats: (.*)")
+_dn_re = re.compile("DN (.+) successfully authorized.")
+_vo_re = re.compile("VO (\w+) (\S+)")
+def process_one_log(log_fname, events, timestamp, backup_fname=None):
+    """
+    Process a single logfile for gridftp events:
+    - log_fname: Name of the logfile to process.
+    - events: A dictionary of all open events.
+    - timestamp: Only process lines after this given timestamp.
+    - backup_fname: Additional file for events.
+
+    The `backup_fname` is only searched if there are open transfer
+    events after this current file has been searched.
+
+    Returns:
+    - events: An updated dictionary of open transfer events.
+    - timestamp: The last Unix timestamp of a processed line.
+    """
+    GratiaCore.DebugPrint(2, "Processing %s for events after %s" % (log_fname, time.asctime(time.gmtime(timestamp))))
+
+    stamp = timestamp
+    daemon_pid = -1
+    xfer_count = 0
+    with open(log_fname, "r") as fp:
+        for line in fp:
+            info = process_line_prefix(line)
+            if not info:
+                continue
+            pid, stamp, msg = info
+            if stamp < timestamp:
+                continue
+            # Ignore the parent process completely
+            m = _start_daemon_re.match(msg)
+            if m:
+                daemon_pid = pid
+                continue
+            if pid == daemon_pid:
+                continue
+
+            if pid not in events:
+                events[pid] = {'pid': pid}
+            event = events[pid]
+            event['lastlog'] = stamp
+            m = _start_re.match(msg)
+            if m:
+                if pid in events:
+                    del events[pid]
+                events[pid] = {'start': stamp, 'pid': pid, 'lastlog': stamp}
+                continue
+            m = _finish_re.match(msg)
+            if not m:
+                m = _shutdown_re.match(msg)
+            if m:
+                if pid in events:
+                    del events[pid]
+                continue
+            m = _dn_re.match(msg)
+            if m:
+                event['dn'] = m.group(1)
+                continue
+            m = _vo_re.match(msg)
+            if m:
+                if 'vo' in event: continue
+                event['vo'] = m.group(1)
+                event['fqan'] = m.group(2).split(",")[0]
+                continue
+            m = _transfer_re.match(msg)
+            if m:
+                # If we didn't see the start of the transfer, we might
+                # be reprocessing old data!
+                if 'start' not in event:
+                    del events[event['pid']]
+                    continue
+                # Transfer has finished; duplicate the dictionary and
+                # create gratia record
+                event = dict(event)
+                for info in m.group(1).split():
+                     info2 = info.split("=", 2)
+                     if len(info2) != 2: continue
+                     event[info2[0]] = info2[1]
+                if 'START' in event:
+                    event['start'] = gftp_to_stamp(event['START'])
+                if 'DATE' in event:
+                    event['end'] = gftp_to_stamp(event['DATE'])
+                if 'NBYTES' in event:
+                    try:
+                        event['NBYTES'] = int(event['NBYTES'])
+                    except:
+                        del event['NBYTES']
+                send_to_gratia(event)
+                xfer_count += 1
+                continue
+
+        # Timeout events older than 48 hours.
+        expiry = stamp - 48*60*60
+        expire_pids = [pid for pid in events if (events[pid].get('lastlog', stamp) < expiry)]
+        for pid in expire_pids:
+            GratiaCore.DebugPrint(2, "Expiring transfer with no events in 48 hours: %d" % pid)
+            del events[pid]
+        no_start_pids = [pid for pid in events if ('start' not in events[pid])]
+        for pid in no_start_pids:
+            GratiaCore.DebugPrint(4, "Ignoring transfer without start events: %d" % pid)
+            del events[pid]
+
+        # Calculate the start timestamp of the oldest transfer.  We can
+        # safely ignore any events prior to that.
+        if events:
+            stamp = min([event.get('start', event.get('lastlog', stamp)) for event in events.values()])
+            GratiaCore.DebugPrint(4, "Oldest active transfer at end of file processing: %s GMT" % time.asctime(time.gmtime(stamp)))
+        else:
+            GratiaCore.DebugPrint(4, "No active transfers at end of the file processing.  Setting last processed time to %s GMT" % time.asctime(time.gmtime(stamp)))
+
+        GratiaCore.DebugPrint(2, "This log file had %d completed transfers." % xfer_count)
+
+        # Write out checkpoint
+        timestamp = max(stamp, timestamp)
+        save_last_time(fp, timestamp)
+
+    return events, timestamp
+
+
+def run_probe():
+    log_path = GratiaCore.Config.getConfigAttribute("GridftpLogLocation")
+    if not log_path:
+        log_path = '/var/log/gridftp-auth.log'
+    log_path_glob = log_path + "*"
+    all_possible_logs = glob.glob(log_path_glob)
+    log_info = [{"name": i, "size": os.stat(i).st_mtime} for i in all_possible_logs if os.access(i, os.R_OK)]
+    log_info.sort(key=lambda i : i['size'], reverse=True)
+    all_possible_logs = [i['name'] for i in log_info]
+
+    if not all_possible_logs:
+        GratiaCore.DebugPrint(1, "No gridftp logs to process")
+        return
+
+    # Sort through the available logs, trying to locate the last active one.
+    for idx in range(len(all_possible_logs)):
+        fname = all_possible_logs[idx]
+        with open(fname, "r") as fp:
+            timestamp = get_last_time(fp)
+            if timestamp: # Indicates this was our last checkpoint file.
+                break
+    all_possible_logs = all_possible_logs[:idx+1][::-1]
+    events = {}
+    for log_fname in all_possible_logs:
+        events, timestamp = process_one_log(log_fname, events, timestamp)
+
+
+def parse_opts():
+
+    parser = optparse.OptionParser(usage="%prog [options]")
+    parser.add_option("-f", "--gratia_config", help="Location of the Gratia config; "
+        "defaults to /etc/gratia/gridftp-transfer/ProbeConfig.", dest="gratia_config",
+        default="/etc/gratia/gridftp-transfer/ProbeConfig")
+    parser.add_option("-s", "--sleep", help="Do a random amount of sleep, up to the"
+        " specified number of seconds before running.", dest="sleep",
+        default=0, type="int")
+    parser.add_option("-v", "--verbose", help="Enable verbose logging to stdout.",
+        default=False, action="store_true", dest="verbose")
+
+    opts, args = parser.parse_args()
+
+    # Initialize Gratia
+    if not opts.gratia_config or not os.path.exists(opts.gratia_config):
+        raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
+    GratiaCore.Config = GratiaCore.ProbeConfiguration(opts.gratia_config)
+
+    if opts.verbose:
+        GratiaCore.Config.set_DebugLevel(5)
+
+    return opts, args
+
+
+def main():
+
+    try:
+        opts, dirs = parse_opts()
+    except Exception, e:
+        print >> sys.stderr, str(e)
+        sys.exit(1)
+
+    # Sanity checks for the probe's runtime environment.
+    GratiaWrapper.CheckPreconditions()
+
+    if opts.sleep:
+        rnd = random.randint(1, int(opts.sleep))
+        GratiaCore.DebugPrint(2, "Sleeping for %d seconds before proceeding." % rnd)
+        time.sleep(rnd)
+
+    # Make sure we have an exclusive lock for this probe.
+    GratiaWrapper.ExclusiveLock()
+ 
+    # TODO: We should really register the probe and GridFTP version here. 
+    GratiaCore.Initialize(opts.gratia_config)
+
+    GratiaCore.DebugPrint(2, "Starting GridFTP probe.")
+    try:
+        run_probe()
+    except Exception, e:
+        GratiaCore.Error("GridFTP probe failed with error: %s" % str(e))
+        raise
+    GratiaCore.DebugPrint(2, "GridFTP probe is done.")
+
+if __name__ == "__main__":
+   main()
+
