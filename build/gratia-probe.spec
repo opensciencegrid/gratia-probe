@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.16.0
+Version:            1.17.0
 Release:            1%{?dist}
 
 License:            GPL
@@ -637,7 +637,8 @@ Contributed by Andrei Baranovksi of the OSG Storage team.
 Summary: Gratia OSG accounting system probe for gridftp transfers.
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
-Requires: netlogger 
+Requires: globus-gridftp-osg-extensions
+Requires: pytz
 License: See LICENSE.
 
 %description gridftp-transfer
@@ -646,9 +647,8 @@ Contributed by Andrei Baranovski of the OSG storage team.
 
 %files gridftp-transfer
 %defattr(-,root,root,-)
-%{python_sitelib}/gratia/gridftp_transfer
 %dir %{default_prefix}/gratia/gridftp-transfer
-%{default_prefix}/gratia/gridftp-transfer/GridftpTransferProbeDriver
+%{default_prefix}/gratia/gridftp-transfer/gridftp-transfer_meter
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/gridftp-transfer/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-gridftp-transfer.cron
 
@@ -1005,6 +1005,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Wed Aug 24 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.17.0-1
+- new gridftp-transfer probe to remove need for gums-host-cron (GRATIA-191,
+                                                                SOFTWARE-2398)
+
 * Fri Apr 22 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.16.0-1
 - modify condor probe for HTCondor-CE (SOFTWARE-2257)
 - filter results by probe name in condor_meter (GRATIA-188)
