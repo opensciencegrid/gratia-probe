@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.17.0
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -638,6 +638,7 @@ Summary: Gratia OSG accounting system probe for gridftp transfers.
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: globus-gridftp-osg-extensions
+Requires: globus-gridftp-server-progs >= 7.20-1.3
 Requires: pytz
 License: See LICENSE.
 
@@ -1005,6 +1006,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Fri Aug 26 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.17.0-2
+- add versioned dependency on globus-gridftp-server-progs (SOFTWARE-2398)
+
 * Wed Aug 24 2016 Carl Edquist <edquist@cs.wisc.edu> - 1.17.0-1
 - new gridftp-transfer probe to remove need for gums-host-cron (GRATIA-191,
                                                                 SOFTWARE-2398)
