@@ -1,0 +1,55 @@
+#!/usr/bin/python
+
+# for the time being, we need to populate svn:keyword fields like $Revision$
+# in the git sources when packaging a release.
+
+import os
+from subprocess import Popen, PIPE
+
+def runcmd(cmdline):
+    return Popen(cmdline, stdout=PIPE).communicate()[0].rstrip("\n")
+
+def HeadURL(path):
+    upstream = "https://github.com/opensciencegrid/gratia-probe/tree/master"
+    txt = "%s/%s" % (upstream, path)
+    return '$HeadURL: %s $' % txt
+
+def Id(path):
+    basename = os.path.basename(path)
+    info = runcmd(['git', 'log', '-1', '--pretty=%h %cd %cn', path])
+    txt = "%s %s" % (basename, info)
+    return '$Id: %s $' % txt
+    
+def Revision(path):
+    txt = runcmd(['git', 'log', '-1', '--pretty=%h', path])
+    return '$Revision: %s $' % txt
+
+def svn_keyword_fill(path):
+    file_txt = open(path).read()
+    file_txt = file_txt.replace('$HeadURL$',  HeadURL(path))
+    file_txt = file_txt.replace('$Id$',       Id(path))
+    file_txt = file_txt.replace('$Revision$', Revision(path))
+    open(path, 'w').write(file_txt)
+
+SVN_KEYWORD_FILES = [
+    'common/GratiaPing',
+    'common/gratia/common/Gratia.py',
+    'common/gratia/common/GratiaCore.py',
+    'common/samplemeter.py',
+    'common/samplemeter_multi.py',
+    'condor/condor_meter',
+    'glexec/glexec_meter',
+    'glexec/glexec_meter.cron.sh',
+    'metric/gratia/metric/Metric.py',
+    'pbs-lsf/pbs-lsf',
+    'pbs-lsf/pbs-lsf_meter.cron.sh',
+    'sge/sge_meter.cron.sh',
+    'test/gratia-site-diag'
+]
+
+if __name__ == '__main__':
+    topdir = runcmd(['git', 'rev-parse', '--show-toplevel'])
+    os.chdir(topdir)
+    for path in SVN_KEYWORD_FILES:
+        svn_keyword_fill(path)
+
