@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+import gratia.common.Gratia as Gratia
+import gratia.common.GratiaCore as GratiaCore
+import gratia.common.GratiaWrapper as GratiaWrapper
+from gratia.common.Gratia import DebugPrint, Error
+import boto3;
+from boto3.session import Session
+from pprint import pprint;
+import datetime
+from time import mktime
+import time
+import sys
+from gratia.awsvm.ec2_util import Ec2Util
+from gratia.awsvm.demand_data import AwsDemandData
+import os
+import ConfigParser
+
+class Awsgratiaprobe:
+    def __init__(self):
+        self._load_instance_data()
+        self._load_profiles()
+
+    def _load_instance_data(self):
+        """
+        Load AWS On-demand instance prices and attributes (cpu, memory, disk)
+        """
+        self.instance_details = AwsDemandData()
+        url=GratiaCore.Config.getConfigAttribute("HardwareDetailsURL")
+        if url != "":
+            try:
+                DebugPrint(3,"Loading AWS instance details and pricing from URL %s"%url)
+                self.instance_details.load_url(url)
+            except:
+                DebugPrint(2,"unable to load AWS instance details from URL, trying file")
+            else:
+                return
+
+        hardwdet=GratiaCore.Config.getConfigAttribute("HardwareDetailsFile")
+        try:
+            DebugPrint(3,"Loading AWS instance details and pricing from file %s"%hardwdet)
+            self.instance_details.load_file(hardwdet)
+        except:
+            DebugPrint(-1,"ERROR: unable to load AWS instance data. Check that HardwareDetailsFile ",
+                "is defined in ProbeConfig and exists")
+            sys.exit(1)
+
+    def _load_profiles(self):
+        """
+        Load profiles from AWS credentials file. These, by convention, correspond to VO name.
+        """
+        cred = GratiaCore.Config.getConfigAttribute("AWSCredentialsFile") or "~/.aws/credentials"
+        cfg = ConfigParser.SafeConfigParser()
+        if len(cfg.read(os.path.expanduser(cred))) > 0:
+            profiles = [vo for vo in cfg.sections() if vo.lower() != "default"]
+            DebugPrint(3,"Loaded AWS credentials file %s, profiles: %s"%(cred,profiles))
+        else:
+            DebugPrint(2,"WARNING: Unable to load profiles from AWS credentials file %s"%cred,
+                    ". Check that AWSCredentialsFile is defined in ProbeConfig and ",
+                    "exsits. Attempting to continue with default profile.")
+            profiles = []
+        self.profiles = profiles
+
+    def _get_regions(self, session):
+        """
+        Get list of regions to query. Regions can be set in ProbeConfig as AWSRegions, comma-separated.
+        If not specified, try to query the US regions to get a list of all regions.
+        """
+        regions = GratiaCore.Config.getConfigAttribute("AWSRegions").split(",")
+        if regions[0] == "":
+            regions = []
+        if len(regions) == 0:
+            bootstrap_regions = ["us-west-1","us-west-2","us-east-1"]
+            for rgn in bootstrap_regions:
+                try:
+                    ec2 = session.client("ec2",rgn)
+                    regions = [rgn['RegionName'] for rgn in ec2.describe_regions()['Regions']]
+                    assert len(regions) > 0
+                except:
+                    DebugPrint(2,"unable to get list of regions from %s"%rgn)
+                else:
+                    break
+            if len(regions) == 0:
+                DebugPrint(-1,"ERROR: unable to get list of AWS regions. Try setting AWSRegions in ProbeConfig.")
+                sys.exit(1)
+        return regions
+
+    def process(self):
+        if len(self.profiles) == 0:
+            DebugPrint(3,"Querying AWS with default profile")
+            session = Session()
+            self.process_session(session)
+        else:
+            for account in self.profiles:
+                DebugPrint(3,"Querying AWS with profile %s"%account)
+                session = Session(profile_name = account)
+                self.process_session(session)
+
+    def process_session(self, session):
+        regions = self._get_regions(session)
+        DebugPrint(3,"AWS regions: %s"%regions)
+        for region in regions:
+            ec2=session.client('ec2',region_name=region)
+            response = ec2.describe_instances()
+            ec2_util=Ec2Util(session,region)
+
+            resv=response['Reservations']
+            for reservation in resv:
+                owneracct=reservation['OwnerId']
+                instances=reservation['Instances']
+                for instance in instances:
+                    DebugPrint(4,"processing instance %s"% instance['InstanceId'])
+                    r = Gratia.UsageRecord()
+                    # set the defaults
+                    user="aws account user"
+                    project="aws-no project name given"
+                    if session.profile_name.lower() != "default":
+                        acctname= session.profile_name
+                    else:
+                        acctname="fermilab"
+                    voname = acctname
+                    try:
+                        tags=instance['Tags']
+                        DebugPrint(4,"the tags are")
+                        for tag in tags:
+                            DebugPrint(4,"%s: %s"%(tag['Key'],tag['Value']))
+                            if tag['Key'].lower() == 'user':
+                                user=tag['Value']
+                            elif tag['Key'].lower() == 'name':
+                                r.JobName(tag['Value'])
+                            elif tag['Key'].lower() == 'project':
+                                project=tag['Value']
+                            elif tag['Key'].lower() in ['vo', 'voname']:
+                                voname=tag['Value']
+                    except KeyError:
+                        DebugPrint(4, 'no tags')
+                    r.LocalUserId(user)
+                    r.GlobalUsername("%s-%s"%(acctname,owneracct))
+                    r.ProjectName(project)
+                    r.VOName(voname)
+                    r.ReportableVOName(voname)
+                    #Public Ip address is retrieved if instance is running"
+                    try:
+                        r.MachineName(instance['PublicIpAddress'],instance['ImageId'])    
+                    except KeyError:
+                        r.MachineName("no Public ip as instance has been stopped",instance['ImageId'])
+
+
+                    r.LocalJobId(instance['InstanceId'])
+                    r.GlobalJobId(instance['InstanceId']+"#"+repr(time.time()))
+            
+                    state=instance['State']
+                    #set the default status
+                    status=1
+                    if state['Name']=="running":
+                        status=0
+                    else:
+                        status=1
+                    description=instance['StateTransitionReason']    
+                    r.Status(status,description)
+            
+                    private_ip = instance.get('PrivateIpAddress','unknown')
+                    if "Placement" in instance:
+                        az = instance['Placement'].get('AvailabilityZone','unknown')
+                    else:
+                        az = "unknown"
+                    r.Host(private_ip,False,az)
+                    r.SubmitHost(private_ip,az)
+
+                    r.Njobs(1,"The no of jobs running at a time")
+
+
+                    processor='1'
+                    memory=''
+                    price=0.0
+                    try:
+                        i = self.instance_details.instance_data(region,instance['InstanceType'])
+                    except KeyError:
+                        DebugPrint(1,"ERROR: instance pricing and data not found for type %s in region %s"%(instance['InstanceType'],region))
+                        processor=0
+                        memory=0
+                        price=0
+                        chargedesc='unable to get instance price'
+                    else:
+                        processor=i['cpu']
+                        memory=i['memory']
+                        price=i['price']
+                        chargedesc="on-demand price"
+                    cpu=float(processor)
+                    r.Processors(int(cpu),0,"total",instance['InstanceType'])
+                    r.Memory(float(memory))
+                    node_type="on-demand"
+                    # Spot price is retrieved using instance id as the charge per hour of that instance in the last hour
+                    if "SpotInstanceRequestId" in instance:
+                        node_type="spot"
+                        price=ec2_util.spot_price(instance['InstanceId'])
+                        chargedesc="spot price"
+                        bid_price = ec2_util.bid_price(instance['SpotInstanceRequestId'])
+                        if bid_price is not None:
+                            r.Resource("BidPrice",bid_price)
+                        if status==1:
+                            reason = instance.get("StateReason",{})
+                            if reason.get("Code","") == "Server.SpotInstanceTermination":
+                                price=0
+                                chargedesc = "no charge"
+                    elif status==1:
+                        price = 0
+                        chargedesc=""
+                    r.Charge(str(price),"$","$/instance hr",chargedesc)
+                    r.NodeCount(1,"total",node_type)
+                    # The Time period for which the spot price and other values are calculated is noted down
+                    launchtime=instance['LaunchTime']
+                    minu=launchtime.minute
+            
+                    currtime=time.time()
+        
+                            
+                    EndTime=datetime.datetime.now()
+                    EndTime=EndTime.replace(minute=minu)
+                    StartTime=EndTime - datetime.timedelta(hours=1)
+                    t=StartTime.date()
+                    stime=time.mktime(StartTime.timetuple())
+                    r.StartTime(stime)
+                    
+                    et=EndTime.date()
+                    etime=time.mktime(EndTime.timetuple())
+                    r.EndTime(etime)
+                    r.WallDuration(etime-stime)
+                    aver=ec2_util.cpu_utilization(instance['InstanceId'])
+                    if aver is None:
+                        cpuUtil=0.0
+                        DebugPrint(4, "The CPU Utilization value is NULL as the instance was not running in the last hour")
+                        r.CpuDuration(0,'user')
+                    else:
+                        cpuUtil=aver
+                        r.CpuDuration((etime-stime)*float(aver)*cpu/100,'user')
+                    r.ResourceType("AWSVM")
+                    r.CpuDuration(0,'system')
+                    r.AdditionalInfo("Version","1.0")
+        
+                    Gratia.Send(r)
+                
+            
+
+
+if __name__ == '__main__':
+    try:
+        Gratia.Initialize('/etc/gratia/awsvm/ProbeConfig')
+        GratiaWrapper.CheckPreconditions()
+        vmProbe=Awsgratiaprobe()
+        conf=GratiaCore.Config
+        duplicatelock=(conf.getConfigAttribute("ExemptDuplicates")=="1")
+        filelock=conf.getConfigAttribute("DuplicateFilelock")
+        if  duplicatelock:
+            if os.path.isfile(filelock):
+                fl=open(filelock, 'r+')
+                date=datetime.datetime.now()
+                line=fl.readline()
+                prevdate = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S.%f")
+                currtime=time.mktime(date.timetuple())
+                prevtime=time.mktime(prevdate.timetuple())
+                diff=currtime-prevtime
+                if diff>=3599.0:
+                    fl.seek(0, 0)
+                    fl.truncate()
+                    fl.write(str(date));
+                    t = os.path.getmtime(filelock)
+                    fl.close()
+                    vmProbe.process()    
+                else:
+                    DebugPrint(1, "ERROR: probe was run less than one hour ago, please wait %d s"%(3600-diff))
+                    fl.close()
+            else:
+                fl=open(filelock,'w+')
+                date=str(datetime.datetime.now())
+                fl.write(date);
+                fl.close()
+                vmProbe.process()
+        else:
+            vmProbe.process()
+    except Exception, e:
+        Error(e)
+        sys.exit(1)
+    sys.exit(0)    
+

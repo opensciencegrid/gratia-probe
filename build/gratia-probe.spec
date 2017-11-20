@@ -63,7 +63,7 @@ Source21: %{name}-enstore-storage-%{version}.tar.bz2
 Source22: %{name}-enstore-tapedrive-%{version}.tar.bz2
 Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
 Source24:  %{name}-lsf-%{version}.tar.bz2
-
+Source25: %{name}-awsvm-%{version}.tar.bz2
 
 ########################################################################
 
@@ -102,6 +102,7 @@ Prefix: /etc
 %setup -q -D -T -a 22
 %setup -q -D -T -a 23
 %setup -q -D -T -a 24
+%setup -q -D -T -a 25
 
 %build
 %if 0%{?rhel} == 7 || %_arch != noarch
@@ -127,7 +128,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %if 0%{?rhel} == 7 || %_arch == noarch
   # Obtain files
 
-%define noarch_packs common condor sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
+%define noarch_packs common condor sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf awsvm
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -158,7 +159,12 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
-
+    
+    ## Moving the awsvm/hardwareinst file to buildroot for packaging
+    #if [ $probe == "awsvm" ]; then
+    #  install -m 644 $probe/aws_demand_data_20151102.json $RPM_BUILD_ROOT%{_sysconfdir}/gratia/awsvm/aws_demand_data_20151102.json
+    #fi
+    
     ## Probe-specific customizations
     # Probe template addon lines in ProbeConfig.add (in probe directory) added before @PROBE_SPECIFIC_DATA@ tag
     if [ -e "$probe/ProbeConfig.add" ]; then
@@ -807,6 +813,31 @@ Gratia OSG accounting system probe for providing VM accounting.
 %post onevm
 %customize_probeconfig -d onevm
 
+%package awsvm
+Summary: Gratia OSG accounting system probe for AWS VM accounting.
+Group:Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: python2-boto3
+License: See LICENSE.
+
+%description awsvm
+Gratia OSG accounting system probe for providing VM accounting in aws.
+
+%files awsvm
+%defattr(-,root,root,-)
+%{default_prefix}/gratia/awsvm/awsvm_probe.cron.sh
+%dir %{default_prefix}/gratia/awsvm
+%{default_prefix}/gratia/awsvm/ProbeConfig
+%{python_sitelib}/gratia/awsvm
+%{default_prefix}/gratia/awsvm/aws-gratia-probe
+%{default_prefix}/gratia/awsvm/aws_demand_data_20151102.json
+%{default_prefix}/gratia/awsvm/README
+
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/awsvm/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-awsvm.cron
+
+%post awsvm
+%customize_probeconfig -d awsvm
 
 %package slurm
 Summary: A SLURM probe

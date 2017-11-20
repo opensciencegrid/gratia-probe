@@ -1,0 +1,1 @@
+0 * * * *  root /usr/share/gratia/common/cron_check  /etc/gratia/awsvm/ProbeConfig && /usr/share/gratia/awsvm/awsvm_probe.cron.sh 
