@@ -733,6 +733,16 @@ def classadToJUR(classad):
     else:
         r.Processors(1, metric="max")
 
+    # Set the Gpus
+    # There are many different spellings of requestgpus, RequestGpus, RequestGpus
+    # So eval, which is case insensitive (from my testing)
+    try:
+        r.GPUs(int(classad.eval('RequestGpus')), metric="max")
+    except:
+        # No GPUs, no problem
+        # Or error converting to int, then just ignore GPUs
+        pass
+
     if 'MyType' in classad:
         r.AdditionalInfo("CondorMyType", classad['MyType'])
 
