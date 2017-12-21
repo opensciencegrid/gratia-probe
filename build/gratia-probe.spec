@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.18.2
-Release:            2%{?dist}
+Version:            1.19.0
+Release:            1%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -999,6 +999,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Thu Dec 21 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.19.0-1
+- Add GPU support to common probe code (SOFTWARE-3084)
+
 * Thu Nov 09 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.18.2-2
 - Add Obsoletes for bdii-status probe (SOFTWARE-2660)
 
