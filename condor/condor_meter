@@ -737,7 +737,7 @@ classad_string_re = re.compile("^(\S+) = \"(.*)\"$")
 classad_catchall_re = re.compile("^(\S+) = (.*)$")
 def fd_to_classad(fd):
     buffer = ''
-    for lineOrig in fd.readlines():
+    for lineOrig in fd:
         line = lineOrig.strip()
         if not line:
             yield add_unique_id(classadLib.parseOne(buffer))
