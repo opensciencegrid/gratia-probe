@@ -740,19 +740,13 @@ def fd_to_classad(fd):
     for lineOrig in fd.readlines():
         line = lineOrig.strip()
         if not line:
-            if hasattr(classadLib, 'parseOne'):
-                yield add_unique_id(classadLib.parseOne(buffer))
-            else:
-                yield add_unique_id(classadLib.parseOld(buffer))
+            yield add_unique_id(classadLib.parseOne(buffer))
             buffer = ''
         else:
             buffer += lineOrig
 
-    if hasattr(classadLib, 'parseOne'):
-        yield add_unique_id(classadLib.parseOne(buffer))
-    else:
-        yield add_unique_id(classadLib.parseOld(buffer))
-        
+    yield add_unique_id(classadLib.parseOne(buffer))
+
 def add_unique_id(classad):
     if 'GlobalJobId' in classad:
         classad['UniqGlobalJobId'] = 'condor.%s' % classad['GlobalJobId']
