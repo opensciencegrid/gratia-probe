@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.19.0
+Version:            1.19.1
 Release:            1%{?dist}
 
 License:            GPL
@@ -497,6 +497,7 @@ Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: condor
+Requires: condor-python
 
 %description condor
 The Condor probe for the Gratia OSG accounting system.
@@ -999,6 +1000,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Wed Jan 24 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.19.1-1
+- Always use classad lib in condor probe (SOFTWARE-3017)
+
 * Thu Dec 21 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.19.0-1
 - Add GPU support to common probe code (SOFTWARE-3084)
 
