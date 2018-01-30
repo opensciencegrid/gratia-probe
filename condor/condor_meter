@@ -28,7 +28,8 @@ import classad as classadLib
 # HACK: allow case-insensitive `attr in ad` checks
 # https://jira.opensciencegrid.org/browse/SOFTWARE-3017
 # https://github.com/opensciencegrid/gratia-probe/pull/24
-classadLib.ClassAd.__contains__ = lambda ad,attr: ad.get(attr) is not None
+if 'name' not in classadLib.ClassAd({"Name": 123}):
+    classadLib.ClassAd.__contains__ = lambda ad,attr: ad.get(attr) is not None
 
 g_alternate_records = {}
 g_probe_config = None
