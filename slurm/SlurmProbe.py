@@ -140,7 +140,7 @@ class SlurmProbe:
             if os.path.exists(c):
                 cmd = c
 
-        fd = os.popen(prog)
+        fd = os.popen(cmd)
         output = fd.read()
         if fd.close():
             raise Exception("Unable to invoke %s" % cmd)
