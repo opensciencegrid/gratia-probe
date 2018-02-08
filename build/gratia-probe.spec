@@ -272,9 +272,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   mv $RPM_BUILD_ROOT%{_datadir}/gratia/hadoop-storage/storage.cfg \
      $RPM_BUILD_ROOT%{_sysconfdir}/gratia/hadoop-storage/storage.cfg
 
-  install -d $RPM_BUILD_ROOT%{perl_vendorlib}/Globus/GRAM
-  install -m 644 $RPM_BUILD_ROOT%{_datadir}/gratia/common/GRAM/JobManagerGratia.pm $RPM_BUILD_ROOT%{perl_vendorlib}/Globus/GRAM/JobManagerGratia.pm
-
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
   install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
@@ -301,8 +298,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove remaining cruft
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/gratia.repo
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/gram_mods
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/GRAM
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.pl
@@ -481,16 +476,6 @@ fi
 # %{default_prefix}/gratia/common2/meter.py
 # %{default_prefix}/gratia/common2/pginput.py
 # %{default_prefix}/gratia/common2/probeinput.py
-
-%package gram
-Summary: GRAM extensions for Gratia OSG accounting system
-Group: Applications/System
-
-%description gram
-%{summary}
-
-%files gram
-%{perl_vendorlib}/Globus/GRAM/JobManagerGratia.pm
 
 %package condor
 Summary: A Condor probe
