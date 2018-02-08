@@ -45,7 +45,6 @@ Source0:  %{name}-common-%{version}.tar.bz2
 Source1:  %{name}-condor-%{version}.tar.bz2
 Source3:  %{name}-pbs-lsf-%{version}.tar.bz2
 Source5:  %{name}-sge-%{version}.tar.bz2
-Source6:  %{name}-glexec-%{version}.tar.bz2
 Source7:  %{name}-metric-%{version}.tar.bz2
 Source8:  %{name}-dCache-transfer-%{version}.tar.bz2
 Source9:  %{name}-dCache-storage-%{version}.tar.bz2
@@ -127,7 +126,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %if 0%{?rhel} == 7 || %_arch == noarch
   # Obtain files
 
-%define noarch_packs common condor sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
+%define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -201,8 +200,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     # Other Probe-specific customizations
     if [ $probe == "sge" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#SGEAccountingFile=""#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "glexec" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#gLExecMonitorLog="/var/log/messages"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "metric" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#metricMonitorLog="/var/log/metric/metric_monitor.log"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "dCache-transfer" ]; then
@@ -249,7 +246,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove unnecessary links
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/gridftp-transfer/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/glexec/ProbeConfig
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -536,27 +532,6 @@ The SGE probe for the Gratia OSG accounting system.
 
 %post sge
 %customize_probeconfig -d sge
-
-%package glexec
-Summary: A gLExec probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires:  /usr/bin/grid-proxy-info
-
-%description glexec
-The gLExec probe for the Gratia OSG accounting system.
-
-%files glexec
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/glexec/README
-%{default_prefix}/gratia/glexec/glexec_meter.cron.sh
-%{default_prefix}/gratia/glexec/glexec_meter
-%{python_sitelib}/gratia/glexec
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-glexec.cron
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/glexec/ProbeConfig
-
-%post glexec
-%customize_probeconfig -d glexec
 
 %package metric
 Summary: A probe for OSG metrics
