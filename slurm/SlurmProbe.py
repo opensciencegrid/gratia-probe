@@ -127,19 +127,17 @@ class SlurmProbe:
         return fp.readline().rstrip('\n')
 
     def get_slurm_version(self):
-        prog = "srun --version"
+        prog = "srun"
         path = Gratia.Config.getConfigAttribute("SlurmLocation")
         fd = None
-
-        # Look for the program on the $PATH
-        cmd = prog
 
         # Unless there is a specific path configured
         if path:
             c = os.path.join(path, "bin", prog)
             if os.path.exists(c):
-                cmd = c
+                prog = c
 
+        cmd = "'%s' --version" % prog.replace("'","'\\''")
         fd = os.popen(cmd)
         output = fd.read()
         if fd.close():
