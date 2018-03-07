@@ -15,6 +15,7 @@
 import sys, os, stat
 import time, random
 import pwd, grp
+import subprocess
 
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaWrapper as GratiaWrapper
@@ -137,10 +138,11 @@ class SlurmProbe:
             if os.path.exists(c):
                 prog = c
 
-        cmd = "'%s' --version" % prog.replace("'","'\\''")
-        fd = os.popen(cmd)
-        output = fd.read()
-        if fd.close():
+        cmd = [prog, "--version"]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        output, _ = p.communicate()
+
+        if p.returncode != 0:
             raise Exception("Unable to invoke %s" % cmd)
 
         name, version = output.split()
