@@ -127,7 +127,7 @@ else
 fi
 
 
-build/package-probe "${version}" common condor pbs-lsf sge glexec \
+build/package-probe "${version}" common condor pbs-lsf sge \
                                  metric services hadoop-storage condor-events \
                                  dCache-transfer gridftp-transfer \
                                  dCache-storage xrootd-transfer xrootd-storage \
