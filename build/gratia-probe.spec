@@ -83,7 +83,6 @@ Prefix: /etc
 %setup -q -D -T -a 3
 %endif
 %setup -q -D -T -a 5
-%setup -q -D -T -a 6
 %setup -q -D -T -a 7
 %setup -q -D -T -a 8
 %setup -q -D -T -a 9
