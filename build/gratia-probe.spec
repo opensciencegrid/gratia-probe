@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.19.1
+Version:            1.20.0
 Release:            1%{?dist}
 
 License:            GPL
@@ -959,6 +959,11 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Tue Apr 10 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.0-1
+- Drop glexec probe & old GRAM code (SOFTWARE-3105)
+- Fix handling of SlurmLocation in slurm probe (SOFTWARE-2795)
+- Make ProjectName case insensitive in condor probe (SOFTWARE-3017)
+
 * Wed Jan 24 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.19.1-1
 - Always use classad lib in condor probe (SOFTWARE-3017)
 
