@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.20.0
+Version:            1.20.1
 Release:            1%{?dist}
 
 License:            GPL
@@ -959,6 +959,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Mon Apr 16 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.1-1
+- Handle raw seconds in walltime / cput in pbs probe (SOFTWARE-3221)
+
 * Tue Apr 10 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.0-1
 - Drop glexec probe & old GRAM code (SOFTWARE-3105)
 - Fix handling of SlurmLocation in slurm probe (SOFTWARE-2795)
