@@ -1332,9 +1332,15 @@ sub parseUR_pbs {
       if ( $record_field =~ /^resources_used\.cput=.*?(\d+):(\d+):(\d+)$/o) {
          $urAcctlogInfo{cput}= $3 + $2*60 + $1*3600;
          next;
+      } elsif ( $record_field =~ /^resources_used\.cput=.*?(\d+)$/o) {
+         $urAcctlogInfo{cput}= $1;
+         next;
       }
       if ( $record_field =~ /^resources_used\.walltime=*?(\d+):(\d+):(\d+)$/o) {
          $urAcctlogInfo{walltime}= $3 + $2*60 + $1*3600;
+         next;
+      } elsif ( $record_field =~ /^resources_used\.walltime=*?(\d+)$/o) {
+         $urAcctlogInfo{walltime}= $1;
          next;
       }
       if ( $record_field =~ /^resources_used\.vmem=.*?(\d*[M.k]b)$/o) {
