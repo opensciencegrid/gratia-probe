@@ -774,7 +774,11 @@ def htcondor_configured():
     """ 
     try:
         path = GratiaCore.Config.getConfigAttribute("CondorLocation")
-        condor_config_path = os.path.join(path, "bin", "condor_config_val")
+        if g_probe_config is not None and 'htcondor-ce' in g_probe_config:
+          condor_config_binary = 'condor_ce_config_val'
+        else:
+          condor_config_binary = 'condor_config_val'
+        condor_config_path = os.path.join(path, "bin", condor_config_binary)
 
         condor_config_val_args=['-schedd']
         schedd_name = GratiaCore.Config.getConfigAttribute('CondorScheddName')
@@ -790,7 +794,7 @@ def htcondor_configured():
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE)
         else:
             # args needs to be string when shell=True
-            args = 'condor_config_val ' + ' '.join(condor_config_val_args)
+            args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
             DebugPrint(4, 'Running command to check condor config: ' + args)
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
         (cmd_stdout, cmd_stderr) = cmd.communicate()
@@ -802,8 +806,8 @@ def htcondor_configured():
                            "return code. Maybe the schedd is overloaded.")
             return False
         elif 'Not defined' in cmd_stdout:
-            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in the default condor schedd" \
-                           "config. You may need to change or reload the condor configuration" \
+            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in the default condor schedd " \
+                           "config. You may need to change or reload the condor configuration " \
                            "or specify a different CondorScheddName in the Gratia config.")
             return False
         elif (not os.path.exists(cmd_stdout) or 
