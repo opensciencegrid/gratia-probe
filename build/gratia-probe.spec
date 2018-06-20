@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.20.2
+Version:            1.20.3
 Release:            1%{?dist}
 
 License:            GPL
@@ -959,6 +959,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Wed Jun 20 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.3-1
+- Update pbs/lsf latest timestamp for empty logfiles (SOFTWARE-3041)
+
 * Tue Jun 05 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.2-1
 - Remove TWiki links from README files (SOFTWARE-3211)
 
