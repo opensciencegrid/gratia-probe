@@ -729,6 +729,18 @@ def classadToJUR(classad):
             r.Network(val, storageUnit='b', phaseUnit=networkPhaseUnit, metric=attr, description=attr)
     r.Network(total_network, storageUnit='b', phaseUnit=networkPhaseUnit, metric="total")
 
+    # Additional Pegasus attributes
+    if 'pegasus_root_wf_uuid' in classad:
+        r.AdditionalInfo("PegasusRootWFUUID", classad['pegasus_root_wf_uuid'])
+    if 'pegasus_wf_uuid' in classad:
+        r.AdditionalInfo("PegasusWFUUID", classad['pegasus_wf_uuid'])
+    if 'pegasus_version' in classad:
+        r.AdditionalInfo("PegasusVersion", classad['pegasus_version'])
+    if 'pegasus_wf_app' in classad:
+        r.AdditionalInfo("PegasusApp", classad['pegasus_wf_app'])
+    if 'pegasus_wf_xformation' in classad:
+        r.AdditionalInfo("PegasusWFXformation", classad['pegasus_wf_xformation'])
+
     return r
 
 classad_bool_re = re.compile("^(\w{1,255}) = (true|True|TRUE|false|False|FALSE)$")
