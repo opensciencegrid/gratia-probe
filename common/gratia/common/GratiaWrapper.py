@@ -53,14 +53,14 @@ def CheckPreconditions(check_enabled=True):
     data_folder = GratiaCore.Config.get_DataFolder()
     if not (os.path.isdir(data_folder) and os.access(data_folder,
             os.X_OK|os.W_OK|os.R_OK)):
-        raise Exception("Data folder %s does not exist or is not accessible",
-            data_folder)
+        raise Exception("Data folder %s does not exist or is not accessible"
+                        % data_folder)
 
     working_folder = GratiaCore.Config.get_WorkingFolder()
     if not (os.path.isdir(working_folder) and os.access(working_folder,
             os.X_OK|os.W_OK|os.R_OK)):
-        raise Exception("Working folder %s does not exist or is not accessible",
-            working_folder)
+        raise Exception("Working folder %s does not exist or is not accessible"
+                        % working_folder)
 
     site = GratiaCore.Config.get_SiteName()
     if site.lower() == "generic site":
