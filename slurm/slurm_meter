@@ -235,4 +235,8 @@ class SlurmMeter(SlurmProbe):
             self.checkpoint.val = time_end + 1
 
 if __name__ == "__main__":
-    SlurmMeter().main()
+    try:
+        SlurmMeter().main()
+    except Exception as e:
+        DebugPrint(1, "ERROR: Unhandled Exception: %s" % e)
+        raise
