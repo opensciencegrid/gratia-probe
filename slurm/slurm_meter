@@ -238,5 +238,5 @@ if __name__ == "__main__":
     try:
         SlurmMeter().main()
     except Exception as e:
-        DebugPrint(1, "Unhandled Exception: %s" % e)
-        raise e
+        DebugPrint(1, "ERROR: Unhandled Exception: %s" % e)
+        raise
