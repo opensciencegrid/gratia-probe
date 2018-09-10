@@ -29,7 +29,7 @@ import classad as classadLib
 # https://jira.opensciencegrid.org/browse/SOFTWARE-3017
 # https://github.com/opensciencegrid/gratia-probe/pull/24
 if 'name' not in classadLib.ClassAd({"Name": 123}):
-    classadLib.ClassAd.__contains__ = lambda ad,attr: ad.get(attr) is not None
+    classadLib.ClassAd.__contains__ = lambda ad,attr: ad.get(str(attr)) is not None
 
 g_alternate_records = {}
 g_probe_config = None
