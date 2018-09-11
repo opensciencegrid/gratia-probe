@@ -647,7 +647,7 @@ def classadToJUR(classad):
     DebugPrint(0, "ArbritaryList: %s" % ArbitraryAttrslist)
     for arbitraryAttr in ArbitraryAttrslist:
         if arbitraryAttr in classad:
-            DebugPrint(5, "Arbitrary attribute: %s found with value %s" % (arbitraryAttr, classad.eval(arbitraryAttr))))
+            DebugPrint(5, "Arbitrary attribute: %s found with value %s" % (arbitraryAttr, classad.eval(arbitraryAttr)))
             r.AdditionalInfo(arbitraryAttr, classad.eval(arbitraryAttr))
     ########################################################################################
     if 'MachineAttrCpus0' in classad:
