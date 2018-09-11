@@ -15,6 +15,7 @@
 from SlurmProbe import SlurmProbe
 from gratia.common.Gratia import DebugPrint
 
+import time
 import optparse
 import gratia.common.Gratia as Gratia
 
@@ -214,7 +215,10 @@ class SlurmMeter(SlurmProbe):
         # Loop over completed jobs
         time_end = None
         server_id = self.get_db_server_id()
-        for job in self.sacct.completed_jobs(self.checkpoint.val):
+        # don't consider jobs that have ended within the last 15 min
+        # https://opensciencegrid.atlassian.net/browse/SOFTWARE-3347
+        cutoff_ts = min(self.checkpoint.val, int(time.time()) - 15 * 60)
+        for job in self.sacct.completed_jobs(cutoff_ts):
             r = job_to_jur(job, server_id)
             Gratia.Send(r)
 
@@ -231,4 +235,8 @@ class SlurmMeter(SlurmProbe):
             self.checkpoint.val = time_end + 1
 
 if __name__ == "__main__":
-    SlurmMeter().main()
+    try:
+        SlurmMeter().main()
+    except Exception as e:
+        DebugPrint(1, "ERROR: Unhandled Exception: %s" % e)
+        raise

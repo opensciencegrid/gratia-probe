@@ -1,2 +1,0 @@
-0 1 * * * root /usr/share/gratia/common/cron_check /etc/gratia/bdii-status/ProbeConfig &&  perl -e 'sleep rand 9600' && /usr/share/gratia/bdii-status/bdii_subcluster_record
-0,15,30,45 * * * * root /usr/share/gratia/common/cron_check /etc/gratia/bdii-status/ProbeConfig && perl -e 'sleep rand 900' && /usr/share/gratia/bdii-status/bdii_cese_record

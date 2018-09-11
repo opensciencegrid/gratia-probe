@@ -15,6 +15,7 @@
 import sys, os, stat
 import time, random
 import pwd, grp
+import subprocess
 
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaWrapper as GratiaWrapper
@@ -127,22 +128,21 @@ class SlurmProbe:
         return fp.readline().rstrip('\n')
 
     def get_slurm_version(self):
-        prog = "srun --version"
+        prog = "srun"
         path = Gratia.Config.getConfigAttribute("SlurmLocation")
         fd = None
-
-        # Look for the program on the $PATH
-        cmd = prog
 
         # Unless there is a specific path configured
         if path:
             c = os.path.join(path, "bin", prog)
             if os.path.exists(c):
-                cmd = c
+                prog = c
 
-        fd = os.popen(prog)
-        output = fd.read()
-        if fd.close():
+        cmd = [prog, "--version"]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        output, _ = p.communicate()
+
+        if p.returncode != 0:
             raise Exception("Unable to invoke %s" % cmd)
 
         name, version = output.split()

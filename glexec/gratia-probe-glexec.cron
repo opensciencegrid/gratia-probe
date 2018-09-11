@@ -1,1 +1,0 @@
-0 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/glexec/ProbeConfig  && /usr/share/gratia/glexec/glexec_meter -s 3600

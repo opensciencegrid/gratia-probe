@@ -127,11 +127,11 @@ else
 fi
 
 
-build/package-probe "${version}" common condor pbs-lsf sge glexec \
+build/package-probe "${version}" common condor pbs-lsf sge \
                                  metric services hadoop-storage condor-events \
                                  dCache-transfer gridftp-transfer \
                                  dCache-storage xrootd-transfer xrootd-storage \
-                                 bdii-status onevm slurm \
+                                 onevm slurm \
                                  common2 \
                                  dCache-storagegroup \
                                  enstore-storage enstore-tapedrive enstore-transfer \

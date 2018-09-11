@@ -375,7 +375,7 @@ sub processLrmsLogs {
          print "".localtime().": Processing LRMS log file: $thisLogFile; last modified: $logFMod{$thisLogFile}\n";
          
          &processLrmsLogFile($thisLogFile, $newestFile,
-         $_[0], $_[1], $_[2], $_[3]);
+         $_[0], $_[1], $_[2], $_[3], $logFMod{$thisLogFile});
          $newestFile = 0;
          # Call Gratia processing internally now to avoid leaving huge numbers of files unprocessed
          system("/usr/share/gratia/pbs-lsf/pbs-lsf_meter.pl 2>&1");
@@ -399,6 +399,7 @@ sub processLrmsLogFile {
    my $startTimestamp = $_[3];
    # my $lastJob = $_[4];
    # my $lastTimestamp = $_[5];
+   my $logfileTimestamp = $_[6];
    
    # for each job to process: check the CE accounting log dir (ordered by
    # modification date) for the right log file +/- 1 (according to last
@@ -562,6 +563,13 @@ sub processLrmsLogFile {
       
    }  # while (<LRMSLOGFILE>) ...
    
+   # if the log file was empty, update the last timestamp to match the file's mtime
+   if (!$firstJobId && !$skipFile) {
+      if ($logfileTimestamp < $_[5]) {  # ie, < $lrmsEventTimestamp
+         $_[5] = $logfileTimestamp;
+         print "".localtime().": No log events processed for '$filename', updating last timestamp to match its modified time: $logfileTimestamp\n";
+      }
+   }
    close (LRMSLOGFILE);
 }
 
@@ -1332,9 +1340,15 @@ sub parseUR_pbs {
       if ( $record_field =~ /^resources_used\.cput=.*?(\d+):(\d+):(\d+)$/o) {
          $urAcctlogInfo{cput}= $3 + $2*60 + $1*3600;
          next;
+      } elsif ( $record_field =~ /^resources_used\.cput=.*?(\d+)$/o) {
+         $urAcctlogInfo{cput}= $1;
+         next;
       }
       if ( $record_field =~ /^resources_used\.walltime=*?(\d+):(\d+):(\d+)$/o) {
          $urAcctlogInfo{walltime}= $3 + $2*60 + $1*3600;
+         next;
+      } elsif ( $record_field =~ /^resources_used\.walltime=*?(\d+)$/o) {
+         $urAcctlogInfo{walltime}= $1;
          next;
       }
       if ( $record_field =~ /^resources_used\.vmem=.*?(\d*[M.k]b)$/o) {

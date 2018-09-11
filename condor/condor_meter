@@ -23,11 +23,14 @@ import gratia.common.Gratia as Gratia
 import gratia.common.file_utils as file_utils
 import gratia.common.config as config
 
-g_has_classad = True
-try:
-    import classad as classadLib
-except ImportError:
-    g_has_classad = False
+import classad as classadLib
+
+# HACK: allow case-insensitive `attr in ad` checks
+# https://jira.opensciencegrid.org/browse/SOFTWARE-3017
+# https://github.com/opensciencegrid/gratia-probe/pull/24
+if 'name' not in classadLib.ClassAd({"Name": 123}):
+    classadLib.ClassAd.__contains__ = lambda ad,attr: ad.get(attr) is not None
+
 g_alternate_records = {}
 g_probe_config = None
 
@@ -41,83 +44,6 @@ min_start_time = time.time() - 120*86400
 
 class IgnoreClassadException(Exception):
     pass
-
-
-# ********************************************
-# class     caselessDict
-#           http://code.activestate.com/recipes/66315-case-insensitive-dictionary/
-# purpose   emulate a normal Python dictionary
-#           but with keys which can accept the
-#           lower() method (typically strings).
-#           Accesses to the dictionary are
-#           case-insensitive but keys returned
-#           from the dictionary are always in
-#           the original case.
-# ********************************************
-
-class caselessDict:
-    def __init__(self, inDict=None):
-        """Constructor: takes conventional dictionary
-           as input (or nothing)"""
-        self.dict = {}
-        if inDict != None:
-            for key in inDict:
-                k = key.lower()
-                self.dict[k] = (key, inDict[key])
-        self.keyList = self.dict.keys()
-        self.iterPosition = 0
-        return
-
-    def __iter__(self):
-        self.iterPosition = 0
-        return self
-
-    def next(self):
-        if self.iterPosition >= len(self.keyList):
-            raise StopIteration
-        x = self.dict[self.keyList[self.iterPosition]][0]
-        self.iterPosition += 1
-        return x
-
-    def __getitem__(self, key):
-        k = key.lower()
-        return self.dict[k][1]
-
-    def __setitem__(self, key, value):
-        k = key.lower()
-        self.dict[k] = (key, value)
-        self.keyList = self.dict.keys()
-
-    def has_key(self, key):
-        k = key.lower()
-        return k in self.keyList
-
-    def __len__(self):
-        return len(self.dict)
-
-    def get(self, key, alt):
-        if self.has_key(key):
-            return self.__getitem__(key)
-        return alt
-
-    def keys(self):
-        return [v[0] for v in self.dict.values()]
-
-    def values(self):
-        return [v[1] for v in self.dict.values()]
-
-    def items(self):
-        return self.dict.values()
-
-    def __contains__(self, item):
-        return self.dict.has_key(item.lower())
-
-    def __repr__(self):
-        items = ", ".join([("%r: %r" % (k, v)) for k, v in self.items()])
-        return "{%s}" % items
-
-    def __str__(self):
-        return repr(self)
 
 
 # --- functions -----------------------------------------------------------------------
@@ -715,21 +641,33 @@ def classadToJUR(classad):
     ########################################################################################
     ########################################################################################
     # Code added to send to arbitrary Ads SOFTWARE-2714
-    ArbitraryJobAttrs = GratiaCore.Config.getConfigAttribute("ExtraAttributes")
-    DebugPrint(5, "Arbitrary Job Attributes: %s" % str(ArbitraryJobAttrs))
+    ArbitraryJobAttrs = str(GratiaCore.Config.getConfigAttribute("ExtraAttributes"))
+    DebugPrint(5, "Arbitrary Job Attributes: %s" % ArbitraryJobAttrs)
     ArbitraryAttrslist = re.split(",?\s?", ArbitraryJobAttrs)
     DebugPrint(0, "ArbritaryList: %s" % ArbitraryAttrslist)
-    for arbitraryAttr in  ArbitraryAttrslist:
+    for arbitraryAttr in ArbitraryAttrslist:
         if arbitraryAttr in classad:
-            DebugPrint(5, "Arbitrary attribute: %s found with value %s" % (arbitraryAttr, classad.eval(str(arbitraryAttr)))) 
-            r.AdditionalInfo(arbitraryAttr, classad.eval(str(arbitraryAttr)))
+            DebugPrint(5, "Arbitrary attribute: %s found with value %s" % (arbitraryAttr, classad.eval(arbitraryAttr))))
+            r.AdditionalInfo(arbitraryAttr, classad.eval(arbitraryAttr))
     ########################################################################################
     if 'MachineAttrCpus0' in classad:
         r.Processors(classad['MachineAttrCpus0'], metric="max")
+    elif 'MATCH_EXP_JOB_GLIDEIN_Cpus' in classad:
+        r.Processors(int(classad['MATCH_EXP_JOB_GLIDEIN_Cpus']), metric="max")
     elif 'RequestCpus' in classad:
         r.Processors(classad['RequestCpus'], metric="max")
     else:
         r.Processors(1, metric="max")
+
+    # Set the Gpus
+    # There are many different spellings of requestgpus, RequestGpus, RequestGpus
+    # So eval, which is case insensitive (from my testing)
+    try:
+        r.GPUs(int(classad.eval('RequestGpus')), metric="max")
+    except:
+        # No GPUs, no problem
+        # Or error converting to int, then just ignore GPUs
+        pass
 
     if 'MyType' in classad:
         r.AdditionalInfo("CondorMyType", classad['MyType'])
@@ -791,6 +729,18 @@ def classadToJUR(classad):
             r.Network(val, storageUnit='b', phaseUnit=networkPhaseUnit, metric=attr, description=attr)
     r.Network(total_network, storageUnit='b', phaseUnit=networkPhaseUnit, metric="total")
 
+    # Additional Pegasus attributes
+    if 'pegasus_root_wf_uuid' in classad:
+        r.AdditionalInfo("PegasusRootWFUUID", classad['pegasus_root_wf_uuid'])
+    if 'pegasus_wf_uuid' in classad:
+        r.AdditionalInfo("PegasusWFUUID", classad['pegasus_wf_uuid'])
+    if 'pegasus_version' in classad:
+        r.AdditionalInfo("PegasusVersion", classad['pegasus_version'])
+    if 'pegasus_wf_app' in classad:
+        r.AdditionalInfo("PegasusApp", classad['pegasus_wf_app'])
+    if 'pegasus_wf_xformation' in classad:
+        r.AdditionalInfo("PegasusWFXformation", classad['pegasus_wf_xformation'])
+
     return r
 
 classad_bool_re = re.compile("^(\w{1,255}) = (true|True|TRUE|false|False|FALSE)$")
@@ -799,64 +749,17 @@ classad_double_re = re.compile("^(\w{1,255}) = ([+-]? *(?:\d{1,30}\.?\d{0,30}|\.
 classad_string_re = re.compile("^(\S+) = \"(.*)\"$")
 classad_catchall_re = re.compile("^(\S+) = (.*)$")
 def fd_to_classad(fd):
-    if g_has_classad:
-        buffer = ''
-    else:
-        classad = caselessDict()
-    for lineOrig in fd.readlines():
+    buffer = ''
+    for lineOrig in fd:
         line = lineOrig.strip()
-        if g_has_classad:
-           if not line:
-               if hasattr(classadLib, 'parseOne'):
-                   yield add_unique_id(classadLib.parseOne(buffer))
-               else:
-                   yield add_unique_id(classadLib.parseOld(buffer))
-               buffer = ''
-           else:
-               buffer += lineOrig
-           continue
-        m = classad_bool_re.match(line)
-        if m:
-            attr, val = m.groups()
-            if val.lower().find("true") >= 0:
-                classad[attr] = True
-            else:
-                classad[attr] = False
-            continue
-        m = classad_int_re.match(line)
-        if m:
-            attr, val = m.groups()
-            classad[attr] = int(val)
-            continue
-        m = classad_double_re.match(line)
-        if m:
-            attr, val = m.groups()
-            classad[attr] = float(val)
-            continue
-        m = classad_string_re.match(line)
-        if m:
-            attr, val = m.groups()
-            classad[attr] = str(val)
-            continue
-        m = classad_catchall_re.match(line)
-        if m:
-            attr, val = m.groups()
-            classad[attr] = str(val)
-            continue
         if not line:
-            yield add_unique_id(classad)
-            classad = caselessDict()
-            continue
-        DebugPrint(2, "Invalid line in ClassAd: %s" % line)
-
-    if g_has_classad:
-        if hasattr(classadLib, 'parseOne'):
             yield add_unique_id(classadLib.parseOne(buffer))
+            buffer = ''
         else:
-            yield add_unique_id(classadLib.parseOld(buffer))
-    else:
-        yield add_unique_id(classad)
-        
+            buffer += lineOrig
+
+    yield add_unique_id(classadLib.parseOne(buffer))
+
 def add_unique_id(classad):
     if 'GlobalJobId' in classad:
         classad['UniqGlobalJobId'] = 'condor.%s' % classad['GlobalJobId']
@@ -883,7 +786,11 @@ def htcondor_configured():
     """ 
     try:
         path = GratiaCore.Config.getConfigAttribute("CondorLocation")
-        condor_config_path = os.path.join(path, "bin", "condor_config_val")
+        if g_probe_config is not None and 'htcondor-ce' in g_probe_config:
+          condor_config_binary = 'condor_ce_config_val'
+        else:
+          condor_config_binary = 'condor_config_val'
+        condor_config_path = os.path.join(path, "bin", condor_config_binary)
 
         condor_config_val_args=['-schedd']
         schedd_name = GratiaCore.Config.getConfigAttribute('CondorScheddName')
@@ -899,7 +806,7 @@ def htcondor_configured():
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE)
         else:
             # args needs to be string when shell=True
-            args = 'condor_config_val ' + ' '.join(condor_config_val_args)
+            args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
             DebugPrint(4, 'Running command to check condor config: ' + args)
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
         (cmd_stdout, cmd_stderr) = cmd.communicate()
@@ -911,8 +818,8 @@ def htcondor_configured():
                            "return code. Maybe the schedd is overloaded.")
             return False
         elif 'Not defined' in cmd_stdout:
-            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in the default condor schedd" \
-                           "config. You may need to change or reload the condor configuration" \
+            DebugPrint(-1, "WARNING: PER_JOB_HISTORY_DIR not set in the default condor schedd " \
+                           "config. You may need to change or reload the condor configuration " \
                            "or specify a different CondorScheddName in the Gratia config.")
             return False
         elif (not os.path.exists(cmd_stdout) or 

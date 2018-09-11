@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.17.5
+Version:            1.20.6
 Release:            1%{?dist}
 
 License:            GPL
@@ -45,7 +45,6 @@ Source0:  %{name}-common-%{version}.tar.bz2
 Source1:  %{name}-condor-%{version}.tar.bz2
 Source3:  %{name}-pbs-lsf-%{version}.tar.bz2
 Source5:  %{name}-sge-%{version}.tar.bz2
-Source6:  %{name}-glexec-%{version}.tar.bz2
 Source7:  %{name}-metric-%{version}.tar.bz2
 Source8:  %{name}-dCache-transfer-%{version}.tar.bz2
 Source9:  %{name}-dCache-storage-%{version}.tar.bz2
@@ -55,7 +54,6 @@ Source12: %{name}-hadoop-storage-%{version}.tar.bz2
 Source13: %{name}-condor-events-%{version}.tar.bz2
 Source14: %{name}-xrootd-transfer-%{version}.tar.bz2
 Source15: %{name}-xrootd-storage-%{version}.tar.bz2
-Source16: %{name}-bdii-status-%{version}.tar.bz2
 Source17: %{name}-onevm-%{version}.tar.bz2
 Source18: %{name}-slurm-%{version}.tar.bz2
 Source19: %{name}-common2-%{version}.tar.bz2
@@ -85,7 +83,6 @@ Prefix: /etc
 %setup -q -D -T -a 3
 %endif
 %setup -q -D -T -a 5
-%setup -q -D -T -a 6
 %setup -q -D -T -a 7
 %setup -q -D -T -a 8
 %setup -q -D -T -a 9
@@ -95,7 +92,6 @@ Prefix: /etc
 %setup -q -D -T -a 13
 %setup -q -D -T -a 14
 %setup -q -D -T -a 15
-%setup -q -D -T -a 16
 %setup -q -D -T -a 17
 %setup -q -D -T -a 18 
 %setup -q -D -T -a 19
@@ -129,7 +125,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %if 0%{?rhel} == 7 || %_arch == noarch
   # Obtain files
 
-%define noarch_packs common condor sge glexec metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage bdii-status onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
+%define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -175,20 +171,25 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     fi
 
     # Collector strings
-    if [ $probe == "enstore-*" -o $probe == "dCache-storagegroup" ]; then
+    case $probe in
+    enstore-* | dCache-storagegroup )
       # must be first to catch enstrore-transfer/storage
       endpoint=%{enstore_collector}:%{default_collector_port}
       ssl_endpoint=%{enstore_collector}:%{ssl_port}
-    elif [ $probe == "*-transfer" -o $probe == "*-storage" ]; then
+      ;;
+    *-transfer | *-storage )
       endpoint=%{osg_transfer_collector}:%{default_collector_port}
       ssl_endpoint=%{osg_transfer_collector}:%{ssl_port}
-    elif [ $probe == metric ]; then
+      ;;
+    metric )
       endpoint=%{osg_metric_collector}:%{metric_port}
       ssl_endpoint=%{osg_metric_collector}:%{ssl_port}
-    else
+      ;;
+    * )
       endpoint=%{osg_collector}:%{default_collector_port}
       ssl_endpoint=%{osg_collector}:%{ssl_port}
-    fi
+      ;;
+    esac
     sed -i -e "s#@PROBE_NAME@#$probe#" \
            -e "s#@COLLECTOR_ENDPOINT@#$endpoint#" \
            -e "s#@SSL_ENDPOINT@#$ssl_endpoint#" \
@@ -198,8 +199,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     # Other Probe-specific customizations
     if [ $probe == "sge" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#SGEAccountingFile=""#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "glexec" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#gLExecMonitorLog="/var/log/messages"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "metric" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#metricMonitorLog="/var/log/metric/metric_monitor.log"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "dCache-transfer" ]; then
@@ -246,7 +245,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove unnecessary links
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/gridftp-transfer/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/glexec/ProbeConfig
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -268,9 +266,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
   mv $RPM_BUILD_ROOT%{_datadir}/gratia/hadoop-storage/storage.cfg \
      $RPM_BUILD_ROOT%{_sysconfdir}/gratia/hadoop-storage/storage.cfg
-
-  install -d $RPM_BUILD_ROOT%{perl_vendorlib}/Globus/GRAM
-  install -m 644 $RPM_BUILD_ROOT%{_datadir}/gratia/common/GRAM/JobManagerGratia.pm $RPM_BUILD_ROOT%{perl_vendorlib}/Globus/GRAM/JobManagerGratia.pm
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
@@ -298,8 +293,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove remaining cruft
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/gratia.repo
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/gram_mods
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/GRAM
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.pl
@@ -417,6 +410,7 @@ Group: Applications/System
 Requires: pyOpenSSL
 Requires(post): chkconfig
 Requires(preun): chkconfig
+Obsoletes: gratia-probe-bdii-status < 1.18.2-1
 
 %description common
 Common files and examples for Gratia OSG accounting system probes.
@@ -478,21 +472,12 @@ fi
 # %{default_prefix}/gratia/common2/pginput.py
 # %{default_prefix}/gratia/common2/probeinput.py
 
-%package gram
-Summary: GRAM extensions for Gratia OSG accounting system
-Group: Applications/System
-
-%description gram
-%{summary}
-
-%files gram
-%{perl_vendorlib}/Globus/GRAM/JobManagerGratia.pm
-
 %package condor
 Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: condor
+Requires: condor-python
 
 %description condor
 The Condor probe for the Gratia OSG accounting system.
@@ -546,27 +531,6 @@ The SGE probe for the Gratia OSG accounting system.
 
 %post sge
 %customize_probeconfig -d sge
-
-%package glexec
-Summary: A gLExec probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires:  /usr/bin/grid-proxy-info
-
-%description glexec
-The gLExec probe for the Gratia OSG accounting system.
-
-%files glexec
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/glexec/README
-%{default_prefix}/gratia/glexec/glexec_meter.cron.sh
-%{default_prefix}/gratia/glexec/glexec_meter
-%{python_sitelib}/gratia/glexec
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-glexec.cron
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/glexec/ProbeConfig
-
-%post glexec
-%customize_probeconfig -d glexec
 
 %package metric
 Summary: A probe for OSG metrics
@@ -777,32 +741,6 @@ Contributed as effort from OSG-Storage.
 
 %post xrootd-storage
 %customize_probeconfig -d xrootd-storage
-
-%package bdii-status
-Summary: Probes that emits records of BDII status
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
-Requires: /usr/bin/ldapsearch
-License: See LICENSE.
-
-%description bdii-status
-Records a BDII's status into the Gratia accounting system.
-Creates a record for CEs, SEs, and Subcluster objects.
-Contributed by University of Nebraska Lincoln.
-
-%files bdii-status
-%defattr(-,root,root,-)
-%{default_prefix}/gratia/bdii-status/ProbeConfig
-%{default_prefix}/gratia/bdii-status/bdii_subcluster_record
-%{default_prefix}/gratia/bdii-status/bdii_cese_record
-%dir %{default_prefix}/gratia/bdii-status
-%{python_sitelib}/gratia/bdii_status
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/bdii-status/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-bdii-status.cron
-
-%post bdii-status
-%customize_probeconfig -d bdii-status
 
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
@@ -1021,6 +959,49 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %endif # noarch
 
 %changelog
+* Mon Sep 10 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.6-1
+- Fix handling of ExtraAttributes in condor probe (SOFTWARE-3415)
+
+* Wed Aug 22 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.5-1
+- Log unhandled exceptions in slurm probe (SOFTWARE-2456)
+
+* Tue Jul 24 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.4-1
+- Avoid missing records due to lag in slurm probe (SOFTWARE-3347)
+
+* Wed Jun 20 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.3-2
+- Fix htcondor-ce probe's condor_config_val queries (SOFTWARE-2629)
+- Update pbs/lsf latest timestamp for empty logfiles (SOFTWARE-3041)
+
+* Tue Jun 05 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.2-1
+- Remove TWiki links from README files (SOFTWARE-3211)
+
+* Mon Apr 16 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.1-1
+- Handle raw seconds in walltime / cput in pbs probe (SOFTWARE-3221)
+
+* Tue Apr 10 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.20.0-1
+- Drop glexec probe & old GRAM code (SOFTWARE-3105)
+- Fix handling of SlurmLocation in slurm probe (SOFTWARE-2795)
+- Make ProjectName case insensitive in condor probe (SOFTWARE-3017)
+
+* Wed Jan 24 2018 Carl Edquist <edquist@cs.wisc.edu> - 1.19.1-1
+- Always use classad lib in condor probe (SOFTWARE-3017)
+
+* Thu Dec 21 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.19.0-1
+- Add GPU support to common probe code (SOFTWARE-3084)
+
+* Thu Nov 09 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.18.2-2
+- Add Obsoletes for bdii-status probe (SOFTWARE-2660)
+
+* Mon Oct 30 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.18.2-1
+- Drop bdii-status probe (SOFTWARE-2660)
+- Fix transfer collector strings in ProbeConfig (SOFTWARE-2560)
+
+* Mon Jun 26 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.18.1-1
+- Add support for WholeNodeJobs for HTCondor-CE (SOFTWARE-2783)
+
+* Mon Jun 12 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.18.0-1
+- Include arbitrary ClassAd attributes in Gratia usage records (SOFTWARE-2714)
+
 * Mon Apr 24 2017 Carl Edquist <edquist@cs.wisc.edu> - 1.17.5-1
 - fix eval call in condor probe (SOFTWARE-2636)
 

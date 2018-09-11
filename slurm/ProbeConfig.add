@@ -1,0 +1,3 @@
+
+    SlurmLocation=""
+        Comments91="Custom install location for slurm; eg: /opt/slurm"

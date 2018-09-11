@@ -381,6 +381,23 @@ class UsageRecord(record.Record):
         self.AppendToList(self.RecordData, 'Processors', pstring + self.Metric(metric)
                           + self.Description(description), str(value))
 
+    def GPUs(
+        self,
+        value,
+        consumptionRate=0,
+        metric='total',
+        description=r'',
+        ):
+        """ Metric should be one of 'total','average','max','min'
+        """
+
+        if consumptionRate > 0:
+            pstring = 'consumptionRate="' + str(consumptionRate) + '" '
+        else:
+            pstring = r''
+        self.AppendToList(self.RecordData, 'GPUs', pstring + self.Metric(metric)
+                          + self.Description(description), str(value))
+
     def ServiceLevel(
         self,
         value,
