@@ -37,6 +37,8 @@ Options:
     Create or freshen yum repository (requires -P)
   [-p]
     Prepare-only (no RPM build)
+  [-S]
+    Source RPM only (no RPM build)
   [-i]
     Install-only (no RPM packaging)
   [-r <rpmbuild-top>]
@@ -54,7 +56,7 @@ EOF
 
 installopt="-ba"
 
-while getopts :hYd:r:s:piPq OPT; do
+while getopts :hYd:r:s:pSiPq OPT; do
     case $OPT in
   d)
       if [[ -n "$defines" ]]; then
@@ -77,6 +79,9 @@ while getopts :hYd:r:s:piPq OPT; do
       ;;
   p)
       prepare_only=1
+      ;;
+  S)
+      srpm_only=1
       ;;
   q)
       quiet=1
@@ -153,6 +158,10 @@ if (( $status == 0 )); then
   if  [[ -n "$prepare_only" ]]; then
     set -x
     eval rpmbuild -bp $defines "${tmp_specfile}" $redir
+    exit $?
+  elif [[ -n "$srpm_only" ]]; then
+    set -x
+    eval rpmbuild -bs $defines "${tmp_specfile}" $redir
     exit $?
   else
     set -x
