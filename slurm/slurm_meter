@@ -181,9 +181,6 @@ def job_to_jur(job, server_id):
     # 4.4 Swap
     # 4.5 NodeCount
 
-    # 4.6 Processors
-    r.Processors(job['cpus_alloc'])
-
     # 4.7 TimeDuration
     # 4.8 TimeInstant
     # 4.9 Service Level
