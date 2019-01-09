@@ -10,6 +10,16 @@ class CondorMeterTests(unittest.TestCase):
     """Unit tests for the HTCondor Gratia probe
     """
 
+    def test_proc_attr_order(self):
+        """get_num_procs() has an order of preferred attributes
+        """
+        jobad = classad.ClassAd()
+        for attr, val in [('RequestCpus', 1),
+                          ('MATCH_EXP_JOB_GLIDEIN_Cpus', 2),
+                          ('MachineAttrCpus0', 3)]:
+            jobad[attr] = val
+            self.assertEquals(condor_meter.get_num_procs(jobad), val)
+
     def test_proc_expr(self):
         """get_num_procs() should be able to handle attributes set to ClassAd expressions
         """
