@@ -12,6 +12,3 @@ install:
 script:
   - test/run_unit_tests.sh
 
-notifications:
-  email: false
-
