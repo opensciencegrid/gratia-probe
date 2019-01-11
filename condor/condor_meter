@@ -157,17 +157,14 @@ def get_num_procs(job_ad):
     2. MATCH_EXP_JOB_GLIDEIN_Cpus
     3. RequestCpus
 
-    If none of the above are set or do not evaluate to an integer, return 1
+    If none of the above are set or do not evaluate to an integer, return 0
     """
-    procs = ''
+    procs = 0
     for attr in ['RequestCpus', 'MATCH_EXP_JOB_GLIDEIN_Cpus', 'MachineAttrCpus0']:
         try:
             procs = int(job_ad.eval(attr))
         except (KeyError, ValueError):
             continue
-
-    if not isinstance(procs, int):
-        procs = 1
 
     return procs
 
