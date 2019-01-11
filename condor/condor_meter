@@ -39,6 +39,9 @@ max_batch_size = 500
 
 min_start_time = time.time() - 120*86400
 
+# The preferred order of JobAd attributes to use for determining the number of
+# processors available to the pilot or payload job
+PROC_ATTRS = ['MachineAttrCpus0', 'MATCH_EXP_JOB_GLIDEIN_Cpus', 'RequestCpus']
 
 # --- classes -------------------------------------------------------------------------
 
@@ -160,9 +163,10 @@ def get_num_procs(job_ad):
     If none of the above are set or do not evaluate to an integer, return 0
     """
     procs = 0
-    for attr in ['RequestCpus', 'MATCH_EXP_JOB_GLIDEIN_Cpus', 'MachineAttrCpus0']:
+    for attr in PROC_ATTRS:
         try:
             procs = int(job_ad.eval(attr))
+            break
         except (KeyError, ValueError):
             continue
 
