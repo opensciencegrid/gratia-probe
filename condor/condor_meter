@@ -39,6 +39,9 @@ max_batch_size = 500
 
 min_start_time = time.time() - 120*86400
 
+# The preferred order of JobAd attributes to use for determining the number of
+# processors available to the pilot or payload job
+PROC_ATTRS = ['MachineAttrCpus0', 'MATCH_EXP_JOB_GLIDEIN_Cpus', 'RequestCpus']
 
 # --- classes -------------------------------------------------------------------------
 
@@ -148,6 +151,26 @@ def logfiles_to_process(args):
                 if m:
                     DebugPrint(5, "Processing logfile %s" % logfile)
                     yield os.path.join(arg, logfile)
+
+
+def get_num_procs(job_ad):
+    """Get the number of processors of a JobAd from one of the following attributes:
+
+    1. MachineAttrCpus0
+    2. MATCH_EXP_JOB_GLIDEIN_Cpus
+    3. RequestCpus
+
+    If none of the above are set or do not evaluate to an integer, return 0
+    """
+    procs = 0
+    for attr in PROC_ATTRS:
+        try:
+            procs = int(job_ad.eval(attr))
+            break
+        except (KeyError, ValueError):
+            continue
+
+    return procs
 
 condor_history_re = re.compile("^history.(\d+)\.(\d+)")
 def main():
@@ -650,14 +673,7 @@ def classadToJUR(classad):
             DebugPrint(5, "Arbitrary attribute: %s found with value %s" % (arbitraryAttr, classad.eval(arbitraryAttr)))
             r.AdditionalInfo(arbitraryAttr, classad.eval(arbitraryAttr))
     ########################################################################################
-    if 'MachineAttrCpus0' in classad:
-        r.Processors(classad['MachineAttrCpus0'], metric="max")
-    elif 'MATCH_EXP_JOB_GLIDEIN_Cpus' in classad:
-        r.Processors(int(classad['MATCH_EXP_JOB_GLIDEIN_Cpus']), metric="max")
-    elif 'RequestCpus' in classad:
-        r.Processors(classad['RequestCpus'], metric="max")
-    else:
-        r.Processors(1, metric="max")
+    r.Processors(get_num_procs(classad), metric="max")
 
     # Set the Gpus
     # There are many different spellings of requestgpus, RequestGpus, RequestGpus
