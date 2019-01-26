@@ -13,9 +13,8 @@ BuildRequires:      python-devel
 
 BuildRequires: gcc-c++
 
-%if 0%{?rhel} == 7
+# just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
-%endif
 
 %define default_prefix /usr/share
 
@@ -59,11 +58,9 @@ Prefix: /etc
 %setup -q
 
 %build
-%if 0%{?rhel} == 7 || %_arch != noarch
 cd pbs-lsf/urCollector-src
 %{__make} clean
 %{__make}
-%endif
 
 %install
 # Setup
@@ -79,7 +76,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     rm common/tmpfiles.d/gratia.conf
 %endif
 
-%if 0%{?rhel} == 7 || %_arch == noarch
   # Obtain files
 
 %define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
@@ -267,8 +263,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
 
-%endif
-%if 0%{?rhel} == 7 || %_arch != noarch
 
   # PBS / LSF probe
   PROBE_DIR=$RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf
@@ -305,7 +299,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove test cruft
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf/test
 
-%endif
 
 # Burn in the RPM version into the python files.
 grep -rIle '%%%%%%RPMVERSION%%%%%%' $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} | while read file; do \
@@ -322,7 +315,6 @@ rm -rf $RPM_BUILD_ROOT
 %description
 Probes for the Gratia OSG accounting system
 
-%if 0%{?rhel} == 7 || %_arch != noarch
 
 %package pbs-lsf
 Summary: Gratia OSG accounting system probe for PBS and LSF batch systems.
@@ -358,8 +350,6 @@ This product includes software developed by The EU EGEE Project
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-pbs-lsf.cron
 
-%endif
-%if 0%{?rhel} == 7 || %_arch == noarch
 
 %package common
 Summary: Common files for Gratia OSG accounting system probes
@@ -912,8 +902,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %customize_probeconfig -d dCache-storagegroup
 
 
-
-%endif # noarch
 
 %changelog
 * Mon Jan 14 2019 Carl Edquist <edquist@cs.wisc.edu> - 1.20.8-1
