@@ -1167,16 +1167,16 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Add slurm patch provided by John Thiltges related to (GRATIA-118)
 - Fix DebugPrint bug found by Matyas Selmeci (GRATIA-122)
 
-* Wed Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
+* Fri Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
 - Fix psacct for sl6 (GRATIA-115)
 
 * Wed Jul 31 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.15-1
 - New patch to deal with condor problems (GRATIA-114/SOFTWARE-1132)
 
-* Wed Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.14-1
+* Fri Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.14-1
 - Fixed typo in condor_meter , also fixed check for condor_setup GRATIA-110 ; all by Suchandra
 
-* Wed Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.13-1
+* Fri Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.13-1
 - Temporary fix for condor_meter probe - (GRATIA-114/SOFTWARE-1132), condor ticket https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=3814
 
 * Wed Jul 3 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.12-1
@@ -1193,7 +1193,7 @@ Have to modify ProbeConfigTemplate.osg
 * Tue May 28 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.9-1
 Added directory under quarantine
 
-* Mon May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
+* Tue May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
 Added quarantine of Unknown VO records (Gratia-107)
 PBS probe fixes SOFTWARE-1032
 
@@ -1245,7 +1245,7 @@ Adding glideinwms configuration package. GRATIA-76
 condor_meter code merge (modification for xsede to include ProjectName from classad) 
 changes provided by Derek and Brian
 
-* Fri Aug 12 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.7
+* Sun Aug 12 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.7
 Brian's common libs fixes: Added  more comments. Re-utilized the regexp objects, fixed the handling of IOError, 
 and simplified the exception handling. 
 * Fri Aug 03 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.6
@@ -1273,14 +1273,14 @@ and simplified the exception handling.
 * Wed Mar 21  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.9.pre
 - Fixed debug message in condor_meter https://jira.opensciencegrid.org/browse/GRATIA-58
 
-* Mon Mar 18  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.8.pre
+* Sun Mar 18  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.8.pre
 - VOOverride feature for campus grid usage https://jira.opensciencegrid.org/browse/GRATIA-57 - Derek Weitzel
 - cron_check header fix
 
 * Mon Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7
 - version for OSG production release
 
-* Thu Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7.pre
+* Mon Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7.pre
 - Fixed pbs probe that now supreesed generation of UserVOName attribute (https://jira.opensciencegrid.org/browse/GRATIA-53)
 - Derek's fixes for pbs (https://jira.opensciencegrid.org/browse/GRATIA-44) 
 - Brian's fixes for condor-meter
@@ -1288,7 +1288,7 @@ and simplified the exception handling.
 * Thu Feb 9  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.6.pre
 - Fixed various bugs intoroduced in 1.10-0.4
 
-* Thu Feb 3  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.4.pre
+* Fri Feb 3  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.4.pre
 - Applied pacthes for pbs probes https://jira.opensciencegrid.org/browse/GRATIA-44 
 - Implemented gratia-probes-cron to start/stop gratia probes that are ran as cronjob as a service (https://jira.opensciencegrid.org/browse/GRATIA-30)
 - Added dist tag to release
@@ -1303,10 +1303,10 @@ and simplified the exception handling.
 - Added support for CMS overflow to Condor probe.
 - Addition of POSIX-style locking for Condor probe.
 
-* Wed Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-1
+* Tue Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-1
 - No changes from 1.09.08.pre - just official release
 
-* Wed Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-08.pre
+* Tue Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-08.pre
 - Fixed psacct data dir location (removed them from /usr/share/gratia/var, and put them under /var/lib/gratia)
 - Added ldapsearch dependency to bdii probe
 - Fixed URCOLLECTOR_LOC  in pbs probe 
