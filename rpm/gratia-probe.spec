@@ -58,9 +58,7 @@ Prefix: /etc
 %setup -q
 
 %build
-cd pbs-lsf/urCollector-src
-%{__make} clean
-%{__make}
+%{__make} -C pbs-lsf/urCollector-src
 
 %install
 # Setup
