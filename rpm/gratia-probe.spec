@@ -41,28 +41,7 @@ ExcludeArch: noarch
 
 ########################################################################
 # Source and patch specifications
-Source0:  %{name}-common-%{version}.tar.bz2
-Source1:  %{name}-condor-%{version}.tar.bz2
-Source3:  %{name}-pbs-lsf-%{version}.tar.bz2
-Source5:  %{name}-sge-%{version}.tar.bz2
-Source7:  %{name}-metric-%{version}.tar.bz2
-Source8:  %{name}-dCache-transfer-%{version}.tar.bz2
-Source9:  %{name}-dCache-storage-%{version}.tar.bz2
-Source10: %{name}-gridftp-transfer-%{version}.tar.bz2
-Source11: %{name}-services-%{version}.tar.bz2
-Source12: %{name}-hadoop-storage-%{version}.tar.bz2
-Source13: %{name}-condor-events-%{version}.tar.bz2
-Source14: %{name}-xrootd-transfer-%{version}.tar.bz2
-Source15: %{name}-xrootd-storage-%{version}.tar.bz2
-Source17: %{name}-onevm-%{version}.tar.bz2
-Source18: %{name}-slurm-%{version}.tar.bz2
-Source19: %{name}-common2-%{version}.tar.bz2
-Source20: %{name}-enstore-transfer-%{version}.tar.bz2
-Source21: %{name}-enstore-storage-%{version}.tar.bz2
-Source22: %{name}-enstore-tapedrive-%{version}.tar.bz2
-Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
-Source24:  %{name}-lsf-%{version}.tar.bz2
-
+Source0: %{name}-%{version}.tar.gz
 
 ########################################################################
 
@@ -77,29 +56,7 @@ Prefix: /etc
 
 # Build preparation.
 %prep
-%setup -q -c
-%setup -q -D -T -a 1
-%if 0%{?rhel} == 7 || %_arch != noarch
-%setup -q -D -T -a 3
-%endif
-%setup -q -D -T -a 5
-%setup -q -D -T -a 7
-%setup -q -D -T -a 8
-%setup -q -D -T -a 9
-%setup -q -D -T -a 10
-%setup -q -D -T -a 11
-%setup -q -D -T -a 12
-%setup -q -D -T -a 13
-%setup -q -D -T -a 14
-%setup -q -D -T -a 15
-%setup -q -D -T -a 17
-%setup -q -D -T -a 18 
-%setup -q -D -T -a 19
-%setup -q -D -T -a 20
-%setup -q -D -T -a 21
-%setup -q -D -T -a 22
-%setup -q -D -T -a 23
-%setup -q -D -T -a 24
+%setup -q
 
 %build
 %if 0%{?rhel} == 7 || %_arch != noarch
