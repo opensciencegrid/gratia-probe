@@ -719,7 +719,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: slurm
 Requires: MySQL-python
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description slurm
@@ -745,7 +744,6 @@ Summary: A HTCondor-CE probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: htcondor-ce
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description htcondor-ce
@@ -771,7 +769,6 @@ Summary: A LSF probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 # Requires: lsf (can get the version form the configuration)
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description lsf
@@ -799,7 +796,6 @@ Summary: Enstore transfer probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-transfer
@@ -825,7 +821,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-storage
@@ -851,7 +846,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-tapedrive
@@ -879,7 +873,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description dcache-storagegroup
