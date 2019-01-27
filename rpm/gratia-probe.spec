@@ -13,9 +13,8 @@ BuildRequires:      python-devel
 
 BuildRequires: gcc-c++
 
-%if 0%{?rhel} == 7
+# just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
-%endif
 
 %define default_prefix /usr/share
 
@@ -41,28 +40,7 @@ ExcludeArch: noarch
 
 ########################################################################
 # Source and patch specifications
-Source0:  %{name}-common-%{version}.tar.bz2
-Source1:  %{name}-condor-%{version}.tar.bz2
-Source3:  %{name}-pbs-lsf-%{version}.tar.bz2
-Source5:  %{name}-sge-%{version}.tar.bz2
-Source7:  %{name}-metric-%{version}.tar.bz2
-Source8:  %{name}-dCache-transfer-%{version}.tar.bz2
-Source9:  %{name}-dCache-storage-%{version}.tar.bz2
-Source10: %{name}-gridftp-transfer-%{version}.tar.bz2
-Source11: %{name}-services-%{version}.tar.bz2
-Source12: %{name}-hadoop-storage-%{version}.tar.bz2
-Source13: %{name}-condor-events-%{version}.tar.bz2
-Source14: %{name}-xrootd-transfer-%{version}.tar.bz2
-Source15: %{name}-xrootd-storage-%{version}.tar.bz2
-Source17: %{name}-onevm-%{version}.tar.bz2
-Source18: %{name}-slurm-%{version}.tar.bz2
-Source19: %{name}-common2-%{version}.tar.bz2
-Source20: %{name}-enstore-transfer-%{version}.tar.bz2
-Source21: %{name}-enstore-storage-%{version}.tar.bz2
-Source22: %{name}-enstore-tapedrive-%{version}.tar.bz2
-Source23: %{name}-dCache-storagegroup-%{version}.tar.bz2
-Source24:  %{name}-lsf-%{version}.tar.bz2
-
+Source0: %{name}-%{version}.tar.gz
 
 ########################################################################
 
@@ -77,36 +55,10 @@ Prefix: /etc
 
 # Build preparation.
 %prep
-%setup -q -c
-%setup -q -D -T -a 1
-%if 0%{?rhel} == 7 || %_arch != noarch
-%setup -q -D -T -a 3
-%endif
-%setup -q -D -T -a 5
-%setup -q -D -T -a 7
-%setup -q -D -T -a 8
-%setup -q -D -T -a 9
-%setup -q -D -T -a 10
-%setup -q -D -T -a 11
-%setup -q -D -T -a 12
-%setup -q -D -T -a 13
-%setup -q -D -T -a 14
-%setup -q -D -T -a 15
-%setup -q -D -T -a 17
-%setup -q -D -T -a 18 
-%setup -q -D -T -a 19
-%setup -q -D -T -a 20
-%setup -q -D -T -a 21
-%setup -q -D -T -a 22
-%setup -q -D -T -a 23
-%setup -q -D -T -a 24
+%setup -q
 
 %build
-%if 0%{?rhel} == 7 || %_arch != noarch
-cd pbs-lsf/urCollector-src
-%{__make} clean
-%{__make}
-%endif
+%{__make} -C pbs-lsf/urCollector-src
 
 %install
 # Setup
@@ -122,7 +74,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
     rm common/tmpfiles.d/gratia.conf
 %endif
 
-%if 0%{?rhel} == 7 || %_arch == noarch
   # Obtain files
 
 %define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
@@ -310,8 +261,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
 
-%endif
-%if 0%{?rhel} == 7 || %_arch != noarch
 
   # PBS / LSF probe
   PROBE_DIR=$RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf
@@ -348,7 +297,6 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Remove test cruft
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf/test
 
-%endif
 
 # Burn in the RPM version into the python files.
 grep -rIle '%%%%%%RPMVERSION%%%%%%' $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} | while read file; do \
@@ -365,7 +313,6 @@ rm -rf $RPM_BUILD_ROOT
 %description
 Probes for the Gratia OSG accounting system
 
-%if 0%{?rhel} == 7 || %_arch != noarch
 
 %package pbs-lsf
 Summary: Gratia OSG accounting system probe for PBS and LSF batch systems.
@@ -401,8 +348,6 @@ This product includes software developed by The EU EGEE Project
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-pbs-lsf.cron
 
-%endif
-%if 0%{?rhel} == 7 || %_arch == noarch
 
 %package common
 Summary: Common files for Gratia OSG accounting system probes
@@ -774,7 +719,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: slurm
 Requires: MySQL-python
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description slurm
@@ -800,7 +744,6 @@ Summary: A HTCondor-CE probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: htcondor-ce
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description htcondor-ce
@@ -826,7 +769,6 @@ Summary: A LSF probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 # Requires: lsf (can get the version form the configuration)
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description lsf
@@ -854,7 +796,6 @@ Summary: Enstore transfer probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-transfer
@@ -880,7 +821,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-storage
@@ -906,7 +846,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description enstore-tapedrive
@@ -934,7 +873,6 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
 Requires: python-psycopg2
-BuildRequires: python-devel
 License: See LICENSE.
 
 %description dcache-storagegroup
@@ -955,8 +893,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %customize_probeconfig -d dCache-storagegroup
 
 
-
-%endif # noarch
 
 %changelog
 * Mon Jan 14 2019 Carl Edquist <edquist@cs.wisc.edu> - 1.20.8-1
@@ -1167,16 +1103,16 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Add slurm patch provided by John Thiltges related to (GRATIA-118)
 - Fix DebugPrint bug found by Matyas Selmeci (GRATIA-122)
 
-* Wed Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
+* Fri Aug 9 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.16-1
 - Fix psacct for sl6 (GRATIA-115)
 
 * Wed Jul 31 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.15-1
 - New patch to deal with condor problems (GRATIA-114/SOFTWARE-1132)
 
-* Wed Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.14-1
+* Fri Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.14-1
 - Fixed typo in condor_meter , also fixed check for condor_setup GRATIA-110 ; all by Suchandra
 
-* Wed Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.13-1
+* Fri Jul 26 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.13-1
 - Temporary fix for condor_meter probe - (GRATIA-114/SOFTWARE-1132), condor ticket https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=3814
 
 * Wed Jul 3 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.12-1
@@ -1193,7 +1129,7 @@ Have to modify ProbeConfigTemplate.osg
 * Tue May 28 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.9-1
 Added directory under quarantine
 
-* Mon May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
+* Tue May 21 2013 Tanya Levshina <tlevshin@fnal.gov> - 1.13.8-1
 Added quarantine of Unknown VO records (Gratia-107)
 PBS probe fixes SOFTWARE-1032
 
@@ -1245,7 +1181,7 @@ Adding glideinwms configuration package. GRATIA-76
 condor_meter code merge (modification for xsede to include ProjectName from classad) 
 changes provided by Derek and Brian
 
-* Fri Aug 12 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.7
+* Sun Aug 12 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.7
 Brian's common libs fixes: Added  more comments. Re-utilized the regexp objects, fixed the handling of IOError, 
 and simplified the exception handling. 
 * Fri Aug 03 2012 Tanya Levshin <tlevshin@fnal.gov> - 1.12.6
@@ -1273,14 +1209,14 @@ and simplified the exception handling.
 * Wed Mar 21  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.9.pre
 - Fixed debug message in condor_meter https://jira.opensciencegrid.org/browse/GRATIA-58
 
-* Mon Mar 18  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.8.pre
+* Sun Mar 18  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.8.pre
 - VOOverride feature for campus grid usage https://jira.opensciencegrid.org/browse/GRATIA-57 - Derek Weitzel
 - cron_check header fix
 
 * Mon Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7
 - version for OSG production release
 
-* Thu Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7.pre
+* Mon Feb 20  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.7.pre
 - Fixed pbs probe that now supreesed generation of UserVOName attribute (https://jira.opensciencegrid.org/browse/GRATIA-53)
 - Derek's fixes for pbs (https://jira.opensciencegrid.org/browse/GRATIA-44) 
 - Brian's fixes for condor-meter
@@ -1288,7 +1224,7 @@ and simplified the exception handling.
 * Thu Feb 9  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.6.pre
 - Fixed various bugs intoroduced in 1.10-0.4
 
-* Thu Feb 3  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.4.pre
+* Fri Feb 3  2012 Tanya Levshina <tlevshin@fnal.gov> - 1.10-0.4.pre
 - Applied pacthes for pbs probes https://jira.opensciencegrid.org/browse/GRATIA-44 
 - Implemented gratia-probes-cron to start/stop gratia probes that are ran as cronjob as a service (https://jira.opensciencegrid.org/browse/GRATIA-30)
 - Added dist tag to release
@@ -1303,10 +1239,10 @@ and simplified the exception handling.
 - Added support for CMS overflow to Condor probe.
 - Addition of POSIX-style locking for Condor probe.
 
-* Wed Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-1
+* Tue Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-1
 - No changes from 1.09.08.pre - just official release
 
-* Wed Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-08.pre
+* Tue Nov 15 2011 Tanya Levshina <tlevshin@fnal.gov> - 1.09-08.pre
 - Fixed psacct data dir location (removed them from /usr/share/gratia/var, and put them under /var/lib/gratia)
 - Added ldapsearch dependency to bdii probe
 - Fixed URCOLLECTOR_LOC  in pbs probe 
