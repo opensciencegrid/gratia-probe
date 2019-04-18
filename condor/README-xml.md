@@ -5,7 +5,7 @@ Here are sample XML records sent for ResourceType = Batch and BatchPilot
 (aka Payload) jobs.
 
 
-### RawXML for `ResourceType=Batch`:
+### RawXML for a `condor` probe record with `ResourceType=Batch`:
 
 ```
 <JobUsageRecord>
@@ -56,7 +56,7 @@ Here are sample XML records sent for ResourceType = Batch and BatchPilot
 ```
 
 
-### RawXML for `ResourceType=Payload`:
+### RawXML for a `condor` probe record with `ResourceType=Payload`:
 
 ```
 <JobUsageRecord>
@@ -112,4 +112,53 @@ gratia-probe) are identified when they have a MATCH_EXP_JOBGLIDEIN_ResourceName 
 the condor history logfile.
 
 Note that none of the other batch probes (that is, other than condor) are able to report as payload jobs.
+
+
+### RawXML for a `htcondor-ce` probe record:
+
+```
+<JobUsageRecord>
+<RecordIdentity urwg:createTime="2019-04-15T19:50:21Z" urwg:recordId="hosted-ce23.grid.uchicago.edu:491390.1"/>
+<JobIdentity>
+	<GlobalJobId>condor.hosted-ce23.grid.uchicago.edu#3996.0#1555355116</GlobalJobId>
+	<LocalJobId>3996</LocalJobId>
+</JobIdentity>
+<UserIdentity>
+	<LocalUserId>ligo</LocalUserId>
+	<GlobalUsername>ligo@users.opensciencegrid.org</GlobalUsername>
+	<DN>/DC=org/DC=opensciencegrid/O=Open Science Grid/OU=Services/CN=pilot/osg-ligo-1.t2.ucsd.edu</DN>
+	<VOName>/osg/ligo/Role=NULL/Capability=NULL</VOName>
+	<ReportableVOName>osg</ReportableVOName>
+</UserIdentity>
+	<JobName>hosted-ce23.grid.uchicago.edu#3996.0#1555355116</JobName>
+	<MachineName>hosted-ce23.grid.uchicago.edu</MachineName>
+	<SubmitHost>hosted-ce23.grid.uchicago.edu</SubmitHost>
+	<Status urwg:description="Condor Exit Status">0</Status>
+	<WallDuration urwg:description="Was entered in seconds">PT41M6.0S</WallDuration>
+	<TimeDuration urwg:type="RemoteUserCpu">PT0S</TimeDuration>
+	<TimeDuration urwg:type="LocalUserCpu">PT0S</TimeDuration>
+	<TimeDuration urwg:type="RemoteSysCpu">PT0S</TimeDuration>
+	<TimeDuration urwg:type="LocalSysCpu">PT0S</TimeDuration>
+	<TimeDuration urwg:type="CumulativeSuspensionTime">PT0S</TimeDuration>
+	<TimeDuration urwg:type="CommittedSuspensionTime">PT0S</TimeDuration>
+	<TimeDuration urwg:type="CommittedTime">PT0S</TimeDuration>
+	<CpuDuration urwg:description="Was entered in seconds" urwg:usageType="system">PT0S</CpuDuration>
+	<CpuDuration urwg:description="Was entered in seconds" urwg:usageType="user">PT0S</CpuDuration>
+	<EndTime urwg:description="Was entered in seconds">2019-04-15T19:47:45Z</EndTime>
+	<StartTime urwg:description="Was entered in seconds">2019-04-15T19:06:30Z</StartTime>
+	<Queue urwg:description="Condor's JobUniverse field">9</Queue>
+	<NodeCount urwg:metric="max">1</NodeCount>
+	<Processors urwg:metric="max">20</Processors>
+	<Resource urwg:description="CondorMyType">Job</Resource>
+	<Resource urwg:description="ExitBySignal">false</Resource>
+	<Resource urwg:description="ExitCode">0</Resource>
+	<Resource urwg:description="condor.JobStatus">4</Resource>
+	<Network urwg:metric="total" urwg:phaseUnit="PT41M6.0S" urwg:storageUnit="b">0</Network>
+	<ProbeName>htcondor-ce:hosted-ce23.grid.uchicago.edu</ProbeName>
+	<SiteName>OSG_US_LSU_SuperMIC</SiteName>
+	<Grid>OSG</Grid>
+	<Njobs>1</Njobs>
+	<Resource urwg:description="ResourceType">Batch</Resource>
+</JobUsageRecord>
+```
 
