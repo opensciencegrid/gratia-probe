@@ -105,3 +105,11 @@ Here are sample XML records sent for ResourceType = Batch and BatchPilot
 </JobUsageRecord>
 ```
 
+#### Notes
+
+The key difference is the "payload" jobs (ResourceType=Payload in GRACC, ResourceType=BatchPilot in the xml sent by the
+gratia-probe) are identified when they have a MATCH_EXP_JOBGLIDEIN_ResourceName attribute in their classad, as found in
+the condor history logfile.
+
+Note that none of the other batch probes (that is, other than condor) are able to report as payload jobs.
+
