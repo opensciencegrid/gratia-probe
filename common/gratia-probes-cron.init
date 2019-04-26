@@ -14,24 +14,15 @@ lockfile=/var/lock/subsys/gratia-probes-cron
 RETVAL=0
 
 checkEnabledProbes() {
-	for name in `ls -1 /etc/cron.d/gratia-probe*cron`
-	do 
-		dir=`echo $name|basename $name|sed 's/gratia-probe-//'|sed 's/.cron//'`
-		grep "EnableProbe.*=.*1" /etc/gratia/$dir/ProbeConfig >/dev/null 2>&1
-		if [ $? -eq 0 ]
-		then
-			echo 0
-			return
-		fi
-	done
-	echo 1
+    grep -qs "EnableProbe.*=.*1" /etc/gratia/*/ProbeConfig
 }
 
 printProbeStatus() {
-    for name in `ls -1 /etc/cron.d/gratia-probe*cron`; do
-        shortname=`echo $name|basename $name|sed 's/gratia-probe-//'|sed 's/.cron//'`
-        grep "EnableProbe.*=.*1" /etc/gratia/$shortname/ProbeConfig >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
+    for name in /etc/cron.d/gratia-probe*cron; do
+        shortname=${name##*/gratia-probe-}
+        shortname=${shortname%.cron}
+        if grep -q "EnableProbe.*=.*1" "/etc/gratia/$shortname/ProbeConfig"
+        then
             echo "    $shortname probe: Enabled"
         else
             echo "    $shortname probe: Disabled"
@@ -40,9 +31,7 @@ printProbeStatus() {
 }
 
 start() {
-	isEnabled=`checkEnabledProbes`
-        if [ $isEnabled -eq 0 ]
-	then
+	if checkEnabledProbes; then
 		action $"Enabling gratia probes cron:" touch "$lockfile" 
                 RETVAL=$?
 	else
