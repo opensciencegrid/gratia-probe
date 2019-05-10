@@ -83,8 +83,8 @@ _sgeFields = [
     "iow",
     "pe_taskid",
     "maxvmem",
-    "unknown1",
-    "unknown2"
+    "arid",
+    "ar_submission_time"
 ]
 
 SGERecord = collections.namedtuple("SGERecord", _sgeFields)
