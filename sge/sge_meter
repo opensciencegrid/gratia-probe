@@ -27,7 +27,7 @@
 
 
 import gratia.common.Gratia as Gratia
-import os, copy, pwd, sys, string
+import os, copy, pwd, sys, string, collections
 
 # This module requires python v2.3
 from optparse import OptionParser
@@ -39,55 +39,61 @@ noGridmap = False
 gridmapFile = ""
 debug = False
 
+_sgeFields = [
+    "qname",
+    "hostname",
+    "group",
+    "owner",
+    "job_name",
+    "job_number",
+    "account",
+    "priority",
+    "submission_time",
+    "start_time",
+    "end_time",
+    "failed",
+    "exit_status",
+    "ru_wallclock",
+    "ru_utime",
+    "ru_stime",
+    "ru_maxrss",
+    "ru_ixrss",
+    "ru_ismrss",
+    "ru_idrss",
+    "ru_isrss",
+    "ru_minflt",
+    "ru_majflt",
+    "ru_nswap",
+    "ru_inblock",
+    "ru_oublock",
+    "ru_msgsnd",
+    "ru_msgrcv",
+    "ru_nsignals",
+    "ru_nvcsw",
+    "ru_nivcsw",
+    "project",
+    "department",
+    "granted_pe",
+    "slots",
+    "task_number",
+    "cpu",
+    "mem",
+    "io",
+    "category",
+    "iow",
+    "pe_taskid",
+    "maxvmem",
+    "unknown1",
+    "unknown2"
+]
+
+SGERecord = collections.namedtuple("SGERecord", _sgeFields)
+
 class SGE:
     sgeRecord = {}
-    __sgeFields__ = [ "qname",
-                      "hostname",
-                      "group",
-                      "owner",
-                      "job_name",
-                      "job_number",
-                      "account",
-                      "priority",
-                      "submission_time",
-                      "start_time",
-                      "end_time",
-                      "failed",
-                      "exit_status",
-                      "ru_wallclock",
-                      "ru_utime",
-                      "ru_stime",
-                      "ru_maxrss",
-                      "ru_ixrss",
-                      "ru_ismrss",
-                      "ru_idrss",
-                      "ru_isrss",
-                      "ru_minflt",
-                      "ru_majflt",
-                      "ru_nswap",
-                      "ru_inblock",
-                      "ru_oublock",
-                      "ru_msgsnd",
-                      "ru_msgrcv",
-                      "ru_nsignals",
-                      "ru_nvcsw",
-                      "ru_nivcsw",
-                      "project",
-                      "department",
-                      "granted_pe",
-                      "slots",
-                      "task_number",
-                      "cpu",
-                      "mem",
-                      "io",
-                      "category",
-                      "iow",
-                      "pe_taskid",
-                      "maxvmem" ]
-    
 
     def reverseGridMap(self):
-        user = self.sgeRecord['owner']
+        user = self.sgeRecord.owner
         try:
             gridmapfile=open(gridmapFile, "r")
         except IOError:
@@ -114,7 +120,7 @@ class SGE:
         return ""
         
     def __init__(self, valueList):
-        self.sgeRecord = dict(zip(self.__sgeFields__, valueList))
+        self.sgeRecord = SGERecord(*valueList)
 
                 
     
@@ -136,19 +142,19 @@ class SGE:
         # 3.2 GlobalJobId - optional, string
         # format: SGE:hostname:job_number.index
         # eg. SGE:pc1805.nersc.gov:121443.0
-        globalJobId="SGE:" + self.sgeRecord['hostname'] + ":" + self.sgeRecord['job_number'] + "." + self.sgeRecord['task_number']
+        globalJobId="SGE:" + self.sgeRecord.hostname + ":" + self.sgeRecord.job_number + "." + self.sgeRecord.task_number
         r.GlobalJobId(globalJobId)
 
         # 3.3 LocalJobId - optional, string
         # use SGE job_number field
-        r.LocalJobId(self.sgeRecord['job_number'])
+        r.LocalJobId(self.sgeRecord.job_number)
 
         # 3.4  ProcessId - optional, integer
         # TBD
 
         # 3.5 LocalUserId - optional, string
         # local username 
-        r.LocalUserId(self.sgeRecord['owner'])
+        r.LocalUserId(self.sgeRecord.owner)
 
         # 3.6 GlobalUsername -
         #
@@ -157,12 +163,12 @@ class SGE:
         # get DN from reverse gridmap lookup to get the 
         # distinguished name from the certificate
         try: 
-            pwent=pwd.getpwnam(self.sgeRecord['owner'])
+            pwent=pwd.getpwnam(self.sgeRecord.owner)
             # TBD: If we need to further qualify this use:
             # globalUserName=pwent.pw_gecos + " (" + pwent.pw_name + ":" + `pwent.pw_uid` + ")"
             globalUserName=pwent.pw_gecos
         except KeyError:
-            globalUserName=self.sgeRecord['owner']
+            globalUserName=self.sgeRecord.owner
         r.GlobalUsername(globalUserName) 
 
         # dn from reverse gridmap lookup
@@ -171,7 +177,7 @@ class SGE:
 
         # 3.7 JobName  - optional, string
         # Use SGE job_name field
-        r.JobName(self.sgeRecord['job_name'])
+        r.JobName(self.sgeRecord.job_name)
         
         # 3.8 Charge - optional, integer, site dependent
         # TBD
@@ -179,54 +185,54 @@ class SGE:
         # 3.9 Status - optional, integer, exit status
         # Use SGE exit_status
         # TBD - May want to do additional error code handling along with "failed"
-        r.Status(self.sgeRecord['exit_status'])
+        r.Status(self.sgeRecord.exit_status)
 
         # 3.10 WallDuration -  "Wall clock time that elpased while the job was running."
         # Use SGE ru_wallclock field
         # Use float or int so that Gratia can format it appropriately
-        r.WallDuration(float(self.sgeRecord['ru_wallclock']),"was entered in seconds")
+        r.WallDuration(float(self.sgeRecord.ru_wallclock),"was entered in seconds")
 
         # 3.11 CpuDuration - "CPU time used, summed over all processes in the job
         # SGE ru_utime is the user CpuDuration
         # SGE ru_stime is the sys CpuDuration
         # Use float or int so that Gratia can format it appropriately
         # fix to correctly calculate CPU times
-        # r.CpuDuration(float(self.sgeRecord['ru_utime']),"user","was entered in seconds")
-        r.CpuDuration(float(self.sgeRecord['cpu'])-float(self.sgeRecord['ru_stime']),"user","was entered in seconds")
-        r.CpuDuration(float(self.sgeRecord['ru_stime']),"sys","was entered in seconds")
+        # r.CpuDuration(float(self.sgeRecord.ru_utime),"user","was entered in seconds")
+        r.CpuDuration(float(self.sgeRecord.cpu)-float(self.sgeRecord.ru_stime),"user","was entered in seconds")
+        r.CpuDuration(float(self.sgeRecord.ru_stime),"sys","was entered in seconds")
 
         # 3.12  EndTime - "The time at which the job completed"
         # SGE end_time field
         # Use float or int so that Gratia can format it appropriately
-        endTime=float(self.sgeRecord['end_time'])
+        endTime=float(self.sgeRecord.end_time)
         r.EndTime(endTime,"Was entered in seconds")
 
         # 3.13 StartTime - The time at which the job started"
         # SGE start_time field
         # Use float or int so that Gratia can format it appropriately
-        startTime=float(self.sgeRecord['start_time'])
+        startTime=float(self.sgeRecord.start_time)
         r.StartTime(startTime,"Was entered in seconds")
 
         # 3.14 MachineName - can be host name or the sites name for a cluster
         # SGE hostname field
         # TBD - May want to use a generic cluster name
-        # r.MachineName(self.sgeRecord['hostname'])
+        # r.MachineName(self.sgeRecord.hostname)
 
         # 3.15 Host - hostname on which job was run
-        r.Host(self.sgeRecord['hostname'])
+        r.Host(self.sgeRecord.hostname)
 
         # 3.16 SubmitHost
         # TBD - May want to read contents of $SGE_ROOT/default/common/act_qmaster
         # Optionally - we may want to use Globus GK hostname instead
-        # r.SubmitHost(self.sgeRecord['hostname'])
+        # r.SubmitHost(self.sgeRecord.hostname)
 
         # 3.17 Queue - string, name of the queue from which job executed
         # SGE qname field
-        r.Queue(self.sgeRecord['qname'])
+        r.Queue(self.sgeRecord.qname)
 
         # 3.18 ProjectName - optional, effective GID (string)
         # SGE project field
-        r.ProjectName(self.sgeRecord['project'])
+        r.ProjectName(self.sgeRecord.project)
 
 
         # 4 Differentiated UsageRecord Properties
@@ -239,7 +245,7 @@ class SGE:
 
         # 4.3 Memory - optional, integer, mem use by all concurrent processe
         # SGE maxvmem field
-        r.Memory(float(self.sgeRecord['maxvmem']), "B", description = "maxvmem")
+        r.Memory(float(self.sgeRecord.maxvmem), "B", description = "maxvmem")
 
         # 4.4 Swap
         # TBD - we could use ru_nswap - but need to verify if SGE actually sets this
@@ -249,26 +255,26 @@ class SGE:
 
         # 4.6 Processors
         try:
-            num_slots = int(self.sgeRecord['slots'])
+            num_slots = int(self.sgeRecord.slots)
             r.Processors(num_slots)
         except:
             Gratia.DebugPrint(verbose_level,
                               "Warning: Unable to parse " \
-                              "number of slots to an integer: %s." % self.sgeRecord['slots'])
+                              "number of slots to an integer: %s." % self.sgeRecord.slots)
 
         # 4.7 TimeDuration
         
         # 4.8 TimeInstant - a discrete time that is relevant to the reported usage time.
         # Type can be 'submit','connect', or 'other'
         # SGE submission_time field
-        r.TimeInstant(float(self.sgeRecord['submission_time']),"submit", "was entered in seconds")
+        r.TimeInstant(float(self.sgeRecord.submission_time),"submit", "was entered in seconds")
 
         # 4.9 Service Level - identifies the quality of service associated with
         # the resource consumption.For example, service level may represent a
         # priority associated with the usage.
         # SGE field - priority
 
-        r.ServiceLevel(self.sgeRecord['priority'], serviceLevelType="priority", description="SGE Priority")
+        r.ServiceLevel(self.sgeRecord.priority, serviceLevelType="priority", description="SGE Priority")
         
         # 4.10 Extension
         # TBD lookup grid VO related information and add  it to record
@@ -278,8 +284,8 @@ class SGE:
 
     def printRecord(self):
         Gratia.DebugPrint(debug_level, "=================================")
-        for key in self.__sgeFields__:
-            Gratia.DebugPrint(debug_level, key +  " : " + self.sgeRecord[key])
+        for i,key in enumerate(_sgeFields):
+            Gratia.DebugPrint(debug_level, key +  " : " + self.sgeRecord[i])
         Gratia.DebugPrint(debug_level, "=================================")
                 
 
