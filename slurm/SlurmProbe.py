@@ -87,12 +87,13 @@ class SlurmProbe:
         self.cluster = Gratia.Config.getConfigAttribute('SlurmCluster')
 
         # SLURM made changes to the accounting database schema
-        if LooseVersion(self.get_slurm_version()) < LooseVersion("15.08.0"):
+        slurm_version = self.get_slurm_version()
+        if LooseVersion(slurm_version) < LooseVersion("15.08.0"):
             # Original schema
-            self.sacct = SlurmAcct_v1(self.conn, self.cluster)
+            self.sacct = SlurmAcct_v1(self.conn, self.cluster, slurm_version)
         else:
             # Added TRES (Trackable resources) in 15.08.0pre5
-            self.sacct = SlurmAcct_v2(self.conn, self.cluster)
+            self.sacct = SlurmAcct_v2(self.conn, self.cluster, slurm_version)
 
     def parse_opts(self):
         """Hook to parse command-line options"""
@@ -200,11 +201,12 @@ class SlurmCheckpoint(object):
     val = property(get_val, set_val)
 
 class SlurmAcctBase(object):
-    def __init__(self, conn, cluster):
+    def __init__(self, conn, cluster, slurm_version):
         self._conn = conn
 
         cluster = re.sub('\W+', '', cluster)
         self._cluster = cluster
+        self._slurm_version = slurm_version
 
     def completed_jobs(self, ts):
         """Completed jobs, ordered by completion time"""
@@ -303,6 +305,15 @@ class SlurmAcct_v1(SlurmAcctBase):
         #       We consider the walltime to be the total time running,
         #       adding up all the records.
 
+        if LooseVersion(self._slurm_version) < LooseVersion("18"):
+            max_rss = '''( SELECT MAX(s.max_rss)
+                FROM %(cluster)s_step_table s
+                WHERE s.job_db_inx = j.job_db_inx
+                /* Note: Will underreport mem for jobs with simultaneous steps */
+              )'''
+        else:
+            max_rss = '''MAX(j.mem_req)'''
+
         sql = '''SELECT j.id_job
             , j.exit_code
             , j.id_group
@@ -320,11 +331,7 @@ class SlurmAcct_v1(SlurmAcctBase):
                   END) AS wall_time
             , a.acct
             , a.user
-            , ( SELECT MAX(s.max_rss)
-                FROM %(cluster)s_step_table s
-                WHERE s.job_db_inx = j.job_db_inx
-                /* Note: Will underreport mem for jobs with simultaneous steps */
-              ) AS max_rss
+            , %(max_rss)s AS max_rss
             , ( SELECT SUM(s.user_sec) + SUM(s.user_usec/1000000)
                 FROM %(cluster)s_step_table s
                 WHERE s.job_db_inx = j.job_db_inx
@@ -339,7 +346,8 @@ class SlurmAcct_v1(SlurmAcctBase):
             GROUP BY id_job
             HAVING %(having)s
             ORDER BY j.time_end
-        ''' % { 'cluster': self._cluster, 'where': where, 'having': having }
+        ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
+                'max_rss': max_rss }
 
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)
@@ -431,6 +439,15 @@ class SlurmAcct_v2(SlurmAcctBase):
         #       We consider the walltime to be the total time running,
         #       adding up all the records.
 
+        if LooseVersion(self._slurm_version) < LooseVersion("18"):
+            max_rss = '''( SELECT MAX(s.max_rss)
+                FROM %(cluster)s_step_table s
+                WHERE s.job_db_inx = j.job_db_inx
+                /* Note: Will underreport mem for jobs with simultaneous steps */
+              )'''
+        else:
+            max_rss = '''MAX(j.mem_req)'''
+
         sql = '''SELECT j.id_job
             , j.exit_code
             , j.id_group
@@ -448,11 +465,7 @@ class SlurmAcct_v2(SlurmAcctBase):
                   END) AS wall_time
             , a.acct
             , a.user
-            , ( SELECT MAX(s.max_rss)
-                FROM %(cluster)s_step_table s
-                WHERE s.job_db_inx = j.job_db_inx
-                /* Note: Will underreport mem for jobs with simultaneous steps */
-              ) AS max_rss
+            , %(max_rss)s AS max_rss
             , ( SELECT SUM(s.user_sec) + SUM(s.user_usec/1000000)
                 FROM %(cluster)s_step_table s
                 WHERE s.job_db_inx = j.job_db_inx
@@ -467,7 +480,8 @@ class SlurmAcct_v2(SlurmAcctBase):
             GROUP BY id_job
             HAVING %(having)s
             ORDER BY j.time_end
-        ''' % { 'cluster': self._cluster, 'where': where, 'having': having }
+        ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
+                'max_rss': max_rss }
 
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)
