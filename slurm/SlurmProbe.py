@@ -305,6 +305,11 @@ class SlurmAcct_v1(SlurmAcctBase):
         #       We consider the walltime to be the total time running,
         #       adding up all the records.
 
+        if LooseVersion(self._slurm_version) < LooseVersion("19"):
+            group_by = "id_job"
+        else:
+            group_by = "j.id_job,j.exit_code,j.id_group,j.id_user,j.job_name,j.tres_alloc,j.partition,j.state,a.acct,a.user,j.job_db_inx"
+
         if LooseVersion(self._slurm_version) < LooseVersion("18"):
             max_rss = '''( SELECT MAX(s.max_rss)
                 FROM %(cluster)s_step_table s
@@ -343,11 +348,11 @@ class SlurmAcct_v1(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_job
+            GROUP BY %(group_by)s
             HAVING %(having)s
             ORDER BY j.time_end
         ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
-                'max_rss': max_rss }
+                'max_rss': max_rss, 'group_by': group_by }
 
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)
@@ -439,6 +444,11 @@ class SlurmAcct_v2(SlurmAcctBase):
         #       We consider the walltime to be the total time running,
         #       adding up all the records.
 
+        if LooseVersion(self._slurm_version) < LooseVersion("19"):
+            group_by = "id_job"
+        else:
+            group_by = "j.id_job,j.exit_code,j.id_group,j.id_user,j.job_name,j.tres_alloc,j.partition,j.state,a.acct,a.user,j.job_db_inx"
+
         if LooseVersion(self._slurm_version) < LooseVersion("18"):
             max_rss = '''( SELECT MAX(s.max_rss)
                 FROM %(cluster)s_step_table s
@@ -477,11 +487,11 @@ class SlurmAcct_v2(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_job
+            GROUP BY %(group_by)s
             HAVING %(having)s
             ORDER BY j.time_end
         ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
-                'max_rss': max_rss }
+                'max_rss': max_rss, 'group_by': group_by }
 
         DebugPrint(5, "Executing SQL: %s" % sql)
         cursor.execute(sql)
