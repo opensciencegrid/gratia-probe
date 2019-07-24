@@ -279,7 +279,7 @@ class SlurmAcct_v1(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_user
+            GROUP BY j.id_user, j.id_group, a.acct, a.user
             ORDER BY time_end
         ''' % { 'cluster': self._cluster, 'where': where }
 
@@ -343,7 +343,17 @@ class SlurmAcct_v1(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_job
+            GROUP BY j.id_job
+                   , j.exit_code
+                   , j.id_group
+                   , j.id_user
+                   , j.job_name
+                   , j.cpus_alloc
+                   , j.partition
+                   , j.state
+                   , a.acct
+                   , a.user
+                   , j.job_db_inx
             HAVING %(having)s
             ORDER BY j.time_end
         ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
@@ -403,7 +413,7 @@ class SlurmAcct_v2(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_user
+            GROUP BY j.id_user, j.id_group, a.acct, a.user
             ORDER BY time_end
         ''' % { 'cluster': self._cluster, 'where': where }
 
@@ -477,7 +487,17 @@ class SlurmAcct_v2(SlurmAcctBase):
             FROM %(cluster)s_job_table as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
-            GROUP BY id_job
+            GROUP BY j.id_job
+                   , j.exit_code
+                   , j.id_group
+                   , j.id_user
+                   , j.job_name
+                   , j.tres_alloc
+                   , j.partition
+                   , j.state
+                   , a.acct
+                   , a.user
+                   , j.job_db_inx
             HAVING %(having)s
             ORDER BY j.time_end
         ''' % { 'cluster': self._cluster, 'where': where, 'having': having,
