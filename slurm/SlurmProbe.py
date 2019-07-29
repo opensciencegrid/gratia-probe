@@ -215,7 +215,7 @@ class SlurmAcctBase(object):
         # time range. This needs to include jobs which were preempted and
         # resumed.
         where = '''id_job IN (
-                SELECT id_job FROM %(cluster)s_job_table
+                SELECT id_job FROM "%(cluster)s_job_table"
                 WHERE time_start > 0 AND time_end >= %(end)s
             )
         ''' % { 'cluster': self._cluster, 'end': long(ts) }
@@ -269,14 +269,14 @@ class SlurmAcct_v1(SlurmAcctBase):
         # See enum job_states in slurm/slurm.h for state values
         sql = '''SELECT j.id_user
             , j.id_group
-            , (SELECT SUM(cpus_req)   FROM %(cluster)s_job_table WHERE
+            , (SELECT SUM(cpus_req)   FROM "%(cluster)s_job_table" WHERE
                   id_user = j.id_user AND state IN (0,2)) AS cpus_pending
-            , (SELECT SUM(cpus_alloc) FROM %(cluster)s_job_table WHERE
+            , (SELECT SUM(cpus_alloc) FROM "%(cluster)s_job_table" WHERE
                   id_user = j.id_user AND state IN (1)  ) AS cpus_running
             , MAX(j.time_end) AS time_end
             , a.acct
             , a.user
-            FROM %(cluster)s_job_table as j
+            FROM "%(cluster)s_job_table" as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_user, j.id_group, a.acct, a.user
@@ -307,7 +307,7 @@ class SlurmAcct_v1(SlurmAcctBase):
 
         if LooseVersion(self._slurm_version) < LooseVersion("18"):
             max_rss = '''( SELECT MAX(s.max_rss)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
                 /* Note: Will underreport mem for jobs with simultaneous steps */
               )'''
@@ -333,14 +333,14 @@ class SlurmAcct_v1(SlurmAcctBase):
             , a.user
             , %(max_rss)s AS max_rss
             , ( SELECT SUM(s.user_sec) + SUM(s.user_usec/1000000)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_user
             , ( SELECT SUM(s.sys_sec) + SUM(s.sys_usec/1000000)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_sys
-            FROM %(cluster)s_job_table as j
+            FROM "%(cluster)s_job_table" as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_job
@@ -403,14 +403,14 @@ class SlurmAcct_v2(SlurmAcctBase):
         # See enum job_states in slurm/slurm.h for state values
         sql = '''SELECT j.id_user
             , j.id_group
-            , (SELECT SUM(cpus_req)   FROM %(cluster)s_job_table WHERE
+            , (SELECT SUM(cpus_req)   FROM "%(cluster)s_job_table" WHERE
                   id_user = j.id_user AND state IN (0,2)) AS cpus_pending
-            , (SELECT GROUP_CONCAT('|', tres_alloc) FROM %(cluster)s_job_table WHERE
+            , (SELECT GROUP_CONCAT('|', tres_alloc) FROM "%(cluster)s_job_table" WHERE
                   id_user = j.id_user AND state IN (1)  ) AS tres_alloc_list
             , MAX(j.time_end) AS time_end
             , a.acct
             , a.user
-            FROM %(cluster)s_job_table as j
+            FROM "%(cluster)s_job_table" as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_user, j.id_group, a.acct, a.user
@@ -451,7 +451,7 @@ class SlurmAcct_v2(SlurmAcctBase):
 
         if LooseVersion(self._slurm_version) < LooseVersion("18"):
             max_rss = '''( SELECT MAX(s.max_rss)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
                 /* Note: Will underreport mem for jobs with simultaneous steps */
               )'''
@@ -477,14 +477,14 @@ class SlurmAcct_v2(SlurmAcctBase):
             , a.user
             , %(max_rss)s AS max_rss
             , ( SELECT SUM(s.user_sec) + SUM(s.user_usec/1000000)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_user
             , ( SELECT SUM(s.sys_sec) + SUM(s.sys_usec/1000000)
-                FROM %(cluster)s_step_table s
+                FROM "%(cluster)s_step_table" s
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_sys
-            FROM %(cluster)s_job_table as j
+            FROM "%(cluster)s_job_table" as j
             LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_job
