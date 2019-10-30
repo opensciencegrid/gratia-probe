@@ -936,5 +936,13 @@ def send_alternate_records_child(info, record_list):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except Exception, e:
+        DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
+        raise
 
