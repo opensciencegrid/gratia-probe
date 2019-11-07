@@ -307,8 +307,14 @@ def process_history_dirs(dirs):
         # Make sure the filename is in a reasonable format
         m = condor_history_re.match(logfile)
         if m:
-            cnt_submit, cnt_found, cnt_alternate = process_history_file(log)
-            if cnt_submit + cnt_alternate == cnt_found and (cnt_submit > 0 or cnt_alternate > 0):
+            e = None
+            try:
+                cnt_submit, cnt_found, cnt_alternate = process_history_file(log)
+            except ValueError, e:
+                DebugPrint(1, "Failed to parse log file: %s\nError was: %s" % (log, e))
+                cnt_submit, cnt_found, cnt_alternate = 0, 0, 0
+
+            if not e and cnt_submit + cnt_alternate == cnt_found and (cnt_submit > 0 or cnt_alternate > 0):
                 DebugPrint(5, "Processed %i ClassAds from file %s" % (cnt_submit, log))
             else:
                 DebugPrint(2, "Unable to process ClassAd from file (will add to quarantine): %s.  Submit count %d; found count %d" % (log, cnt_submit, cnt_found))
