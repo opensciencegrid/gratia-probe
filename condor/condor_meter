@@ -944,5 +944,6 @@ if __name__ == "__main__":
         raise
     except Exception, e:
         DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
+        DebugPrintTraceback()
         raise
 
