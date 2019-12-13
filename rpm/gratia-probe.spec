@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.20.11
+Version:            1.20.12
 Release:            1%{?dist}
 
 License:            GPL
@@ -897,6 +897,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Fri Dec 13 2019 Carl Edquist <edquist@cs.wisc.edu> - 1.20.12-1
+- Quarantine files with parse errors, log unhandled errors (SOFTWARE-3877)
+
 * Tue Oct 01 2019 Carl Edquist <edquist@cs.wisc.edu> - 1.20.11-1
 - Slurm probe SQL fixes (backtick quotes for identifiers) (SOFTWARE-3724)
 
