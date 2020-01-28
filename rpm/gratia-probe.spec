@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.20.12
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -261,7 +261,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Set up var area
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
-  chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
+  chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{data,tmp}
 
 
   # PBS / LSF probe
@@ -897,6 +897,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Jan 22 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.20.12-2
+- Set /var/lib/gratia/tmp permissions to 1777 (SOFTWARE-3975)
+
 * Fri Dec 13 2019 Carl Edquist <edquist@cs.wisc.edu> - 1.20.12-1
 - Quarantine files with parse errors, log unhandled errors (SOFTWARE-3877)
 
