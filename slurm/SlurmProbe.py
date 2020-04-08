@@ -310,7 +310,7 @@ class SlurmAcct_v1(SlurmAcctBase):
                 FROM `%(cluster)s_step_table` s
                 WHERE s.job_db_inx = j.job_db_inx
                 /* Note: Will underreport mem for jobs with simultaneous steps */
-              )'''
+              )''' % {'cluster': self._cluster }
         else:
             max_rss = '''MAX(j.mem_req)'''
 
@@ -454,7 +454,7 @@ class SlurmAcct_v2(SlurmAcctBase):
                 FROM `%(cluster)s_step_table` s
                 WHERE s.job_db_inx = j.job_db_inx
                 /* Note: Will underreport mem for jobs with simultaneous steps */
-              )'''
+              )''' % {'cluster': self._cluster }
         else:
             max_rss = '''MAX(j.mem_req)'''
 
