@@ -204,7 +204,7 @@ class SlurmAcctBase(object):
     def __init__(self, conn, cluster, slurm_version):
         self._conn = conn
 
-        cluster = re.sub('\W+', '', cluster)
+        cluster = re.sub(r'[`\0]', '', cluster)
         self._cluster = cluster
         self._slurm_version = slurm_version
 
