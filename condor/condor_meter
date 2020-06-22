@@ -37,6 +37,9 @@ g_probe_config = None
 prog_version = "%%%RPMVERSION%%%"
 max_batch_size = 500
 
+probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+probe_config = "/etc/gratia/%s/ProbeConfig" % probe_name
+
 min_start_time = time.time() - 120*86400
 
 # The preferred order of JobAd attributes to use for determining the number of
@@ -61,10 +64,9 @@ Normal cron usage: $prog --sleep SECONDS
 Command line usage: $prog --history
                     $prog --history --start-time=STARTTIME --end-time-ENDTIME""")
     parser.add_option("-f", "--gratia_config", 
-        help="""Location of the Gratia config; defaults to 
-/etc/gratia/condor/ProbeConfig.""", 
+        help="Location of the Gratia config; defaults to %s." % probe_config,
         dest="gratia_config",
-        default="/etc/gratia/condor/ProbeConfig")
+        default=probe_config)
 
     parser.add_option("-s", "--sleep", 
         help="""This should be used with normal cron usage. It sets a random 
