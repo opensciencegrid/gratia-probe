@@ -277,7 +277,7 @@ class SlurmAcct_v1(SlurmAcctBase):
             , a.acct
             , a.user
             FROM `%(cluster)s_job_table` as j
-            LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
+            LEFT JOIN `%(cluster)s_assoc_table` AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_user, j.id_group, a.acct, a.user
             ORDER BY time_end
@@ -341,7 +341,7 @@ class SlurmAcct_v1(SlurmAcctBase):
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_sys
             FROM `%(cluster)s_job_table` as j
-            LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
+            LEFT JOIN `%(cluster)s_assoc_table` AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_job
                    , j.exit_code
@@ -411,7 +411,7 @@ class SlurmAcct_v2(SlurmAcctBase):
             , a.acct
             , a.user
             FROM `%(cluster)s_job_table` as j
-            LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
+            LEFT JOIN `%(cluster)s_assoc_table` AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_user, j.id_group, a.acct, a.user
             ORDER BY time_end
@@ -485,7 +485,7 @@ class SlurmAcct_v2(SlurmAcctBase):
                 WHERE s.job_db_inx = j.job_db_inx
               ) AS cpu_sys
             FROM `%(cluster)s_job_table` as j
-            LEFT JOIN %(cluster)s_assoc_table AS a ON j.id_assoc = a.id_assoc
+            LEFT JOIN `%(cluster)s_assoc_table` AS a ON j.id_assoc = a.id_assoc
             WHERE %(where)s
             GROUP BY j.id_job
                    , j.exit_code
