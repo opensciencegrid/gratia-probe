@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.20.13
+Version:            1.20.14
 Release:            1%{?dist}
 
 License:            GPL
@@ -897,6 +897,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Fri Jul 31 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.20.14-1
+- Fix unquoted cluster names in slurm probe sql (SOFTWARE-4189)
+- Detect condor vs htcondor-ce probe config (SOFTWARE-4195)
+
 * Tue May 05 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.20.13-1
 - Fix bug for slurm version < 18 (SOFTWARE-4055)
 - Fix handling of non-word characters in slurm cluster name (SOFTWARE-4032)
