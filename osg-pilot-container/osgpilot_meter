@@ -14,6 +14,9 @@ want_attrs = [
     'GLIDEIN_Site',
     'GLIDEIN_ResourceName',
     'Machine',
+    'Name',
+   #'MyAddress',  # _might_ need to key off (Name,MyAddress),
+                  # but maybe Name by itself will do
 ]
 
 schema_sql = """
