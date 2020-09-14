@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
+import os
+import sqlite3
+import time
 
+import classad
 
 want_attrs = [
     'DaemonStartTime',
@@ -20,30 +24,50 @@ create table data
 """ % "\n, ".join(want_attrs)
 
 filter_cond = 'true'
+#filter_cond = 'IsOsgVoContainer =?= True'
 
-def query_current_attrs(ad):
-    """ ad is for collector """
+
+# query collector for machine (startd) ads
+
+def query_current_attrs():
     import htcondor
-    import classad
     pool = 'flock.opensciencegrid.org' #:9618
-    name = 'yyy'
-    dbpath = 'data.db'
     coll = htcondor.Collector(pool)
-    colld = coll.locate(htcondor.DaemonTypes.Collector, name)
+
+    ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=want_attrs,
+                     constraint=filter_cond)
+
+    return ads
+
+
+def eval_expr(x):
+    return x.eval() if isinstance(x, classad.classad.ExprTree) else x
+
+def write_ads_to_sqlite(ads, current_ts):
+    dbpath = 'data.db'
     db_exists = os.path.exists(dbpath)
+
     sqldb = sqlite3.connect(dbpath)
     if not db_exists:
         sqldb.execute(schema_sql)
 
-    qmarks = ",".join(["?"]*len(want_attrs))
+    qmarks = ",".join(["?"]*(len(want_attrs) + 1))
     insert_sql = "insert into data values (%s)" % qmarks
 
-    current_ts = time.now()
-    for job in colld.xquery(filter_cond, want_attrs):
-        vals = list(map(job.get, want_attrs))
-        sqldb.execute(insert_sql, vals)
+    def job2vals(job):
+        return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
+
+    sqldb.executemany(insert_sql, map(job2vals, ads))
+    sqldb.commit()
 
 
+def query_and_update_db():
+    current_ts = int(time.time())
+    ads = query_current_attrs()
+    write_ads_to_sqlite(ads, current_ts)
 
+
+if __name__ == '__main__':
+    query_and_update_db()
 
 
