@@ -235,7 +235,7 @@ def detect_new_jobs(sqldb, current_ts):
         delete from inbox;
     """
 
-    rc1 = sqldb.execute(insert_sql).rowcount
+    rc1 = sqldb.execute(insert_sql, (current_ts,)).rowcount
 
     # XXX: not before update_active_jobs
     rc2 = sqldb.execute(delete_sql).rowcount
