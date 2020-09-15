@@ -44,16 +44,21 @@ create table jobs
 ( last_updated
 , {jobs_cols}
 , total_cpu
+, unique (Name)
 );
 
-create unique index jobs__name on jobs(Name);
 
 create table inbox
 ( next_updated
 , {inbox_cols}
+, unique (Name)
 );
 
-create unique index inbox__name on inbox(Name);
+
+create table outbox
+( id integer primary key autoincrement
+, {outbox_cols}
+);
 
 
 create view updates as
@@ -100,12 +105,6 @@ select b.*
   left join jobs a
     on a.name = b.name
  where a.name is null;
-
-
-create table outbox
-( id integer primary key autoincrement
-, {outbox_cols}
-);
 
 """.format(jobs_cols   = "\n, ".join(want_attrs),
            inbox_cols  = "\n, ".join(want_attrs),
@@ -172,6 +171,7 @@ def detect_finished_jobs(sqldb, current_ts):
 
 
 def update_active_jobs(sqldb):
+    # TODO: simplify with UPDATE FROM syntax after SQLite 3.33.0 (2020-08-14)
     update_sql = """
         update jobs a
            set last_update = (
@@ -193,14 +193,26 @@ def update_active_jobs(sqldb):
                           from jobs a
                          where a.name = b.name);
     """
+
     sqldb.execute(insert_sql)
     sqldb.execute(delete_sql)
 
 
 
 def detect_new_jobs(sqldb, current_ts):
-    # ...
-    pass
+    insert_sql = """
+        insert into jobs
+        select *
+             , (? - DaemonStartTime) * CPUsUsage as total_cpu
+          from new_jobs;
+    """
+
+    delete_sql = """
+        delete from inbox;
+    """
+
+    sqldb.execute(insert_sql)
+    sqldb.execute(delete_sql)  # XXX: not before update_active_jobs
 
 
 
@@ -208,14 +220,15 @@ def query_and_update_db():
     current_ts = int(time.time())
     ads = query_current_attrs()
     sqldb = write_ads_to_sqlite(ads, current_ts)
+
     detect_finished_jobs(sqldb, current_ts)
     update_active_jobs(sqldb)
-    detect_new_jobs(sqldb, current_ts)
+    detect_new_jobs(sqldb, current_ts) # XXX: this step must go last
     sqldb.commit()
 
 
 def send_updates():
-    # TODO: send records from outbox table
+    # TODO: generate & send records to gracc from outbox table
     pass
 
 
