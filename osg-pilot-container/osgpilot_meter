@@ -8,7 +8,8 @@ import sqlite3
 import classad
 
 
-DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
+#DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
+DONE_IF_NOT_SEEN_AFTER = 60
 
 want_attrs = [
     'DaemonStartTime',
@@ -176,15 +177,18 @@ def detect_finished_jobs(sqldb, current_ts):
     """ % ", ".join(send_attrs)
 
     delete_sql = """
-        delete from jobs a
+        delete from jobs
          where exists ( select 1
                           from finished b
-                         where a.name = b.name
+                         where jobs.name = b.name
                            and b.last_update < ?);
     """
 
-    sqldb.execute(insert_sql, (dead_cutoff,))
-    sqldb.execute(delete_sql, (dead_cutoff,))
+    rc1 = sqldb.execute(insert_sql, (dead_cutoff,)).rowcount
+    rc2 = sqldb.execute(delete_sql, (dead_cutoff,)).rowcount
+
+    print("inserted %s rows into outbox" % rc1)
+    print("deleted %s rows from jobs" % rc2)
 
 
 def update_active_jobs(sqldb):
@@ -205,14 +209,17 @@ def update_active_jobs(sqldb):
     """
 
     delete_sql = """
-        delete from inbox b
+        delete from inbox
          where exists ( select 1
                           from jobs a
-                         where a.name = b.name);
+                         where a.name = inbox.name);
     """
 
-    sqldb.execute(insert_sql)
-    sqldb.execute(delete_sql)
+    rc1 = sqldb.execute(update_sql).rowcount
+    rc2 = sqldb.execute(delete_sql).rowcount
+
+    print("updated %s rows from jobs" % rc1)
+    print("deleted %s rows from inbox" % rc2)
 
 
 
@@ -228,8 +235,13 @@ def detect_new_jobs(sqldb, current_ts):
         delete from inbox;
     """
 
-    sqldb.execute(insert_sql)
-    sqldb.execute(delete_sql)  # XXX: not before update_active_jobs
+    rc1 = sqldb.execute(insert_sql).rowcount
+
+    # XXX: not before update_active_jobs
+    rc2 = sqldb.execute(delete_sql).rowcount
+
+    print("inserted %s rows into jobs" % rc1)
+    print("deleted %s rows from inbox" % rc2)
 
 
 
