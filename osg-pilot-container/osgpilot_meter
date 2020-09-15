@@ -181,7 +181,7 @@ def detect_finished_jobs(sqldb, current_ts):
          where exists ( select 1
                           from finished b
                          where jobs.name = b.name
-                           and b.last_update < ?);
+                           and b.last_updated < ?);
     """
 
     rc1 = sqldb.execute(insert_sql, (dead_cutoff,)).rowcount
@@ -195,7 +195,7 @@ def update_active_jobs(sqldb):
     # TODO: simplify with UPDATE FROM syntax after SQLite 3.33.0 (2020-08-14)
     update_sql = """
         update jobs a
-           set last_update = (
+           set last_updated = (
                         select next_updated
                           from updated b
                          where a.name = b.name),
