@@ -39,77 +39,89 @@ send_attrs = [
 
 
 
-schema_sql = """
-create table jobs
-( last_updated
-, {jobs_cols}
-, total_cpu
-, unique (Name)
-);
+schema_sql = [
+    """
+    create table jobs
+    ( last_updated
+    , {jobs_cols}
+    , total_cpu
+    , unique (Name)
+    );
+    """.format(jobs_cols="\n, ".join(want_attrs)),
 
 
-create table inbox
-( next_updated
-, {inbox_cols}
-, unique (Name)
-);
+    """
+    create table inbox
+    ( next_updated
+    , {inbox_cols}
+    , unique (Name)
+    );
+    """.format(inbox_cols="\n, ".join(want_attrs)),
 
 
-create table outbox
-( id integer primary key autoincrement
-, {outbox_cols}
-);
+    """
+    create table outbox
+    ( id integer primary key autoincrement
+    , {outbox_cols}
+    );
+    """.format(outbox_cols="\n, ".join(send_attrs)),
 
 
-create view updates as
-select a.*
-     , b.name                      as b_name
-     , b.next_updated
-     , b.CPUsUsage                 as next_CPUsUsage
-     , next_updated - last_updated as elapsed_interval
-  from jobs a
-  left join inbox b
-    on a.name = b.name;
+    """
+    create view updates as
+    select a.*
+         , b.name                      as b_name
+         , b.next_updated
+         , b.CPUsUsage                 as next_CPUsUsage
+         , next_updated - last_updated as elapsed_interval
+      from jobs a
+      left join inbox b
+        on a.name = b.name;
+    """,
 
 
-create view finished as
-select *
-  from updates
- where b_name is null;
+    """
+    create view finished as
+    select *
+      from updates
+     where b_name is null;
+    """,
 
 
-create view finished2 as
-select DaemonStartTime                as StartTime
-     , last_updated                   as EndTime
-     , last_updated - DaemonStartTime as WallDuration
-     , total_cpu                      as CpuDuration
-     , Cpus                           as Processors
-     , MemoryUsage                    as Memory
-     , '{VO}'                         as VOName
-     , ifnull(GLIDEIN_Site,
-              GLIDEIN_ResourceName)   as Site
-     , Machine                        as MachineName
-  from finished;
+    """
+    create view finished2 as
+    select DaemonStartTime                as StartTime
+         , last_updated                   as EndTime
+         , last_updated - DaemonStartTime as WallDuration
+         , total_cpu                      as CpuDuration
+         , Cpus                           as Processors
+         , MemoryUsage                    as Memory
+         , '{VO}'                         as VOName
+         , ifnull(GLIDEIN_Site,
+                  GLIDEIN_ResourceName)   as Site
+         , Machine                        as MachineName
+      from finished;
+    """.format(VO="OSG"),
 
 
-create view updated as
-select *
-     , next_CPUsUsage * elapsed_interval as next_cpu
-  from updates
- where b_name is not null;
+    """
+    create view updated as
+    select *
+         , next_CPUsUsage * elapsed_interval as next_cpu
+      from updates
+     where b_name is not null;
+    """,
 
 
-create view new_jobs as
-select b.*
-  from inbox b
-  left join jobs a
-    on a.name = b.name
- where a.name is null;
-
-""".format(jobs_cols   = "\n, ".join(want_attrs),
-           inbox_cols  = "\n, ".join(want_attrs),
-           outbox_cols = "\n, ".join(send_attrs),
-           VO          = "OSG")
+    """
+    create view new_jobs as
+    select b.*
+      from inbox b
+      left join jobs a
+        on a.name = b.name
+     where a.name is null;
+    """
+]
 
 
 # query collector for machine (startd) ads
@@ -127,17 +139,23 @@ def query_current_attrs():
     return ads
 
 
-def eval_expr(x):
-    return x.eval() if isinstance(x, classad.classad.ExprTree) else x
-
-def write_ads_to_sqlite(ads, current_ts):
+def get_db():
     dbpath = 'data.db'
     db_exists = os.path.exists(dbpath)
 
     sqldb = sqlite3.connect(dbpath)
     if not db_exists:
-        sqldb.execute(schema_sql)
+        for sql in schema_sql:
+            sqldb.execute(sql)
+        sqldb.commit()
 
+    return sqldb
+
+
+def eval_expr(x):
+    return x.eval() if isinstance(x, classad.classad.ExprTree) else x
+
+def write_ads_to_sqlite(sqldb, ads, current_ts):
     qmarks = ",".join(["?"]*(len(want_attrs) + 1))
     insert_sql = "insert into inbox values (%s)" % qmarks
 
@@ -145,7 +163,6 @@ def write_ads_to_sqlite(ads, current_ts):
         return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
 
     sqldb.executemany(insert_sql, map(job2vals, ads))
-    return sqldb
 
 
 def detect_finished_jobs(sqldb, current_ts):
@@ -219,7 +236,9 @@ def detect_new_jobs(sqldb, current_ts):
 def query_and_update_db():
     current_ts = int(time.time())
     ads = query_current_attrs()
-    sqldb = write_ads_to_sqlite(ads, current_ts)
+
+    sqldb = get_db()
+    write_ads_to_sqlite(sqldb, ads, current_ts)
 
     detect_finished_jobs(sqldb, current_ts)
     update_active_jobs(sqldb)
