@@ -24,6 +24,8 @@ want_attrs = [
     'Name',
    #'MyAddress',  # _might_ need to key off (Name,MyAddress),
                   # but maybe Name by itself will do
+    'SlotType',
+    'ChildName',
 ]
 
 send_attrs = [
@@ -51,6 +53,16 @@ schema_sql = [
     , unique (Name)
     );
     """.format(jobs_cols="\n, ".join(want_attrs)),
+
+
+    """
+    create table slots
+    ( pslot
+    , dslot
+    , unique (pslot, dslot)
+    , unique (dslot)
+    );
+    """,
 
 
     """
@@ -125,6 +137,22 @@ schema_sql = [
       left join jobs a
         on a.name = b.name
      where a.name is null;
+    """,
+
+
+    """
+    create view pslot_dslots as
+    select p.*
+         , d.CPUsUsage       as dslot_CPUsUsage
+         , d.DaemonStartTime as dslot_DaemonStartTime
+      from inbox p
+      join slots s
+        on p.name = s.pslot
+--     and p.SlotType = 'Partitionable'
+      join inbox d
+        on d.name = s.dslot
+--     and d.SlotType = 'Dynamic'
+       ;
     """
 ]
 
@@ -136,8 +164,8 @@ def query_current_attrs():
     pool = 'flock.opensciencegrid.org' #:9618
     coll = htcondor.Collector(pool)
 
-    #filter_cond = 'IsOsgVoContainer =?= True'
-    filter_cond = 'true'
+    filter_cond = 'SlotType != "Static"'
+    #filter_cond += ' && IsOsgVoContainer =?= True'
 
     ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=want_attrs,
                      constraint=filter_cond)
@@ -158,7 +186,11 @@ def get_db():
 
 
 def eval_expr(x):
-    return x.eval() if isinstance(x, classad.classad.ExprTree) else x
+    if isinstance(x, classad.classad.ExprTree):
+        x = x.eval()
+    if isinstance(x, list):
+        x = "\t".join(x)
+    return x
 
 def qmarks(n):
     return ",".join(["?"] * n)
@@ -175,6 +207,37 @@ def write_ads_to_sqlite(sqldb, ads, current_ts):
     rc = sqldb.executemany(insert_sql, map(job2vals, ads)).rowcount
 
     print("- inserted %s rows into inbox" % rc)
+    print()
+
+
+def get_pslots_children(ads):
+    for ad in ads:
+        if 'ChildName' in ad:
+            yield ad['Name'], ad['ChildName']
+
+
+def get_pslots_dslots(items):
+    for pslot, dslots in items:
+        for dslot in dslots:
+            yield pslot, dslot
+
+def get_pslots_dslots2(ads):
+    for ad in ads:
+        if 'ChildName' in ad:
+            for dslot in ad['ChildName']:
+                yield ad['Name'], dslot
+
+def update_slots_info(sqldb, ads):
+    print("Updating slot info")
+
+    delete_sql = "delete from slots;"
+    insert_sql = "insert into slots values (?,?);"
+
+    rc1 = sqldb.execute(delete_sql).rowcount
+    rc2 = sqldb.executemany(insert_sql, get_pslots_dslots2(ads)).rowcount
+
+    print("- deleted %s rows from slots" % rc1)
+    print("- inserted %s rows into slots" % rc2)
     print()
 
 
@@ -276,6 +339,7 @@ def query_and_update_db():
 
     sqldb = get_db()
     write_ads_to_sqlite(sqldb, ads, current_ts)
+    update_slots_info(sqldb, ads)
 
     detect_finished_jobs(sqldb, current_ts)
     update_active_jobs(sqldb)
