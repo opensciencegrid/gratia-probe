@@ -76,6 +76,7 @@ schema_sql = [
          , b.name                      as b_name
          , b.next_updated
          , b.CPUsUsage                 as next_CPUsUsage
+         , b.MemoryUsage               as next_MemoryUsage
          , next_updated - last_updated as elapsed_interval
       from jobs a
       left join inbox b
@@ -111,6 +112,7 @@ schema_sql = [
     create view updated as
     select *
          , next_CPUsUsage * elapsed_interval as next_cpu
+         , max(MemoryUsage,next_MemoryUsage) as next_mem
       from updates
      where b_name is not null;
     """,
@@ -213,6 +215,10 @@ def update_active_jobs(sqldb):
                          where jobs.name = b.name),
                total_cpu = total_cpu + (
                         select next_cpu
+                          from updated b
+                         where jobs.name = b.name),
+               MemoryUsage = (
+                        select next_mem
                           from updated b
                          where jobs.name = b.name)
          where exists ( select 1
