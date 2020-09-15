@@ -157,6 +157,8 @@ def eval_expr(x):
     return x.eval() if isinstance(x, classad.classad.ExprTree) else x
 
 def write_ads_to_sqlite(sqldb, ads, current_ts):
+    print("Writing new ads to inbox")
+
     qmarks = ",".join(["?"]*(len(want_attrs) + 1))
     insert_sql = "insert into inbox values (%s)" % qmarks
 
@@ -167,6 +169,8 @@ def write_ads_to_sqlite(sqldb, ads, current_ts):
 
 
 def detect_finished_jobs(sqldb, current_ts):
+    print("Detecting finished jobs")
+
     dead_cutoff = current_ts - DONE_IF_NOT_SEEN_AFTER
 
     insert_sql = """
@@ -192,6 +196,8 @@ def detect_finished_jobs(sqldb, current_ts):
 
 
 def update_active_jobs(sqldb):
+    print("Updating active jobs")
+
     # TODO: simplify with UPDATE FROM syntax after SQLite 3.33.0 (2020-08-14)
     update_sql = """
         update jobs
@@ -224,6 +230,8 @@ def update_active_jobs(sqldb):
 
 
 def detect_new_jobs(sqldb, current_ts):
+    print("Detecting new jobs...")
+
     insert_sql = """
         insert into jobs
         select *
