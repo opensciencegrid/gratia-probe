@@ -160,11 +160,14 @@ def get_db():
 def eval_expr(x):
     return x.eval() if isinstance(x, classad.classad.ExprTree) else x
 
+def qmarks(n):
+    return ",".join(["?"] * n)
+
 def write_ads_to_sqlite(sqldb, ads, current_ts):
     print("Writing new ads to inbox")
 
-    qmarks = ",".join(["?"]*(len(want_attrs) + 1))
-    insert_sql = "insert into inbox values (%s)" % qmarks
+    n_attrs = len(want_attrs) + 1
+    insert_sql = "insert into inbox values (%s)" % qmarks(n_attrs)
 
     def job2vals(job):
         return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
