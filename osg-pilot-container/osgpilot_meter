@@ -1,10 +1,14 @@
 #!/usr/bin/python
 
 import os
-import sqlite3
 import time
+import sqlite3
+# import collections
 
 import classad
+
+
+DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
 
 want_attrs = [
     'DaemonStartTime',
@@ -19,15 +23,75 @@ want_attrs = [
                   # but maybe Name by itself will do
 ]
 
+send_attrs = [
+    'StartTime',     # DaemonStartTime
+    'EndTime',       # <last seen time, after gone for N hours>
+    'WallDuration',  # <EndTime or Now> - <StartTime>
+    'CpuDuration',   #(User): CPUsUsage * <polling interval in minutes>
+                     # + <previous CPU total> across all dynamic slots carved
+                     #                        off from the partitionable slot
+    'Processors',    # Cpus
+    'Memory',        # MemoryUsage
+    'VOName',        # "OSG" (fixed)
+    'Site',          # GLIDEIN_Site (or GLIDEIN_ResourceName)
+    'MachineName',   # Machine
+]
+
+
+
 schema_sql = """
-create table data
-( tstamp
+create table jobs
+( last_updated
+, %s
+, total_cpu
+);
+
+create unique index jobs__name on jobs(Name);
+
+create table inbox
+( next_updated
 , %s
 );
-""" % "\n, ".join(want_attrs)
 
-filter_cond = 'true'
-#filter_cond = 'IsOsgVoContainer =?= True'
+create unique index inbox__name on inbox(Name);
+
+
+create view updates as
+select a.*
+     , b.name as b_name
+     , b.next_updated
+     , b.CPUsUsage as next_CPUsUsage
+  from jobs a
+  left join inbox b
+    on a.name = b.name;
+
+
+create view finished as
+select *
+  from updates
+ where b_name is null;
+
+
+create view updated as
+select *
+  from updates
+ where b_name is not null;
+
+
+create view new_jobs as
+select b.*
+  from inbox b
+  left join jobs a
+    on a.name = b.name
+ where a.name is null;
+
+
+create table outbox
+( id integer primary key autoincrement
+, %s
+);
+
+""" % tuple(map("\n, ".join, [want_attrs, want_attrs, send_attrs]))
 
 
 # query collector for machine (startd) ads
@@ -37,9 +101,11 @@ def query_current_attrs():
     pool = 'flock.opensciencegrid.org' #:9618
     coll = htcondor.Collector(pool)
 
+    #filter_cond = 'IsOsgVoContainer =?= True'
+    filter_cond = 'true'
+
     ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=want_attrs,
                      constraint=filter_cond)
-
     return ads
 
 
@@ -55,19 +121,42 @@ def write_ads_to_sqlite(ads, current_ts):
         sqldb.execute(schema_sql)
 
     qmarks = ",".join(["?"]*(len(want_attrs) + 1))
-    insert_sql = "insert into data values (%s)" % qmarks
+    insert_sql = "insert into inbox values (%s)" % qmarks
 
     def job2vals(job):
         return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
 
     sqldb.executemany(insert_sql, map(job2vals, ads))
-    sqldb.commit()
+    return sqldb
+
+
+def update_active_jobs(sqldb):
+    # ...
+    pass
+
+
+def detect_finished_jobs(sqldb, current_ts):
+    dead_cutoff = current_ts - DONE_IF_NOT_SEEN_AFTER
+    # ...
+    pass
+
+
+def detect_new_jobs(sqldb, current_ts):
+    # ...
+    pass
+
 
 
 def query_and_update_db():
     current_ts = int(time.time())
     ads = query_current_attrs()
-    write_ads_to_sqlite(ads, current_ts)
+    sqldb = write_ads_to_sqlite(ads, current_ts)
+    sqldb.commit()
+
+
+def send_updates():
+    # TODO: send records from outbox table
+    pass
 
 
 if __name__ == '__main__':
