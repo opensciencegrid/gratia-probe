@@ -183,8 +183,8 @@ def detect_finished_jobs(sqldb, current_ts):
                            and b.last_update < ?);
     """
 
-    sqldb.execute(insert_sql, dead_cutoff)
-    sqldb.execute(delete_sql, dead_cutoff)
+    sqldb.execute(insert_sql, (dead_cutoff,))
+    sqldb.execute(delete_sql, (dead_cutoff,))
 
 
 def update_active_jobs(sqldb):
