@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import os
 import time
 import sqlite3
@@ -165,7 +167,10 @@ def write_ads_to_sqlite(sqldb, ads, current_ts):
     def job2vals(job):
         return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
 
-    sqldb.executemany(insert_sql, map(job2vals, ads))
+    rc = sqldb.executemany(insert_sql, map(job2vals, ads)).rowcount
+
+    print("- inserted %s rows into inbox" % rc)
+    print()
 
 
 def detect_finished_jobs(sqldb, current_ts):
@@ -191,8 +196,9 @@ def detect_finished_jobs(sqldb, current_ts):
     rc1 = sqldb.execute(insert_sql, (dead_cutoff,)).rowcount
     rc2 = sqldb.execute(delete_sql, (dead_cutoff,)).rowcount
 
-    print("inserted %s rows into outbox" % rc1)
-    print("deleted %s rows from jobs" % rc2)
+    print("- inserted %s rows into outbox" % rc1)
+    print("- deleted %s rows from jobs" % rc2)
+    print()
 
 
 def update_active_jobs(sqldb):
@@ -224,8 +230,9 @@ def update_active_jobs(sqldb):
     rc1 = sqldb.execute(update_sql).rowcount
     rc2 = sqldb.execute(delete_sql).rowcount
 
-    print("updated %s rows from jobs" % rc1)
-    print("deleted %s rows from inbox" % rc2)
+    print("- updated %s rows from jobs" % rc1)
+    print("- deleted %s rows from inbox" % rc2)
+    print()
 
 
 
@@ -248,8 +255,9 @@ def detect_new_jobs(sqldb, current_ts):
     # XXX: not before update_active_jobs
     rc2 = sqldb.execute(delete_sql).rowcount
 
-    print("inserted %s rows into jobs" % rc1)
-    print("deleted %s rows from inbox" % rc2)
+    print("- inserted %s rows into jobs" % rc1)
+    print("- deleted %s rows from inbox" % rc2)
+    print()
 
 
 
@@ -271,7 +279,12 @@ def send_updates():
     pass
 
 
-if __name__ == '__main__':
+def main():
     query_and_update_db()
+    send_updates()
+
+
+if __name__ == '__main__':
+    main()
 
 
