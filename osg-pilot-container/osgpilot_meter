@@ -94,7 +94,8 @@ schema_sql = [
 
     """
     create view pslot_totals as
-    select {pslot_cols}
+    select p.next_updated
+         , {pslot_cols}
          , {dslot_cols}
       from inbox p
       join slots s
@@ -105,7 +106,7 @@ schema_sql = [
 --     and d.SlotType = 'Dynamic'
        ;
     """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
-               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs))
+               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs)),
 
 
     """
