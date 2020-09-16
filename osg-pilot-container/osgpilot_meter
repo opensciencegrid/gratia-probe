@@ -104,6 +104,7 @@ schema_sql = [
       join inbox d
         on d.name = s.dslot
 --     and d.SlotType = 'Dynamic'
+     group by p.name
        ;
     """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
                dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs)),
