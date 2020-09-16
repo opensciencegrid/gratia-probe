@@ -13,20 +13,23 @@ import classad
 #DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
 DONE_IF_NOT_SEEN_AFTER = 60
 
-want_attrs = [
+want_pslot_attrs = [
     'DaemonStartTime',
-    'CPUsUsage',
     'Cpus',
-    'MemoryUsage',  # max observed
     'GLIDEIN_Site',
     'GLIDEIN_ResourceName',
     'Machine',
     'Name',
-   #'MyAddress',  # _might_ need to key off (Name,MyAddress),
-                  # but maybe Name by itself will do
     'SlotType',
     'ChildName',
 ]
+
+want_dslot_attrs = [
+    'CPUsUsage',
+    'MemoryUsage',
+]
+
+want_attrs = want_pslot_attrs + want_dslot_attrs
 
 send_attrs = [
     'StartTime',     # DaemonStartTime
@@ -44,6 +47,13 @@ send_attrs = [
 
 
 
+def coljoin(cols):
+    return "\n, ".join(cols)
+
+def fmt_coljoin(fmt, cols):
+    return coljoin(map(fmt.format, cols))
+
+
 schema_sql = [
     """
     create table jobs
@@ -52,7 +62,7 @@ schema_sql = [
     , total_cpu
     , unique (Name)
     );
-    """.format(jobs_cols="\n, ".join(want_attrs)),
+    """.format(jobs_cols=coljoin(want_attrs)),
 
 
     """
@@ -71,7 +81,7 @@ schema_sql = [
     , {inbox_cols}
     , unique (Name)
     );
-    """.format(inbox_cols="\n, ".join(want_attrs)),
+    """.format(inbox_cols=coljoin(want_attrs)),
 
 
     """
@@ -79,7 +89,23 @@ schema_sql = [
     ( id integer primary key autoincrement
     , {outbox_cols}
     );
-    """.format(outbox_cols="\n, ".join(send_attrs)),
+    """.format(outbox_cols=coljoin(send_attrs)),
+
+
+    """
+    create view pslot_totals as
+    select {pslot_cols}
+         , {dslot_cols}
+      from inbox p
+      join slots s
+        on p.name = s.pslot
+--     and p.SlotType = 'Partitionable'
+      join inbox d
+        on d.name = s.dslot
+--     and d.SlotType = 'Dynamic'
+       ;
+    """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
+               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs))
 
 
     """
@@ -91,7 +117,8 @@ schema_sql = [
          , b.MemoryUsage               as next_MemoryUsage
          , next_updated - last_updated as elapsed_interval
       from jobs a
-      left join inbox b
+--    left join inbox b
+      left join pslot_totals b
         on a.name = b.name;
     """,
 
@@ -133,27 +160,12 @@ schema_sql = [
     """
     create view new_jobs as
     select b.*
-      from inbox b
+--    from inbox b
+      from pslot_totals b
       left join jobs a
         on a.name = b.name
      where a.name is null;
     """,
-
-
-    """
-    create view pslot_dslots as
-    select p.*
-         , d.CPUsUsage       as dslot_CPUsUsage
-         , d.DaemonStartTime as dslot_DaemonStartTime
-      from inbox p
-      join slots s
-        on p.name = s.pslot
---     and p.SlotType = 'Partitionable'
-      join inbox d
-        on d.name = s.dslot
---     and d.SlotType = 'Dynamic'
-       ;
-    """
 ]
 
 
