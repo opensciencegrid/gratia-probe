@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 import time
+import hashlib
 import sqlite3
 # import collections
 
@@ -11,7 +12,9 @@ import classad
 
 
 #DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
-DONE_IF_NOT_SEEN_AFTER = 60
+DONE_IF_NOT_SEEN_AFTER = 15
+
+POLL_INTERVAL = 15  # seconds
 
 want_pslot_attrs = [
     'DaemonStartTime',
@@ -22,6 +25,8 @@ want_pslot_attrs = [
     'Name',
     'SlotType',
     'ChildName',
+    'SlotId',
+    'MyAddress',
 ]
 
 want_dslot_attrs = [
@@ -30,6 +35,8 @@ want_dslot_attrs = [
 ]
 
 want_attrs = want_pslot_attrs + want_dslot_attrs
+
+want_attrs_idx = { v:i for i,v in enumerate(want_attrs) }
 
 send_attrs = [
     'StartTime',     # DaemonStartTime
@@ -83,6 +90,18 @@ schema_sql = [
     );
     """.format(inbox_cols=coljoin(want_attrs)),
 
+    """
+    create table inbox_archive
+    ( next_updated
+    , {inbox_cols}
+    , unique (Name, next_updated)
+    );
+    """.format(inbox_cols=coljoin(want_attrs)),
+
+    """
+    create index inbox_match
+        on inbox (MyAddress, SlotType, SlotId);
+    """,
 
     """
     create table outbox
@@ -97,13 +116,32 @@ schema_sql = [
     select p.next_updated
          , {pslot_cols}
          , {dslot_cols}
+--       , count(*) as n_dslots
       from inbox p
-      join slots s
+      left join slots s
         on p.name = s.pslot
 --     and p.SlotType = 'Partitionable'
-      join inbox d
+      left join inbox d
         on d.name = s.dslot
 --     and d.SlotType = 'Dynamic'
+     group by p.name
+       ;
+    """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
+               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs)),
+
+
+    """
+    create view pslot_totals2 as
+    select p.next_updated
+         , {pslot_cols}
+         , {dslot_cols}
+--       , count(*) as n_dslots
+      from inbox p
+      left join inbox d
+        on p.MyAddress = d.MyAddress
+       and p.SlotId = d.SlotId
+       and p.SlotType = 'P'  -- 'Partitionable'
+       and d.SlotType = 'D'  -- 'Dynamic'
      group by p.name
        ;
     """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
@@ -199,12 +237,29 @@ def get_db():
     return sqldb
 
 
+def sha1sum(s):
+    return hashlib.sha1(s).hexdigest()
+
+def slottype_shortname(s):
+    return s[0] if s in ("Partitionable", "Dynamic", "Static") else s
+
 def eval_expr(x):
     if isinstance(x, classad.classad.ExprTree):
         x = x.eval()
     if isinstance(x, list):
         x = "\t".join(x)
     return x
+
+
+def mangle_job_attrs(vals, attr_idx):
+    filters = [
+        ("SlotType",  slottype_shortname),
+        ("MyAddress", sha1sum),
+    ]
+    for attr, fn in filters:
+        if attr in attr_idx:
+            idx = attr_idx[attr]
+            vals[idx] = fn(vals[idx])
 
 def qmarks(n):
     return ",".join(["?"] * n)
@@ -216,11 +271,23 @@ def write_ads_to_sqlite(sqldb, ads, current_ts):
     insert_sql = "insert into inbox values (%s)" % qmarks(n_attrs)
 
     def job2vals(job):
-        return [current_ts] + list(map(eval_expr, map(job.get, want_attrs)))
+        vals = list(map(eval_expr, map(job.get, want_attrs)))
+        mangle_job_attrs(vals, want_attrs_idx)
+        return [current_ts] + vals
 
     rc = sqldb.executemany(insert_sql, map(job2vals, ads)).rowcount
 
     print("- inserted %s rows into inbox" % rc)
+    print()
+
+
+def archive_new_ads(sqldb, ads, current_ts):
+    print("Archiving new ads")
+
+    insert_sql = "insert into inbox_archive select * from inbox"
+    rc = sqldb.execute(insert_sql).rowcount
+
+    print("- inserted %s rows into inbox_archive" % rc)
     print()
 
 
@@ -329,6 +396,7 @@ def detect_new_jobs(sqldb, current_ts):
         insert into jobs
         select *
              , (? - DaemonStartTime) * CPUsUsage as total_cpu
+--           , min(?, (? - DaemonStartTime)) * CPUsUsage as total_cpu
           from new_jobs;
     """
 
@@ -337,6 +405,7 @@ def detect_new_jobs(sqldb, current_ts):
     """
 
     rc1 = sqldb.execute(insert_sql, (current_ts,)).rowcount
+#   rc1 = sqldb.execute(insert_sql, (POLL_INTERVAL, current_ts,)).rowcount
 
     # XXX: not before update_active_jobs
     rc2 = sqldb.execute(delete_sql).rowcount
@@ -353,7 +422,10 @@ def query_and_update_db():
 
     sqldb = get_db()
     write_ads_to_sqlite(sqldb, ads, current_ts)
+    #archive_new_ads(sqldb, ads, current_ts)
     update_slots_info(sqldb, ads)
+    #sqldb.commit()
+    #return
 
     detect_finished_jobs(sqldb, current_ts)
     update_active_jobs(sqldb)
