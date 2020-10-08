@@ -40,8 +40,8 @@ class SlurmProbe:
     def __init__(self):
         try:
             self.opts, self.args = self.parse_opts()
-        except Exception, e:
-            print >> sys.stderr, str(e)
+        except Exception as e:
+            print(e, file=sys.stderr)
             sys.exit(1)
 
         # Initialize Gratia
@@ -154,7 +154,7 @@ class SlurmProbe:
 
         try:
             slurm_version = self.get_slurm_version()
-        except Exception, e:
+        except Exception as e:
             DebugPrint(0, "Unable to get SLURM version: %s" % str(e))
             raise
 
@@ -179,7 +179,7 @@ class SlurmCheckpoint(object):
             try:
                 fd        = os.open(target, os.O_RDWR | os.O_CREAT)
                 self._fp  = os.fdopen(fd, 'r+')
-                self._val = long(self._fp.readline())
+                self._val = int(self._fp.readline())
                 DebugPrint(1, "Resuming from checkpoint in %s" % target)
             except IOError:
                 raise IOError("Could not open checkpoint file %s" % target)
@@ -192,7 +192,7 @@ class SlurmCheckpoint(object):
 
     def set_val(self, val):
         """Set checkpoint value"""
-        self._val = long(val)
+        self._val = int(val)
         if (self._fp):
             self._fp.seek(0)
             self._fp.write(str(self._val) + "\n")
@@ -218,7 +218,7 @@ class SlurmAcctBase(object):
                 SELECT id_job FROM `%(cluster)s_job_table`
                 WHERE time_start > 0 AND time_end >= %(end)s
             )
-        ''' % { 'cluster': self._cluster, 'end': long(ts) }
+        ''' % { 'cluster': self._cluster, 'end': int(ts) }
 
         # The job is not running and has not been requeued
         having = 'MIN(j.time_end) > 0 AND MIN(j.time_start) > 0'
@@ -235,7 +235,7 @@ class SlurmAcctBase(object):
 
         # Also include users with recently ended jobs
         if ts is not None:
-            where = where + " OR j.time_end >= %s" % long(ts)
+            where = where + " OR j.time_end >= %s" % int(ts)
 
         return self._users(where)
 
