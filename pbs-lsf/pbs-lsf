@@ -9,12 +9,12 @@ import gratia.common.Gratia as Gratia
 if __name__ == '__main__':
         tag = "%%%RPMVERSION%%%";
         Gratia.RegisterReporter("pbs-lsf.py")
-	if hasattr(sys,'argv') and sys.argv[1]:
+        if hasattr(sys,'argv') and sys.argv[1]:
                 if (len(sys.argv) >= 3 and sys.argv[2]):
                         Gratia.setProbeBatchManager(sys.argv[2])
                 if (len(sys.argv) == 4) and sys.argv[2] and sys.argv[3]:
                         Gratia.RegisterService(sys.argv[2], sys.argv[3])
                 Gratia.Initialize()
-		print(Gratia.SendXMLFiles(sys.argv[1], True, "Batch"))
-	else:
-		print("pbs-lsf.py: No records directory specified\n")
+                print(Gratia.SendXMLFiles(sys.argv[1], True, "Batch"))
+        else:
+                print("pbs-lsf.py: No records directory specified\n")
