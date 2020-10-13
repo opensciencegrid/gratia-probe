@@ -495,7 +495,7 @@ def send_updates(opts):
         if response[:2] == 'OK':
             count_submit += 1
 
-        # delete outbox row
+    cur2 = sqldb.execute("delete from outbox;")
 
 #   DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
 #   DebugPrint(2, "Number of usage records found: %d" % count_found)
