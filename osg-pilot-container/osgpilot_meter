@@ -14,9 +14,18 @@ import gratia.common.GratiaCore as GratiaCore
 #import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
 #import gratia.common.file_utils as file_utils
-#import gratia.common.config as config
+import gratia.common.config as config
 
 import classad
+
+
+prog_version = "%%%RPMVERSION%%%"
+
+probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+
+# default locations
+probe_config = "/etc/gratia/%s/ProbeConfig" % probe_name
+db_path = "/var/lib/gratia/%s/data.db" % probe_name
 
 
 #DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
@@ -233,8 +242,8 @@ def query_current_attrs():
     return ads
 
 
-def get_db():
-    dbpath = 'data.db'
+def get_db(opts):
+    dbpath = opts.db_path
     db_exists = os.path.exists(dbpath)
 
     sqldb = sqlite3.connect(dbpath)
@@ -425,11 +434,11 @@ def detect_new_jobs(sqldb, current_ts):
 
 
 
-def query_and_update_db():
+def query_and_update_db(opts):
     current_ts = int(time.time())
     ads = query_current_attrs()
 
-    sqldb = get_db()
+    sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)
     #archive_new_ads(sqldb, ads, current_ts)
     update_slots_info(sqldb, ads)
@@ -472,8 +481,8 @@ def outbox_row_to_jur(row):
     return r
 
 
-def send_updates():
-    sqldb = get_db()
+def send_updates(opts):
+    sqldb = get_db(opts)
 
     cur = sqldb.execute("select * from outbox;")
     recid = record[0]
@@ -488,14 +497,41 @@ def send_updates():
 #   DebugPrint(2, "Number of usage records found: %d" % count_found)
 
 
+def parse_opts():
+    parser = optparse.OptionParser(usage="""%prog""")
+    parser.add_option("-f", "--gratia_config",
+        help="Location of the Gratia config; defaults to %s." % probe_config,
+        dest="gratia_config", default=probe_config)
 
-    # TODO: generate & send records to gracc from outbox table
-    pass
+    parser.add_option("-d", "--db_path",
+        help="Location of the sqlite db; defaults to %s." % db_path,
+        dest="db_path", default=db_path)
+
+    parser.add_option("-v", "--verbose",
+        help="Enable verbose logging to stdout.",
+        default=False, action="store_true", dest="verbose")
+
+    opts, args = parser.parse_args()
+
+    # Initialize Gratia
+    if not opts.gratia_config or not os.path.exists(opts.gratia_config):
+        raise Exception("Gratia config '%s' does not exist." %
+                        opts.gratia_config)
+    GratiaCore.Config = GratiaCore.ProbeConfiguration(opts.gratia_config)
+
+    if opts.verbose:
+        GratiaCore.Config.set_DebugLevel(5)
+
+    return opts, args
+
+
 
 
 def main():
-    query_and_update_db()
-    send_updates()
+    opts, args = parse_opts()
+
+    query_and_update_db(opts)
+    send_updates(opts)
 
 
 if __name__ == '__main__':
