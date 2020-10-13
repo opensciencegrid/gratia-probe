@@ -484,14 +484,18 @@ def outbox_row_to_jur(row):
 def send_updates(opts):
     sqldb = get_db(opts)
 
+    count_submit = 0
     cur = sqldb.execute("select * from outbox;")
-    recid = record[0]
-    response = GratiaCore.Send(record[1:])
-    if response[:2] == 'OK':
-        count_submit += 1
+    for row in cur:
+#       DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
+#           (probe, site, response))
+        rec = outbox_row_to_jur(row)
+        response = GratiaCore.Send(rec)
 
-#   DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
-#       (probe, site, response))
+        if response[:2] == 'OK':
+            count_submit += 1
+
+        # delete outbox row
 
 #   DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
 #   DebugPrint(2, "Number of usage records found: %d" % count_found)
