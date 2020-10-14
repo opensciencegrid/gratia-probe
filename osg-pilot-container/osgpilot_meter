@@ -70,7 +70,7 @@ send_attrs = [
     'MachineName',   # Machine
 ]
 
-OutboxRow = collections.namedtuple('OutboxRow', send_attrs)
+OutboxRow = collections.namedtuple('OutboxRow', ['ID'] + send_attrs)
 
 
 def coljoin(cols):
