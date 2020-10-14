@@ -530,10 +530,20 @@ def parse_opts():
     return opts, args
 
 
+def register_gratia():
+    GratiaCore.RegisterReporter("osgpilot_meter")
+    GratiaCore.RegisterService("OSGPilotContainer", probe_version)
+    GratiaCore.setProbeBatchManager("condor")
 
 
 def main():
     opts, args = parse_opts()
+
+    GratiaWrapper.CheckPreconditions()
+    GratiaWrapper.ExclusiveLock()
+
+    register_gratia()
+    GratiaCore.Initialize(opts.gratia_config)
 
     query_and_update_db(opts)
     send_updates(opts)
