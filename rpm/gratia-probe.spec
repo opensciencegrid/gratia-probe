@@ -722,6 +722,9 @@ Requires: %{name}-common >= %{version}-%{release}
 #Requires: python-condor
 License: See LICENSE.
 
+%description osg-pilot-container
+osg pilot container probe
+
 %files osg-pilot-container
 %defattr(-,root,root,-)
 %doc %{default_prefix}/gratia/slurm/README.html
