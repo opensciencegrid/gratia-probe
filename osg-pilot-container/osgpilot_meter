@@ -20,7 +20,7 @@ import gratia.common.config as config
 import classad
 
 
-prog_version = "%%%RPMVERSION%%%"
+probe_version = "%%%RPMVERSION%%%"
 
 probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 
