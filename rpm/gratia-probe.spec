@@ -732,6 +732,7 @@ osg pilot container probe
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
 %{default_prefix}/gratia/osg-pilot-container/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
 
 %package slurm
