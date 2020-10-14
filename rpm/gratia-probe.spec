@@ -262,6 +262,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
+  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/osg-pilot-container
 
 
   # PBS / LSF probe
@@ -731,7 +732,7 @@ osg pilot container probe
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
 %{default_prefix}/gratia/osg-pilot-container/ProbeConfig
-%dir /var/lib/gratia/osg-pilot-container
+%dir %{_localstatedir}/lib/gratia/osg-pilot-container
 
 %package slurm
 Summary: A SLURM probe
