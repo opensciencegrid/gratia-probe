@@ -9,9 +9,8 @@ Group:              Applications/System
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
-BuildRequires:      python-devel
-
-BuildRequires: gcc-c++
+BuildRequires:      make
+BuildRequires:      gcc-c++
 
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
