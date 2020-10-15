@@ -4,6 +4,8 @@
 #       By Brian Bockelman; Nov 4, 2011
 #
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -182,8 +184,8 @@ def main():
         raise
     except KeyboardInterrupt:
         raise
-    except Exception, e:
-        print >> sys.stderr, str(e)
+    except Exception as e:
+        print(e, file=sys.stderr)
         sys.exit(1)
 
     # Sanity checks for the probe's runtime environment.
@@ -265,7 +267,7 @@ def parse_date(date_string):
         return int(round(time.mktime(result)))
     except ValueError:
         pass
-    except Exception, e:
+    except Exception as e:
         return None
 
     try:
@@ -273,7 +275,7 @@ def parse_date(date_string):
         return int(round(time.mktime(result)))
     except ValueError:
         pass
-    except Exception, e:
+    except Exception as e:
         return None
     
     return result
@@ -286,7 +288,7 @@ def register_gratia():
         raise
     except KeyboardInterrupt:
         raise
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, "Unable to successfully invoke condor_version: %s" %
             str(e))
         sys.exit(1)
@@ -312,7 +314,7 @@ def process_history_dirs(dirs):
             e = None
             try:
                 cnt_submit, cnt_found, cnt_alternate = process_history_file(log)
-            except ValueError, e:
+            except ValueError as e:
                 DebugPrint(1, "Failed to parse log file: %s\nError was: %s" % (log, e))
                 cnt_submit, cnt_found, cnt_alternate = 0, 0, 0
 
@@ -342,7 +344,7 @@ def process_history_file(logfile):
     count_found = 0
     try:
         fd = open(logfile, 'r')
-    except IOError, ie:
+    except IOError as ie:
         DebugPrint(2, "Cannot process %s: (errno=%d) %s" % (logfile, ie.errno,
             ie.strerror))
         return 0, 0
@@ -363,11 +365,11 @@ def process_history_file(logfile):
             raise
         except SystemExit:
             raise
-        except IgnoreClassadException, e:
+        except IgnoreClassadException as e:
             DebugPrint(3, "Ignoring ClassAd: %s" % str(e))
             count_submit += 1
             continue
-        except Exception, e:
+        except Exception as e:
             DebugPrint(2, "Exception while converting the ClassAd to a JUR: %s" % str(e))
             continue
 
@@ -437,11 +439,11 @@ def process_history_fd(fd):
             raise
         except SystemExit:
             raise
-        except IgnoreClassadException, e:
+        except IgnoreClassadException as e:
             DebugPrint(3, "Ignoring ClassAd: %s" % str(e))
             count_submit += 1
             continue
-        except Exception, e:
+        except Exception as e:
             DebugPrint(2, "Exception while converting the ClassAd to a JUR: %s" % str(e))
             continue
 
@@ -741,7 +743,7 @@ def classadToJUR(classad):
 
     if 'GratiaSiteName' in classad and hasattr(classad, 'lookup'):
         evaluated = classad.lookup('GratiaSiteName').eval()
-        if isinstance(evaluated, types.StringType):
+        if isinstance(evaluated, bytes):
             r.SiteName(evaluated)
             r.ProbeName('%s-%s' % (r.GetProbeName(), evaluated))
 
@@ -890,7 +892,7 @@ def send_alternate_records(gratia_info):
             try:
                 signal.alarm(5*60)
                 send_alternate_records_child(info, records)
-            except Exception, e:
+            except Exception as e:
                 DebugPrint(2, "Failed to send alternate records: %s" % str(e))
                 DebugPrintTraceback(2)
                 os._exit(0)
@@ -907,7 +909,7 @@ def send_alternate_records_child(info, record_list):
 
     try:
         GratiaCore.Initialize(g_probe_config)
-    except Exception, e:
+    except Exception as e:
         DebugPrint(2, "Failed to send alternate records: %s" % str(e))
         DebugPrintTraceback(2)
         raise
@@ -916,7 +918,7 @@ def send_alternate_records_child(info, record_list):
     GratiaCore.Handshake()
     try:
         GratiaCore.SearchOutstandingRecord()
-    except Exception, e:
+    except Exception as e:
         DebugPrint(2, "Failed to send alternate records: %s" % str(e)) 
         DebugPrintTraceback(2)
         raise
@@ -950,7 +952,7 @@ if __name__ == "__main__":
         raise
     except KeyboardInterrupt:
         raise
-    except Exception, e:
+    except Exception as e:
         DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
         DebugPrintTraceback()
         raise

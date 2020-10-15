@@ -12,7 +12,7 @@
 # Copyright 2012 University of Nebraska-Lincoln. Released under GPL v2.
 ###########################################################################
 
-+from __future__ import print_function
+from __future__ import print_function
 
 import sys, os, stat
 import time, random
