@@ -1,3 +1,6 @@
+# run from top-level gratia-probe dir with:
+#   docker build -f test/Dockerfile .
+
 FROM centos:centos7
 
 LABEL name="EL7 OSG 3.5 Gratia Probe Test Container"
@@ -10,18 +13,21 @@ RUN yum install -y \
 RUN yum install -y --enablerepo=devops osg-build
 RUN yum install -y --enablerepo=osg-empty slurm
 
-RUN mkdir /root/gratia-probe
-
-RUN git clone --depth=1 https://github.com/opensciencegrid/gratia-probe \
-    /root/gratia-probe
+COPY . /root/gratia-probe
 
 RUN yum-builddep -y /root/gratia-probe/rpm/gratia-probe.spec
 
 RUN mkdir -p /root/bld/upstream
+
+# ensure uncommitted changes make it into rpm
+RUN cd /root/gratia-probe && git add -A && git commit -m autocommit || :
+
 RUN cd \
     && ver=$(awk '/Version:/ {print $2}' gratia-probe/rpm/gratia-probe.spec) \
-    && echo type=github repo=opensciencegrid/gratia-probe tag=master \
+    && echo type=git url=/root/gratia-probe tag=HEAD \
             tarball=gratia-probe-$ver.tar.gz > bld/upstream/gp.source
+
 RUN osg-build rpmbuild /root/bld
+
 RUN yum install -y /root/bld/_build_results/gratia-probe-*-*-*.rpm
 
