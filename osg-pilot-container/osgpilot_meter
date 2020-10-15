@@ -474,6 +474,7 @@ def outbox_row_to_jur(row):
     if row.Memory:
         r.Memory   ( row.Memory, "MB", description="RSS")
     r.VOName       ( row.VOName )
+    r.LocalUserId  ( "osg-fake-user" )
     #r.Site         ( row.Site )
     r.MachineName  ( row.MachineName )
 
