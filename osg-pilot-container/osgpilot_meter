@@ -453,8 +453,6 @@ def query_and_update_db(opts):
 
 
 def outbox_row_to_jur(row):
-    row = OutboxRow(*row)
-
     resource_type = 'Batch'
     r = Gratia.UsageRecord(resource_type)
 
@@ -471,12 +469,12 @@ def outbox_row_to_jur(row):
     r.StartTime    ( row.StartTime,          SECONDS )
     r.EndTime      ( row.EndTime,            SECONDS )
     r.WallDuration ( row.WallDuration,       SECONDS )
-    r.CpuDuration  ( row.CpuDuration,  USER, SECONDS )
+    r.CpuDuration  ( row.CpuDuration or 0,  USER, SECONDS )
     r.Processors   ( row.Processors, metric="max" )
     if row.Memory:
         r.Memory   ( row.Memory, "MB", description="RSS")
     r.VOName       ( row.VOName )
-    r.Site         ( row.Site )
+    #r.Site         ( row.Site )
     r.MachineName  ( row.MachineName )
 
     return r
@@ -486,17 +484,28 @@ def send_updates(opts):
     sqldb = get_db(opts)
 
     count_submit = 0
+    count_delete = 0
     cur = sqldb.execute("select * from outbox;")
     for row in cur:
+        row = OutboxRow(*row)
+
 #       DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
 #           (probe, site, response))
         rec = outbox_row_to_jur(row)
+        print("...sending record to gracc...")
         response = GratiaCore.Send(rec)
+        print("response: %s" % response)
+
 
         if response[:2] == 'OK':
             count_submit += 1
+            delete_sql = "delete from outbox where id = ?"
+            count_delete += sqldb.execute(delete_sql, (row.ID,)).rowcount
 
-    cur2 = sqldb.execute("delete from outbox;")
+    sqldb.commit()
+
+    print("- sent %s records to gracc" % count_submit)
+    print("- deleted %s rows from outbox" % count_delete)
 
 #   DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
 #   DebugPrint(2, "Number of usage records found: %d" % count_found)
@@ -540,7 +549,7 @@ def main():
     opts, args = parse_opts()
 
     GratiaWrapper.CheckPreconditions()
-    GratiaWrapper.ExclusiveLock()
+    #GratiaWrapper.ExclusiveLock()
 
     register_gratia()
     GratiaCore.Initialize(opts.gratia_config)
