@@ -31,6 +31,8 @@ db_path = "/var/lib/gratia/%s/data.db" % probe_name
 VO = 'osg'  # lowercase
 LOCAL_USER = "osgvo-container-pilot"
 
+grid_type = "OSG"
+
 #DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
 DONE_IF_NOT_SEEN_AFTER = 15
 
@@ -475,6 +477,7 @@ def outbox_row_to_jur(row):
         r.Memory   ( row.Memory, "MB", description="RSS")
     #r.Site         ( row.Site )
     r.MachineName  ( row.MachineName )
+    r.Grid         ( grid_type )
     r.LocalUserId  ( LOCAL_USER )
     r.VOName       ( VO )
     r.ReportableVOName ( VO )
@@ -537,6 +540,9 @@ def parse_opts():
 
     if opts.verbose:
         GratiaCore.Config.set_DebugLevel(5)
+
+    global grid_type
+    grid_type = GratiaCore.Config.getConfigAttribute("Grid")
 
     return opts, args
 
