@@ -144,6 +144,8 @@ class SlurmProbe:
         cmd = [prog, "--version"]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         output, _ = p.communicate()
+        if not isinstance(output, str):
+            output = output.decode()
 
         if p.returncode != 0:
             raise Exception("Unable to invoke %s" % cmd)
