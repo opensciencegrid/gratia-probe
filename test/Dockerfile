@@ -31,3 +31,10 @@ RUN osg-build rpmbuild /root/bld
 
 RUN yum install -y /root/bld/_build_results/gratia-probe-*-*-*.rpm
 
+RUN sed -i -e '/SiteName=/s/"Generic site"/"Gratia Probe Docker Tests"/' \
+           -e '/Grid=/s/"OSG"/"OSG-ITB"/' \
+           -e '/EnableProbe=/s/"0"/"1"/' \
+           -e 's/gratia-osg-prod/gratia-osg-itb/g' \
+           -e 's/gratia-osg-transfer/gratia-osg-itb/g' \
+           /etc/gratia/*/ProbeConfig
+
