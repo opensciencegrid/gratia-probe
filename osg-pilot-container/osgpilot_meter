@@ -28,6 +28,8 @@ probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 probe_config = "/etc/gratia/%s/ProbeConfig" % probe_name
 db_path = "/var/lib/gratia/%s/data.db" % probe_name
 
+VO = 'osg'  # lowercase
+LOCAL_USER = "osgvo-container-pilot"
 
 #DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
 DONE_IF_NOT_SEEN_AFTER = 15
@@ -65,7 +67,6 @@ send_attrs = [
                      #                        off from the partitionable slot
     'Processors',    # Cpus
     'Memory',        # MemoryUsage
-    'VOName',        # "OSG" (fixed)
     'Site',          # GLIDEIN_Site (or GLIDEIN_ResourceName)
     'MachineName',   # Machine
 ]
@@ -198,12 +199,11 @@ schema_sql = [
          , total_cpu                      as CpuDuration
          , Cpus                           as Processors
          , MemoryUsage                    as Memory
-         , '{VO}'                         as VOName
          , ifnull(GLIDEIN_Site,
                   GLIDEIN_ResourceName)   as Site
          , Machine                        as MachineName
       from finished;
-    """.format(VO="OSG"),
+    """,
 
 
     """
@@ -473,10 +473,11 @@ def outbox_row_to_jur(row):
     r.Processors   ( row.Processors, metric="max" )
     if row.Memory:
         r.Memory   ( row.Memory, "MB", description="RSS")
-    r.VOName       ( row.VOName )
-    r.LocalUserId  ( "osg-fake-user" )
     #r.Site         ( row.Site )
     r.MachineName  ( row.MachineName )
+    r.LocalUserId  ( LOCAL_USER )
+    r.VOName       ( VO )
+    r.ReportableVOName ( VO )
 
     return r
 
