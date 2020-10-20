@@ -20,7 +20,9 @@ RUN yum-builddep -y /root/gratia-probe/rpm/gratia-probe.spec
 RUN mkdir -p /root/bld/upstream
 
 # ensure uncommitted changes make it into rpm
-RUN cd /root/gratia-probe && git add -A && git commit -m autocommit || :
+RUN cd /root/gratia-probe && git config --global user.email "gratiaprobetests"
+RUN cd /root/gratia-probe && git config --global user.name "Gratia Probe Tests"
+RUN cd /root/gratia-probe && git commit -am autocommit || :
 
 RUN cd \
     && ver=$(awk '/Version:/ {print $2}' gratia-probe/rpm/gratia-probe.spec) \
