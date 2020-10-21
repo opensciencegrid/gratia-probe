@@ -24,12 +24,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import socket
-import httplib
 import os
 
 from string import split
-from urlparse import urlsplit # CG
+
+try:
+    import httplib
+    from urlparse import urlsplit # CG
+except ImportError:
+    import http.client as httplib
+    from urllib.parse import urlsplit
 
 class Connection:  # generic tcp connection wrapper
     def __init__(self, server):
@@ -58,7 +65,7 @@ class Connection:  # generic tcp connection wrapper
         return sent
 
     def send_data_line(self, line):
-        print "C:" + line #XXX
+        print("C:" + line) #XXX
         return self.send_data_all(line) + self.send_data_all('\r\n')
 
     def receive_data_line(self):
@@ -76,7 +83,7 @@ class Connection:  # generic tcp connection wrapper
                 cnt = 0
             buf = buf + in_byte
             if cnt == 2:
-                print "S:" + buf #XXX
+                print("S:" + buf) #XXX
                 return buf
 
     def break_(self):
