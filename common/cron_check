@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# cron-check 
-# checks if 
+# cron-check
+# checks if
 #    gratia probes service is on
 #    this particular probe is enabled
 # It also performs other sanity checks
@@ -12,57 +12,55 @@
 from __future__ import print_function
 
 import os
-import sys 
+import sys
 import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.GratiaCore as GratiaCore
 
 
- 
-def log(message): 
-	if verbose:
-		print(message, file=sys.stderr)
+
+def log(message):
+    if verbose:
+        print(message, file=sys.stderr)
 
 if __name__== "__main__":
-	# checks arguments
+    # checks arguments
 
-	global verbose
-	from optparse import OptionParser
-        usage="Usage: ./cron_check  [-v] config_file"
-	try:
-		parser = OptionParser(usage=usage)
- 		parser.add_option("-v", "--verbose", help="Enable verbose logging to stdout.", default=False, action="store_true", dest="verbose")
-		opts, args = parser.parse_args()
-	except Exception as e:
-        	log(str(e))
-        	sys.exit(1)
-	verbose=opts.verbose	
-	#checks if the confif file has been provided 
-	if len(args):
-		config_file=args[0]
-	else:
-		log(parser.usage)
-        	sys.exit(1)
-		
+    global verbose
+    from optparse import OptionParser
+    usage="Usage: ./cron_check  [-v] config_file"
+    try:
+        parser = OptionParser(usage=usage)
+        parser.add_option("-v", "--verbose", help="Enable verbose logging to stdout.", default=False, action="store_true", dest="verbose")
+        opts, args = parser.parse_args()
+    except Exception as e:
+        log(str(e))
+        sys.exit(1)
+    verbose=opts.verbose
+    #checks if the confif file has been provided
+    if len(args):
+        config_file=args[0]
+    else:
+        log(parser.usage)
+        sys.exit(1)
 
-	
-	#checks if the service is enabled 
-	if not os.path.exists("/var/lock/subsys/gratia-probes-cron"):
-		log("Gratia probes cron services is disabled, to start use \n service gratia-probes-cron start")
-		sys.exit(1)
-	#checks if the  config file exists 
-	if  not os.path.exists(config_file): 
-        	log("Gratia config file, %s, does not exist." % config_file)
-		sys.exit(1)
-	#checks if it is a file  
-	if not os.path.isfile(config_file):
-                log("%s is not a file ." % config_file)
-                sys.exit(1)
+    #checks if the service is enabled
+    if not os.path.exists("/var/lock/subsys/gratia-probes-cron"):
+        log("Gratia probes cron services is disabled, to start use \n service gratia-probes-cron start")
+        sys.exit(1)
+    #checks if the  config file exists
+    if  not os.path.exists(config_file):
+        log("Gratia config file, %s, does not exist." % config_file)
+        sys.exit(1)
+    #checks if it is a file
+    if not os.path.isfile(config_file):
+        log("%s is not a file ." % config_file)
+        sys.exit(1)
 
-	#performs other sanity checks  
-	try:
-		GratiaCore.Config = GratiaCore.ProbeConfiguration(config_file)
-		GratiaWrapper.CheckPreconditions()
-	except Exception as e:
-                log(str(e))
-                sys.exit(1)
-	sys.exit(0)
+    #performs other sanity checks
+    try:
+        GratiaCore.Config = GratiaCore.ProbeConfiguration(config_file)
+        GratiaWrapper.CheckPreconditions()
+    except Exception as e:
+        log(str(e))
+        sys.exit(1)
+    sys.exit(0)
