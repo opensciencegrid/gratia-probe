@@ -27,6 +27,7 @@
 from __future__ import print_function
 
 import socket
+import ssl
 import os
 
 try:
@@ -139,8 +140,8 @@ class HTTPSConnection(httplib.HTTPSConnection):
             conn = HttpProxyConnection((self.host, self.port), self.http_proxy)
             conn.establish()
             sock = conn.socket
-            ssl = socket.ssl(sock, self.key_file, self.cert_file)
-            self.sock = httplib.FakeSocket(sock, ssl)
+            ssl_sock = ssl.SSLSocket(sock, self.key_file, self.cert_file)
+            self.sock = httplib.FakeSocket(sock, ssl_sock)
         else:
             httplib.HTTPSConnection.connect(self)
 
