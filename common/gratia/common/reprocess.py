@@ -61,7 +61,7 @@ def ReprocessList():
     
     # Loop through and try to send any outstanding records
     
-    filenames = sandbox_mgmt.outstandingRecord.keys()
+    filenames = list(sandbox_mgmt.outstandingRecord.keys())
     filenames.sort() 
     for failedRecord in filenames:
         if connect_utils.connectionError:
@@ -169,6 +169,6 @@ def ReprocessList():
     DebugPrint(1, 'After reprocessing: ' + str(sandbox_mgmt.outstandingRecordCount) + ' in outbox '
                + str(sandbox_mgmt.outstandingStagedRecordCount) + ' in staged outbox ' + str(sandbox_mgmt.outstandingStagedTarCount)
                + ' tar files')
-    return (responseString, currentSuccessCount > 0 or currentBundledCount == len(sandbox_mgmt.outstandingRecord.keys())
+    return (responseString, currentSuccessCount > 0 or currentBundledCount == len(list(sandbox_mgmt.outstandingRecord.keys()))
             or prevQuarantine != bundle.quarantinedFiles)
 
