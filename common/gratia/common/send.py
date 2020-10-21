@@ -198,7 +198,7 @@ def Send(record):
         raise
     except SystemExit:
         raise
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'ERROR: ' + str(e) + ' exception caught while processing record ')
         DebugPrint(0, '       This record has been LOST')
         DebugPrintTraceback()
