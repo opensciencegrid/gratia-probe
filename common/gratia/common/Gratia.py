@@ -467,7 +467,7 @@ class UsageRecord(record.Record):
 
                 item_index += 1
 
-        if not id_info.has_key('LocalUserId') or len(id_info) == len(interesting_keys):  # Nothing to do
+        if 'LocalUserId' not in id_info or len(id_info) == len(interesting_keys):  # Nothing to do
             return
 
         # Obtain user->VO info from reverse gridmap file.
@@ -478,7 +478,7 @@ class UsageRecord(record.Record):
             # If we already have one of the two, update both to remain consistent.
 
             for key in ('VOName', 'ReportableVOName'):
-                if id_info.has_key(key):  # Replace existing value
+                if key in id_info:  # Replace existing value
                     self.UserId[id_info[key]['Index']] = re.sub(r'(>\s*)' + re.escape(id_info[key]['Value'])
                             + r'(\s*<)', r'\1' + vo_info[key] + r'\2', self.UserId[id_info[key]['Index']], 1)
                 else:
