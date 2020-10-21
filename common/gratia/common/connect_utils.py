@@ -3,8 +3,12 @@ import sys
 import time
 import signal
 import socket
-import urllib
-import httplib
+try:
+    import urllib
+    import httplib
+except ImportError:
+    import urllib.parse as urllib
+    import http.client as httplib
 
 from gratia.common.config import ConfigProxy
 from gratia.common.debug import DebugPrint, DebugPrintTraceback
@@ -117,7 +121,7 @@ def connect():
                 raise
             except SystemExit:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 DebugPrint(0, 'ERROR: could not initialize HTTP connection')
                 DebugPrintTraceback()
                 connectionError = True
@@ -130,7 +134,7 @@ def connect():
                 DebugPrint(4, 'DEBUG: Connect: OK')
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, prev_handler)
-            except socket.error, ex:
+            except socket.error as ex:
                 DebugPrint(3, 'Socket connection error: '+str(ex))
                 connectionError = True
                 raise
@@ -142,7 +146,7 @@ def connect():
                 raise
             except SystemExit:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 connectionError = True
                 DebugPrint(4, 'DEBUG: Connect: FAILED')
                 DebugPrint(0, 'Error: While trying to connect to HTTP, caught exception ' + str(ex))
@@ -182,7 +186,7 @@ def connect():
                 raise
             except SystemExit:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 DebugPrint(0, 'ERROR: could not initialize HTTPS connection')
                 DebugPrintTraceback()
                 connectionError = True
@@ -195,7 +199,7 @@ def connect():
                 DebugPrint(4, 'DEBUG: Connect: OK')
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, prev_handler)
-            except socket.error, ex:
+            except socket.error as ex:
                 connectionError = True
                 raise
             except GratiaTimeout:
@@ -206,7 +210,7 @@ def connect():
                 raise
             except SystemExit:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 DebugPrint(4, 'DEBUG: Connect: FAILED')
                 DebugPrint(0, 'Error: While trying to connect to HTTPS, caught exception ' + str(ex))
                 DebugPrintTraceback()
@@ -389,7 +393,7 @@ def sendUsageXML(meterId, recordXml, messageType='URLEncodedUpdate'):
     except SystemExit:
 
         raise
-    except socket.error, ex:
+    except socket.error as ex:
         if ex.args[0] == 111:
             DebugPrint(0, 'Connection refused while attempting to send xml to web service')
         else:
@@ -397,7 +401,7 @@ def sendUsageXML(meterId, recordXml, messageType='URLEncodedUpdate'):
                        '": ', sys.exc_info()[1])
             DebugPrintTraceback(1)
         response_obj = response.Response(response.Response.Failed, r'Server unable to receive data: save for reprocessing')
-    except GratiaTimeout, ex:
+    except GratiaTimeout as ex:
         connectionError = True
         if not __resending:
             DebugPrint(0, 'Connection timeout.  Will now attempt to re-establish connection and send record.')
