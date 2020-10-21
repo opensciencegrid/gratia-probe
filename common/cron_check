@@ -9,6 +9,7 @@
 # if probe fails any of the checks
 # Tanya Levshina <tlevshin@fnal.gov>
 
+from __future__ import print_function
 
 import os
 import sys 
@@ -19,7 +20,7 @@ import gratia.common.GratiaCore as GratiaCore
  
 def log(message): 
 	if verbose:
-		print >> sys.stderr,message
+		print(message, file=sys.stderr)
 
 if __name__== "__main__":
 	# checks arguments
@@ -31,7 +32,7 @@ if __name__== "__main__":
 		parser = OptionParser(usage=usage)
  		parser.add_option("-v", "--verbose", help="Enable verbose logging to stdout.", default=False, action="store_true", dest="verbose")
 		opts, args = parser.parse_args()
-	except Exception, e:
+	except Exception as e:
         	log(str(e))
         	sys.exit(1)
 	verbose=opts.verbose	
@@ -61,7 +62,7 @@ if __name__== "__main__":
 	try:
 		GratiaCore.Config = GratiaCore.ProbeConfiguration(config_file)
 		GratiaWrapper.CheckPreconditions()
-	except Exception, e:
+	except Exception as e:
                 log(str(e))
                 sys.exit(1)
 	sys.exit(0)
