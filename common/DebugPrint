@@ -9,6 +9,8 @@ DebugPrint.py
        cat message.txt | DebugPrint.py [-l #|--level=#] [-c <probeconfig>|--conf=<probeconfig>]
 """
 
+from __future__ import print_function
+
 import sys
 from gratia.common import GratiaCore
 import getopt
@@ -18,9 +20,9 @@ def Usage():
     """
     Print the usage.
     """
-    print """usage: DebugPrint.py [-h|--help]
+    print("""usage: DebugPrint.py [-h|--help]
        DebugPrint.py [-l #|--level=#] [-c <probeconfig>|--conf=<probeconfig>] <message>
-       cat message.txt | DebugPrint.py [-l #|--level=#] [-c <probeconfig>|--conf=<probeconfig>]"""
+       cat message.txt | DebugPrint.py [-l #|--level=#] [-c <probeconfig>|--conf=<probeconfig>]""")
 
 def main():
     """
@@ -50,9 +52,9 @@ def main():
     GratiaCore.quiet = 1
 
     if customConfig:
-    	GratiaCore.Initialize(customConfig)
+        GratiaCore.Initialize(customConfig)
     else:
-    	GratiaCore.Initialize()
+        GratiaCore.Initialize()
 
     GratiaCore.quiet = 0
 
@@ -61,8 +63,8 @@ def main():
     else:
         while 1:
             try:
-                line = raw_input()
-            except EOFError, ex:
+                line = input()
+            except EOFError as ex:
                 break
             GratiaCore.DebugPrint(level, line.rstrip())
 
