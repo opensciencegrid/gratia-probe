@@ -277,6 +277,8 @@ def postRequest(myconnection, to, what, headers):
     DebugPrint(4, 'DEBUG: POST: OK')
     DebugPrint(4, 'DEBUG: Read response')
     responseString = myconnection.getresponse().read()
+    if not isinstance(responseString, str):
+        responseString = responseString.decode(errors='ignore')
     DebugPrint(4, 'DEBUG: Read response: OK')
     
     signal.alarm(0)
