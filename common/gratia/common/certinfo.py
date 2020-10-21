@@ -175,12 +175,12 @@ def readCertInfoLog(localJobId):
                 for item in __quoteSplit.findall(line):
                     split_item = item.split('=', 1)
                     res[split_item[0]] = split_item[1]
-                if res.has_key('lrmsID') and res['lrmsID'] == str(localJobId):
-                    if res.has_key('userDN'):
+                if 'lrmsID' in res and res['lrmsID'] == str(localJobId):
+                    if 'userDN' in res:
                         res['DN'] = res['userDN']
                     else:
                         res['DN'] = None
-                    if res.has_key('userFQAN'):
+                    if 'userFQAN' in res:
                         res['FQAN'] = res['userFQAN']
                     else:
                         res['FQAN'] = None
@@ -249,7 +249,7 @@ def _findCertinfoFile(localJobId, probeName):
             raise
         except SystemExit:
             raise
-        except Exception, e:
+        except Exception as e:
             DebugPrint(0, 'ERROR: Unable to parse XML file ' + certinfo, ': ', e)
             continue
 
