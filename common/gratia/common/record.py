@@ -120,8 +120,8 @@ class Record(object):
         use function in gratia.common2.timeutil
         """
 
-        seconds = long(value * 100) % 6000 / 100.0
-        value = long((value - seconds) / 60)
+        seconds = int(value * 100) % 6000 / 100.0
+        value = int((value - seconds) / 60)
         minutes = value % 60
         value = (value - minutes) / 60
         hours = value % 24
