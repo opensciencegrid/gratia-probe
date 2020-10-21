@@ -3,7 +3,6 @@ import os
 import sys
 import math
 import time
-import string
 import exceptions
 
 # Returns a nicely formatted string for the floating point number
@@ -97,8 +96,8 @@ def pythonVersionRequire(
         result = True
     else:
         try:
-            releaseLevelIndex = releaseLevelsDir[string.lower(releaseLevel)]
-            releaseCompareIndex = releaseLevelsDir[string.lower(sys.version_info[3])]
+            releaseLevelIndex = releaseLevelsDir[releaseLevel.lower()]
+            releaseCompareIndex = releaseLevelsDir[sys.version_info[3].lower()]
         except KeyError:
             result = False
         if releaseLevelIndex > releaseCompareIndex:
@@ -132,7 +131,7 @@ def TimeToString(targ=None):
 __lrms = None
 def setProbeBatchManager(lrms):
     global __lrms
-    __lrms = string.lower(lrms)
+    __lrms = lrms.lower()
 
 def getProbeBatchManager():
     return __lrms

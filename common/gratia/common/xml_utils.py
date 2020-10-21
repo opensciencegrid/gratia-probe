@@ -2,7 +2,6 @@ import os
 import re
 import grp
 import pwd
-import string
 import xml.sax.saxutils
 import xml.dom.minidom
 
@@ -281,7 +280,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
         reason = None
         isQuarantined=False
         grid = GetElement(xmlDoc, usageRecord, namespace, prefix, 'Grid')
-        if Config.get_SuppressgridLocalRecords() and grid and string.lower(grid) == 'local':
+        if Config.get_SuppressgridLocalRecords() and grid and grid.lower() == 'local':
             # 1
             reason = 'Grid == Local'
         elif Config.get_SuppressNoDNRecords() and not usageRecord.getElementsByTagNameNS(namespace, 'DN'):
@@ -446,7 +445,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_
                 tmpVOName = vo_info['VOName']
                 if vo_info['ReportableVOName'] == None:
                     if tmpVOName[0] == r'/':
-                        vo_info['ReportableVOName'] = string.split(VOName, r'/')[1]
+                        vo_info['ReportableVOName'] = VOName.split('/')[1]
                     else:
                         vo_info['ReportableVOName'] = tmpVOName
 

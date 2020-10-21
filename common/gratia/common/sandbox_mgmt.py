@@ -4,7 +4,6 @@ import os
 import sys
 import glob
 import time
-import string
 import shutil
 import tarfile
 
@@ -397,7 +396,7 @@ def GenerateFilename(prefix, current_dir):
     if mktemp_pipe != None:
         filename = mktemp_pipe.readline()
         mktemp_pipe.close()
-        filename = string.strip(filename)
+        filename = filename.strip()
         if filename != r'':
             return filename
 

@@ -29,8 +29,6 @@ from __future__ import print_function
 import socket
 import os
 
-from string import split
-
 try:
     import httplib
     from urlparse import urlsplit # CG
@@ -116,7 +114,7 @@ class HttpProxyConnection(Connection):  # http tunnelling
         while 1:
             buf = self.receive_data_line()
             if status == -1:
-                resp = split(buf, ' ', 2)
+                resp = buf.split(' ', 2)
                 if len(resp) > 1:
                     status = int(resp[1])
                 else:
@@ -178,7 +176,7 @@ def findHTTPSProxy():
 def process_proxy(proxy):
     if proxy.startswith('http'):
         _, netloc, _, _, _ = urlsplit(proxy)
-        address, port = split(netloc, ':')
+        address, port = netloc.split(':')
     else:
-        address, port = split(proxy, ':')
+        address, port = proxy.split(':')
     return (address, port)

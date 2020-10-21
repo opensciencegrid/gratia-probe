@@ -4,7 +4,6 @@ from __future__ import print_function
 import os
 import sys
 import time
-import string
 import syslog
 import traceback
 
@@ -162,7 +161,7 @@ def LogToSyslog(level, message):
 
 def DebugPrintTraceback(debugLevel=4):
     DebugPrint(4, 'In traceback print (0)')
-    message = string.join(traceback.format_exception(*sys.exc_info()), r'')
+    message = ''.join(traceback.format_exception(*sys.exc_info()))
     DebugPrint(4, 'In traceback print (1)')
     DebugPrint(debugLevel, message)
 

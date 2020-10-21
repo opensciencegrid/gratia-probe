@@ -14,7 +14,6 @@ from __future__ import print_function
 import sys
 from gratia.common import GratiaCore
 import getopt
-import string
 
 def Usage():
     """
@@ -59,7 +58,7 @@ def main():
     GratiaCore.quiet = 0
 
     if len(args) > 0:
-        GratiaCore.DebugPrint(level, string.join(args, " ").rstrip())
+        GratiaCore.DebugPrint(level, " ".join(args).rstrip())
     else:
         while 1:
             try:
