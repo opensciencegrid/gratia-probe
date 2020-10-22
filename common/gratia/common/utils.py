@@ -3,7 +3,6 @@ import os
 import sys
 import math
 import time
-import exceptions
 
 # Returns a nicely formatted string for the floating point number
 # provided.  This number will be rounded to the supplied accuracy
@@ -111,7 +110,7 @@ def pythonVersionRequire(
     return result
 
 
-class InternalError(exceptions.Exception):
+class InternalError(Exception):
     pass
 
 
