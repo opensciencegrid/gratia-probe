@@ -9,7 +9,7 @@ import sqlite3
 import optparse
 import collections
 
-#from gratia.common.Gratia import DebugPrint
+from gratia.common.Gratia import DebugPrint
 #from gratia.common.debug import DebugPrintTraceback
 import gratia.common.GratiaCore as GratiaCore
 import gratia.common.GratiaWrapper as GratiaWrapper
@@ -37,6 +37,13 @@ grid_type = "OSG"
 DONE_IF_NOT_SEEN_AFTER = 15
 
 POLL_INTERVAL = 15  # seconds
+
+# log levels
+CRITICAL = 0
+ERROR    = 1
+WARNING  = 2
+INFO     = 3
+DEBUG    = 4
 
 want_pslot_attrs = [
     'DaemonStartTime',
@@ -286,7 +293,7 @@ def qmarks(n):
     return ",".join(["?"] * n)
 
 def write_ads_to_sqlite(sqldb, ads, current_ts):
-    print("Writing new ads to inbox")
+    DebugPrint(INFO, "Writing new ads to inbox")
 
     n_attrs = len(want_attrs) + 1
     insert_sql = "insert into inbox values (%s)" % qmarks(n_attrs)
@@ -298,18 +305,16 @@ def write_ads_to_sqlite(sqldb, ads, current_ts):
 
     rc = sqldb.executemany(insert_sql, map(job2vals, ads)).rowcount
 
-    print("- inserted %s rows into inbox" % rc)
-    print()
+    DebugPrint(INFO, "- inserted %s rows into inbox" % rc)
 
 
 def archive_new_ads(sqldb, ads, current_ts):
-    print("Archiving new ads")
+    DebugPrint(INFO, "Archiving new ads")
 
     insert_sql = "insert into inbox_archive select * from inbox"
     rc = sqldb.execute(insert_sql).rowcount
 
-    print("- inserted %s rows into inbox_archive" % rc)
-    print()
+    DebugPrint(INFO, "- inserted %s rows into inbox_archive" % rc)
 
 
 def get_pslots_children(ads):
@@ -330,7 +335,7 @@ def get_pslots_dslots2(ads):
                 yield ad['Name'], dslot
 
 def update_slots_info(sqldb, ads):
-    print("Updating slot info")
+    DebugPrint(INFO, "Updating slot info")
 
     delete_sql = "delete from slots;"
     insert_sql = "insert into slots values (?,?);"
@@ -338,13 +343,12 @@ def update_slots_info(sqldb, ads):
     rc1 = sqldb.execute(delete_sql).rowcount
     rc2 = sqldb.executemany(insert_sql, get_pslots_dslots2(ads)).rowcount
 
-    print("- deleted %s rows from slots" % rc1)
-    print("- inserted %s rows into slots" % rc2)
-    print()
+    DebugPrint(INFO, "- deleted %s rows from slots" % rc1)
+    DebugPrint(INFO, "- inserted %s rows into slots" % rc2)
 
 
 def detect_finished_jobs(sqldb, current_ts):
-    print("Detecting finished jobs")
+    DebugPrint(INFO, "Detecting finished jobs")
 
     dead_cutoff = current_ts - DONE_IF_NOT_SEEN_AFTER
 
@@ -366,13 +370,12 @@ def detect_finished_jobs(sqldb, current_ts):
     rc1 = sqldb.execute(insert_sql, (dead_cutoff,)).rowcount
     rc2 = sqldb.execute(delete_sql, (dead_cutoff,)).rowcount
 
-    print("- inserted %s rows into outbox" % rc1)
-    print("- deleted %s rows from jobs" % rc2)
-    print()
+    DebugPrint(INFO, "- inserted %s rows into outbox" % rc1)
+    DebugPrint(INFO, "- deleted %s rows from jobs" % rc2)
 
 
 def update_active_jobs(sqldb):
-    print("Updating active jobs")
+    DebugPrint(INFO, "Updating active jobs")
 
     # TODO: simplify with UPDATE FROM syntax after SQLite 3.33.0 (2020-08-14)
     update_sql = """
@@ -404,14 +407,13 @@ def update_active_jobs(sqldb):
     rc1 = sqldb.execute(update_sql).rowcount
     rc2 = sqldb.execute(delete_sql).rowcount
 
-    print("- updated %s rows from jobs" % rc1)
-    print("- deleted %s rows from inbox" % rc2)
-    print()
+    DebugPrint(INFO, "- updated %s rows from jobs" % rc1)
+    DebugPrint(INFO, "- deleted %s rows from inbox" % rc2)
 
 
 
 def detect_new_jobs(sqldb, current_ts):
-    print("Detecting new jobs...")
+    DebugPrint(INFO, "Detecting new jobs...")
 
     insert_sql = """
         insert into jobs
@@ -431,9 +433,8 @@ def detect_new_jobs(sqldb, current_ts):
     # XXX: not before update_active_jobs
     rc2 = sqldb.execute(delete_sql).rowcount
 
-    print("- inserted %s rows into jobs" % rc1)
-    print("- deleted %s rows from inbox" % rc2)
-    print()
+    DebugPrint(INFO, "- inserted %s rows into jobs" % rc1)
+    DebugPrint(INFO, "- deleted %s rows from inbox" % rc2)
 
 
 
@@ -494,13 +495,10 @@ def send_updates(opts):
     for row in cur:
         row = OutboxRow(*row)
 
-#       DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
-#           (probe, site, response))
         rec = outbox_row_to_jur(row)
-        print("...sending record to gracc...")
         response = GratiaCore.Send(rec)
-        print("response: %s" % response)
-
+        DebugPrint(DEBUG, "Sending record to gracc; response: %s."
+                          % response)
 
         if response[:2] == 'OK':
             count_submit += 1
@@ -509,11 +507,8 @@ def send_updates(opts):
 
     sqldb.commit()
 
-    print("- sent %s records to gracc" % count_submit)
-    print("- deleted %s rows from outbox" % count_delete)
-
-#   DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
-#   DebugPrint(2, "Number of usage records found: %d" % count_found)
+    DebugPrint(INFO, "- sent %s records to gracc" % count_submit)
+    DebugPrint(INFO, "- deleted %s rows from outbox" % count_delete)
 
 
 def parse_opts():
