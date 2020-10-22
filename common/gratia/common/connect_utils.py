@@ -414,7 +414,7 @@ def sendUsageXML(meterId, recordXml, messageType='URLEncodedUpdate'):
             DebugPrint(0, 'Received GratiaTimeout exception:')
             DebugPrintTraceback(1)
             response_obj = response.Response(response.Response.Failed, 'Failed to send xml to web service')
-    except httplib.BadStatusLine, ex:
+    except httplib.BadStatusLine as ex:
         connectionError = True
         if ex.args[0] == r'' and not __resending:
             DebugPrint(0, 'Possible connection timeout.  Will now attempt to re-establish connection and send record.')
