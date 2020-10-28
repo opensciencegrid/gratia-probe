@@ -24,12 +24,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import socket
-import httplib
+import ssl
 import os
 
-from string import split
-from urlparse import urlsplit # CG
+try:
+    import httplib
+    from urlparse import urlsplit # CG
+except ImportError:
+    import http.client as httplib
+    from urllib.parse import urlsplit
 
 class Connection:  # generic tcp connection wrapper
     def __init__(self, server):
@@ -58,7 +64,7 @@ class Connection:  # generic tcp connection wrapper
         return sent
 
     def send_data_line(self, line):
-        print "C:" + line #XXX
+        print("C:" + line) #XXX
         return self.send_data_all(line) + self.send_data_all('\r\n')
 
     def receive_data_line(self):
@@ -76,7 +82,7 @@ class Connection:  # generic tcp connection wrapper
                 cnt = 0
             buf = buf + in_byte
             if cnt == 2:
-                print "S:" + buf #XXX
+                print("S:" + buf) #XXX
                 return buf
 
     def break_(self):
@@ -109,7 +115,7 @@ class HttpProxyConnection(Connection):  # http tunnelling
         while 1:
             buf = self.receive_data_line()
             if status == -1:
-                resp = split(buf, ' ', 2)
+                resp = buf.split(' ', 2)
                 if len(resp) > 1:
                     status = int(resp[1])
                 else:
@@ -134,8 +140,8 @@ class HTTPSConnection(httplib.HTTPSConnection):
             conn = HttpProxyConnection((self.host, self.port), self.http_proxy)
             conn.establish()
             sock = conn.socket
-            ssl = socket.ssl(sock, self.key_file, self.cert_file)
-            self.sock = httplib.FakeSocket(sock, ssl)
+            ssl_sock = ssl.SSLSocket(sock, self.key_file, self.cert_file)
+            self.sock = httplib.FakeSocket(sock, ssl_sock)
         else:
             httplib.HTTPSConnection.connect(self)
 
@@ -171,7 +177,7 @@ def findHTTPSProxy():
 def process_proxy(proxy):
     if proxy.startswith('http'):
         _, netloc, _, _, _ = urlsplit(proxy)
-        address, port = split(netloc, ':')
+        address, port = netloc.split(':')
     else:
-        address, port = split(proxy, ':')
+        address, port = proxy.split(':')
     return (address, port)

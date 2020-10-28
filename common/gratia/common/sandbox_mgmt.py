@@ -4,7 +4,6 @@ import os
 import sys
 import glob
 import time
-import string
 import shutil
 import tarfile
 
@@ -64,7 +63,7 @@ def QuarantineFile(filename, isempty):
         dest = os.path.join(quarantine, os.path.basename(filename))
         try:
             shutil.copy2(filename, dest)
-        except IOError, ie:
+        except IOError as ie:
             DebugPrint(1, "Unable to copy file %s to dest %s due to error: %s; ignoring" % (filename,dest,ie.strerror))
             return
     RemoveRecordFile(filename)
@@ -382,7 +381,7 @@ def SearchOutstandingRecord():
 
     hasMoreOutstandingRecord = outstandingStagedTarCount > 0 or len(outstandingRecord) >= __maxFilesToReprocess__
 
-    DebugPrint(4, 'DEBUG: List of Outstanding records: ', outstandingRecord.keys())
+    DebugPrint(4, 'DEBUG: List of Outstanding records: ', list(outstandingRecord.keys()))
     DebugPrint(4, 'DEBUG: After SearchOutstandingRecord outbox:' + str(outstandingRecordCount)
                + ' staged outbox:' + str(outstandingStagedRecordCount) + ' tarfiles:'
                + str(outstandingStagedTarCount))
@@ -397,7 +396,7 @@ def GenerateFilename(prefix, current_dir):
     if mktemp_pipe != None:
         filename = mktemp_pipe.readline()
         mktemp_pipe.close()
-        filename = string.strip(filename)
+        filename = filename.strip()
         if filename != r'':
             return filename
 
@@ -418,7 +417,7 @@ def UncompressOutbox(staging_name, target_dir):
         raise
     except SystemExit:
         raise
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while opening tar file: ' + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
         DebugPrintTraceback()
@@ -432,7 +431,7 @@ def UncompressOutbox(staging_name, target_dir):
         raise   
     except SystemExit:
         raise   
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while extracting from tar file: ' + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
         DebugPrintTraceback()
@@ -444,7 +443,7 @@ def UncompressOutbox(staging_name, target_dir):
         raise   
     except SystemExit:
         raise   
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while closing tar file: ' + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
         DebugPrintTraceback()
@@ -472,7 +471,7 @@ def CompressOutbox(probe_dir, outbox, outfiles):
         raise   
     except SystemExit:
         raise   
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while opening tar.bz2 file: ' + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
         DebugPrintTraceback()
@@ -490,7 +489,7 @@ def CompressOutbox(probe_dir, outbox, outfiles):
         raise   
     except SystemExit:
         raise   
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while adding ' + f + ' from ' + outbox + ' to tar.bz2 file: '
                    + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
@@ -503,7 +502,7 @@ def CompressOutbox(probe_dir, outbox, outfiles):
         raise   
     except SystemExit:
         raise   
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'Warning: Exception caught while closing tar.bz2 file: ' + staging_name + ':')
         DebugPrint(0, 'Caught exception: ', e)
         DebugPrintTraceback()

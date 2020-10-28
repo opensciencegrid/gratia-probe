@@ -2,10 +2,13 @@ import os
 import re
 import grp
 import pwd
-import string
-import StringIO
 import xml.sax.saxutils
 import xml.dom.minidom
+
+try:
+    import StringIO
+except ImportError:
+    import io as StringIO
 
 import gratia.common.vo as vo
 import gratia.common.utils as utils
@@ -236,7 +239,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
                 id_info = CheckAndExtendUserIdentity(xmlDoc, userIdentityNodes[0], namespace, prefix, use_certinfo)
                 DebugPrint(4, 'DEBUG: Call CheckAndExtendUserIdentity: OK')
                 if Config.get_NoCertinfoBatchRecordsAreLocal() and ResourceType and ResourceType == 'Batch' \
-                    and not (id_info.has_key('has_certinfo') and id_info['has_certinfo']):
+                    and not ('has_certinfo' in id_info and id_info['has_certinfo']):
 
                     # Set grid local
 
@@ -249,13 +252,13 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
                         'Grid',
                         'Local',
                         )
-                if id_info.has_key('VOName'):
+                if 'VOName' in id_info:
                     VOName = id_info['VOName']
             except KeyboardInterrupt:
                 raise   
             except SystemExit:
                 raise   
-            except Exception, e:
+            except Exception as e:
                 DebugPrint(0, 'DEBUG: Caught exception: ', e)
                 DebugPrintTraceback()
                 raise
@@ -277,7 +280,7 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
         reason = None
         isQuarantined=False
         grid = GetElement(xmlDoc, usageRecord, namespace, prefix, 'Grid')
-        if Config.get_SuppressgridLocalRecords() and grid and string.lower(grid) == 'local':
+        if Config.get_SuppressgridLocalRecords() and grid and grid.lower() == 'local':
             # 1
             reason = 'Grid == Local'
         elif Config.get_SuppressNoDNRecords() and not usageRecord.getElementsByTagNameNS(namespace, 'DN'):
@@ -442,7 +445,7 @@ def CheckAndExtendUserIdentity(xmlDoc, userIdentityNode, namespace, prefix, use_
                 tmpVOName = vo_info['VOName']
                 if vo_info['ReportableVOName'] == None:
                     if tmpVOName[0] == r'/':
-                        vo_info['ReportableVOName'] = string.split(VOName, r'/')[1]
+                        vo_info['ReportableVOName'] = VOName.split('/')[1]
                     else:
                         vo_info['ReportableVOName'] = tmpVOName
 

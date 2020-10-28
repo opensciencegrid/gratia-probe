@@ -11,12 +11,10 @@ import os
 import sys
 import time
 import xml.dom.minidom
-import StringIO
 import traceback
 import re
 import fileinput
 import atexit
-import urllib
 
 import gratia.common.ProxyUtil as ProxyUtil
 import gratia.common.send as send
@@ -72,7 +70,7 @@ def __disconnect_at_exit__():
             raise
         except SystemExit:
             raise
-        except Exception, exception:
+        except Exception as exception:
             DebugPrint(0, 'Exception caught at top level: ' + str(exception))
             DebugPrintTraceback()
     DebugPrint(0, 'End of execution summary: new records sent successfully: ' + str(bundle.successfulSendCount))

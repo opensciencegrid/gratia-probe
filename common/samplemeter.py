@@ -3,6 +3,9 @@
 """
 An example on how to create and upload Gratia record.
 """
+
+from __future__ import print_function
+
 import gratia.common.Gratia as Gratia
 import gratia.common.GratiaCore as GratiaCore
 import gratia.common.send as send
@@ -67,4 +70,4 @@ if __name__ == '__main__':
     GratiaCore.Initialize()
 
     rec = GetRecord()
-    print send.Send(rec)
+    print(send.Send(rec))

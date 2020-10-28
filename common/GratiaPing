@@ -1,5 +1,7 @@
 #!/bin/env python
 
+from __future__ import print_function
+
 import getopt,sys
 import gratia.common.GratiaCore as GratiaCore
 import gratia.common.bundle as bundle
@@ -11,23 +13,23 @@ class UsageError(Exception):
         self.msg = msg
 
 def Usage():
-        print" Usage: "+sys.argv[0]+" [-v] [--verbose]"
-        print
-        print "   -v, --verbose: print the result in human readable form"
-        print 
-        print " This will attempt to upload a handshake to the server"
-        
+        print(" Usage: "+sys.argv[0]+" [-v] [--verbose]")
+        print()
+        print("   -v, --verbose: print the result in human readable form")
+        print()
+        print(" This will attempt to upload a handshake to the server")
+
 if __name__ == '__main__':
         verbose = False;
         argv = sys.argv
         try:
                 try:
                         opts, args = getopt.getopt(argv[1:], "hv", ["help","verbose"])
-                except getopt.error, msg:
+                except getopt.error as msg:
                         raise UsageError(msg)
-        except UsageError, err:
-                print >>sys.stderr, err.msg
-                print >>sys.stderr, "for help use --help"
+        except UsageError as err:
+                print(err.msg, file=sys.stderr)
+                print("for help use --help", file=sys.stderr)
                 sys.exit(2)
         for o, a in opts:
                 if o in ("-v","--verbose"):
@@ -41,6 +43,6 @@ if __name__ == '__main__':
         GratiaCore.Initialize()
 
         if (verbose):
-                print "Number of successful handshakes: "+str(bundle.successfulHandshakes)
+                print("Number of successful handshakes: "+str(bundle.successfulHandshakes))
         sys.exit(0==bundle.successfulHandshakes)
 
