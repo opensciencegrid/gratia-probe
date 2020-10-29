@@ -141,3 +141,7 @@ def genDefaultProbeName():
     f.close()
     return meterName
 
+# for python2/3 compat, when you have a bytes and want a str
+def bytes2str(s):
+    return s if isinstance(s, str) else s.decode(errors='ignore')
+
