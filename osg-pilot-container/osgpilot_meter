@@ -272,7 +272,7 @@ def slottype_shortname(s):
     return s[0] if s in ("Partitionable", "Dynamic", "Static") else s
 
 def eval_expr(x):
-    if isinstance(x, classad.classad.ExprTree):
+    if isinstance(x, classad.ExprTree):
         x = x.eval()
     if isinstance(x, list):
         x = "\t".join(x)
