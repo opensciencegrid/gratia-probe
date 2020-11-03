@@ -151,9 +151,7 @@ class ProbeConfiguration:
                                        'not really')])
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         qconnection.request('POST', self.get_RegistrationService(), queryString, headers)
-        responseString = qconnection.getresponse().read()
-        if not isinstance(responseString, str):
-            responseString = responseString.decode(errors='ignore')
+        responseString = utils.bytes2str(qconnection.getresponse().read())
         resplist = responseString.split(':')
         if len(resplist) == 3 and resplist[0] == 'ok':
 

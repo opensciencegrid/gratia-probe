@@ -24,6 +24,7 @@ import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
 import gratia.common.file_utils as file_utils
 import gratia.common.config as config
+import gratia.common.utils as utils
 
 import classad as classadLib
 
@@ -835,7 +836,7 @@ def htcondor_configured():
             args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
             DebugPrint(4, 'Running command to check condor config: ' + args)
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
-        (cmd_stdout, cmd_stderr) = cmd.communicate()
+        (cmd_stdout, cmd_stderr) = map(utils.bytes2str, cmd.communicate())
         # cmd_stdout contains the directory path, removing spaces
         # It will always be a string even if returncode != 0 
         cmd_stdout = cmd_stdout.strip()

@@ -22,6 +22,7 @@ import subprocess
 from gratia.common.Gratia import DebugPrint
 import gratia.common.GratiaWrapper as GratiaWrapper
 import gratia.common.Gratia as Gratia
+import gratia.common.utils as utils
 
 import MySQLdb
 import MySQLdb.cursors
@@ -143,9 +144,7 @@ class SlurmProbe:
 
         cmd = [prog, "--version"]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        output, _ = p.communicate()
-        if not isinstance(output, str):
-            output = output.decode(errors="ignore")
+        output, _ = map(utils.bytes2str, p.communicate())
 
         if p.returncode != 0:
             raise Exception("Unable to invoke %s" % cmd)
