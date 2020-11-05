@@ -32,6 +32,10 @@ ExcludeArch: noarch
 
 %define customize_probeconfig(d:) sed -i "s#@PROBE_HOST@#%{meter_name}#" %{_sysconfdir}/gratia/%{-d*}/ProbeConfig
 
+%if 0%{?rhel} >= 8
+%global __python /usr/bin/python3
+%endif
+
 ########################################################################
 # Source and patch specifications
 Source0: %{name}-%{version}.tar.gz
