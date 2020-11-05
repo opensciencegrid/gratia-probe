@@ -34,6 +34,8 @@ ExcludeArch: noarch
 %global __python /usr/bin/python3
 %endif
 
+%global debug_package %{nil}
+
 ########################################################################
 # Source and patch specifications
 Source0: %{name}-%{version}.tar.gz
