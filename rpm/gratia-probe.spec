@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -896,6 +896,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Nov 05 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-2
+- Build fix: specify python3 explicitly for el8 (SOFTWARE-4348)
+
 * Wed Nov 04 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-1
 - Add python3 support (SOFTWARE-4285, 4287, 4288, 4283)
 - Add docker testing container (SOFTWARE-4313)
