@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
-Release:            1%{?dist}
+Release:            2%{?dist}
 
 License:            GPL
 Group:              Applications/System
@@ -32,9 +32,8 @@ ExcludeArch: noarch
 
 %define customize_probeconfig(d:) sed -i "s#@PROBE_HOST@#%{meter_name}#" %{_sysconfdir}/gratia/%{-d*}/ProbeConfig
 
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+%if 0%{?rhel} >= 8
+%global __python /usr/bin/python3
 %endif
 
 ########################################################################
@@ -62,6 +61,11 @@ Prefix: /etc
 %install
 # Setup
 rm -rf $RPM_BUILD_ROOT
+
+%if 0%{?rhel} >= 8
+find . -type f -exec \
+    sed -ri '1s,^#!\s*(/usr)?/bin/(env *)?python.*,#!%{__python},' '{}' +
+%endif
 
 install -d $RPM_BUILD_ROOT/%{_datadir}/gratia
 install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
@@ -897,6 +901,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Nov 05 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-2
+- Build fix: specify python3 explicitly for el8 (SOFTWARE-4348)
+
 * Wed Nov 04 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-1
 - Add python3 support (SOFTWARE-4285, 4287, 4288, 4283)
 - Add docker testing container (SOFTWARE-4313)
