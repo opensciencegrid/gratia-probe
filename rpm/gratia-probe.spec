@@ -3,9 +3,7 @@ Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
 Release:            2%{?dist}
-
 License:            GPL
-Group:              Applications/System
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
