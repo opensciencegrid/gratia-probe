@@ -62,6 +62,11 @@ Prefix: /etc
 # Setup
 rm -rf $RPM_BUILD_ROOT
 
+%if 0%{?rhel} >= 8
+find . -type f -exec \
+    sed -ri '1s,^#!\s*(/usr)?/bin/(env *)?python.*,#!%{__python},' '{}' +
+%endif
+
 install -d $RPM_BUILD_ROOT/%{_datadir}/gratia
 install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
