@@ -3,9 +3,7 @@ Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
 Release:            2%{?dist}
-
 License:            GPL
-Group:              Applications/System
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
@@ -35,6 +33,8 @@ ExcludeArch: noarch
 %if 0%{?rhel} >= 8
 %global __python /usr/bin/python3
 %endif
+
+%global debug_package %{nil}
 
 ########################################################################
 # Source and patch specifications
@@ -412,16 +412,16 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
-# this is in common: %{python_sitelib}/gratia/__init__.py*
+# this is in common: %%{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
 %dir %{default_prefix}/gratia/common2
-# %{default_prefix}/gratia/common2/alarm.py
-# %{default_prefix}/gratia/common2/checkpoint.py
-# %{default_prefix}/gratia/common2/uuid_replacement.py
-# %{default_prefix}/gratia/common2/meter.py
-# %{default_prefix}/gratia/common2/pginput.py
-# %{default_prefix}/gratia/common2/probeinput.py
+# %%{default_prefix}/gratia/common2/alarm.py
+# %%{default_prefix}/gratia/common2/checkpoint.py
+# %%{default_prefix}/gratia/common2/uuid_replacement.py
+# %%{default_prefix}/gratia/common2/meter.py
+# %%{default_prefix}/gratia/common2/pginput.py
+# %%{default_prefix}/gratia/common2/probeinput.py
 
 %package condor
 Summary: A Condor probe
