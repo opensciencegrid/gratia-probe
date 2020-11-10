@@ -45,7 +45,7 @@ WARNING  = 2
 INFO     = 3
 DEBUG    = 4
 
-want_pslot_attrs = [
+WANT_PSLOT_ATTRS = [
     'DaemonStartTime',
     'Cpus',
     'GLIDEIN_Site',
@@ -58,16 +58,16 @@ want_pslot_attrs = [
     'MyAddress',
 ]
 
-want_dslot_attrs = [
+WANT_DSLOT_ATTRS = [
     'CPUsUsage',
     'MemoryUsage',
 ]
 
-want_attrs = want_pslot_attrs + want_dslot_attrs
+WANT_ATTRS = WANT_PSLOT_ATTRS + WANT_DSLOT_ATTRS
 
-want_attrs_idx = { v:i for i,v in enumerate(want_attrs) }
+WANT_ATTRS_IDX = { v:i for i,v in enumerate(WANT_ATTRS) }
 
-send_attrs = [
+SEND_ATTRS = [
     'StartTime',     # DaemonStartTime
     'EndTime',       # <last seen time, after gone for N hours>
     'WallDuration',  # <EndTime or Now> - <StartTime>
@@ -80,7 +80,7 @@ send_attrs = [
     'MachineName',   # Machine
 ]
 
-OutboxRow = collections.namedtuple('OutboxRow', ['ID'] + send_attrs)
+OutboxRow = collections.namedtuple('OutboxRow', ['ID'] + SEND_ATTRS)
 
 
 def coljoin(cols):
@@ -98,7 +98,7 @@ schema_sql = [
     , total_cpu
     , unique (Name)
     );
-    """.format(jobs_cols=coljoin(want_attrs)),
+    """.format(jobs_cols=coljoin(WANT_ATTRS)),
 
 
     """
@@ -117,7 +117,7 @@ schema_sql = [
     , {inbox_cols}
     , unique (Name)
     );
-    """.format(inbox_cols=coljoin(want_attrs)),
+    """.format(inbox_cols=coljoin(WANT_ATTRS)),
 
     """
     create table inbox_archive
@@ -125,7 +125,7 @@ schema_sql = [
     , {inbox_cols}
     , unique (Name, next_updated)
     );
-    """.format(inbox_cols=coljoin(want_attrs)),
+    """.format(inbox_cols=coljoin(WANT_ATTRS)),
 
     """
     create index inbox_match
@@ -137,7 +137,7 @@ schema_sql = [
     ( id integer primary key autoincrement
     , {outbox_cols}
     );
-    """.format(outbox_cols=coljoin(send_attrs)),
+    """.format(outbox_cols=coljoin(SEND_ATTRS)),
 
 
     """
@@ -155,8 +155,8 @@ schema_sql = [
 --     and d.SlotType = 'Dynamic'
      group by p.name
        ;
-    """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
-               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs)),
+    """.format(pslot_cols=fmt_coljoin("p.{}", WANT_PSLOT_ATTRS),
+               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", WANT_DSLOT_ATTRS)),
 
 
     """
@@ -173,8 +173,8 @@ schema_sql = [
        and d.SlotType = 'D'  -- 'Dynamic'
      group by p.name
        ;
-    """.format(pslot_cols=fmt_coljoin("p.{}", want_pslot_attrs),
-               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", want_dslot_attrs)),
+    """.format(pslot_cols=fmt_coljoin("p.{}", WANT_PSLOT_ATTRS),
+               dslot_cols=fmt_coljoin("sum(d.{0}) as {0}", WANT_DSLOT_ATTRS)),
 
 
     """
@@ -248,7 +248,7 @@ def query_current_attrs(opts):
     if not opts.any_records:
         filter_cond += ' && IsOsgVoContainer =?= True'
 
-    ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=want_attrs,
+    ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=WANT_ATTRS,
                      constraint=filter_cond)
     return ads
 
@@ -296,12 +296,12 @@ def qmarks(n):
 def write_ads_to_sqlite(sqldb, ads, current_ts):
     DebugPrint(INFO, "Writing new ads to inbox")
 
-    n_attrs = len(want_attrs) + 1
+    n_attrs = len(WANT_ATTRS) + 1
     insert_sql = "insert into inbox values (%s)" % qmarks(n_attrs)
 
     def job2vals(job):
-        vals = list(map(eval_expr, map(job.get, want_attrs)))
-        mangle_job_attrs(vals, want_attrs_idx)
+        vals = list(map(eval_expr, map(job.get, WANT_ATTRS)))
+        mangle_job_attrs(vals, WANT_ATTRS_IDX)
         return [current_ts] + vals
 
     rc = sqldb.executemany(insert_sql, map(job2vals, ads)).rowcount
@@ -358,7 +358,7 @@ def detect_finished_jobs(sqldb, current_ts):
         select *
           from finished2
          where EndTime < ?
-    """ % ", ".join(send_attrs)
+    """ % ", ".join(SEND_ATTRS)
 
     delete_sql = """
         delete from jobs
