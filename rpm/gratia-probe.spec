@@ -727,7 +727,7 @@ Summary: osg pilot container probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 #Requires: python-sqlite
-Requires: python-condor
+Requires: %{condor_python}
 License: See LICENSE.
 
 %description osg-pilot-container
