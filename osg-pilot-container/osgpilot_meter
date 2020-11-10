@@ -239,13 +239,14 @@ schema_sql = [
 
 # query collector for machine (startd) ads
 
-def query_current_attrs():
+def query_current_attrs(opts):
     import htcondor
     pool = 'flock.opensciencegrid.org' #:9618
     coll = htcondor.Collector(pool)
 
     filter_cond = 'SlotType != "Static"'
-    #filter_cond += ' && IsOsgVoContainer =?= True'
+    if not opts.any_records:
+        filter_cond += ' && IsOsgVoContainer =?= True'
 
     ads = coll.query(ad_type=htcondor.AdTypes.Startd, projection=want_attrs,
                      constraint=filter_cond)
@@ -440,7 +441,7 @@ def detect_new_jobs(sqldb, current_ts):
 
 def query_and_update_db(opts):
     current_ts = int(time.time())
-    ads = query_current_attrs()
+    ads = query_current_attrs(opts)
 
     sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)
@@ -524,6 +525,10 @@ def parse_opts():
     parser.add_option("-v", "--verbose",
         help="Enable verbose logging to stdout.",
         default=False, action="store_true", dest="verbose")
+
+    parser.add_option("-a", "--any-records",
+        help="Do not limit records to those with IsOsgVoContainer.",
+        default=False, action="store_true", dest="any_records")
 
     opts, args = parser.parse_args()
 
