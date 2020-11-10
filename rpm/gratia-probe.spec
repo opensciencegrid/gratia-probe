@@ -262,6 +262,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/Dockerfile
 
   # TODO: allow test directory, remove from RPM
 
