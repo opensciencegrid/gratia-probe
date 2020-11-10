@@ -28,7 +28,7 @@ RUN cd \
 
 RUN osg-build rpmbuild /root/bld
 
-RUN yum install -y /root/bld/_build_results/gratia-probe-*-*-*.rpm
+RUN yum install -y /root/bld/_build_results/gratia-probe-{osg-pilot-container,common}-*-*.rpm
 
 RUN sed -i -e '/SiteName=/s/"Generic site"/"OSG Pilot Container Probe"/' \
            -e '/EnableProbe=/s/"0"/"1"/' \
