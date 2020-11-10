@@ -3,8 +3,6 @@ import os
 import sys
 import math
 import time
-import string
-import exceptions
 
 # Returns a nicely formatted string for the floating point number
 # provided.  This number will be rounded to the supplied accuracy
@@ -97,8 +95,8 @@ def pythonVersionRequire(
         result = True
     else:
         try:
-            releaseLevelIndex = releaseLevelsDir[string.lower(releaseLevel)]
-            releaseCompareIndex = releaseLevelsDir[string.lower(sys.version_info[3])]
+            releaseLevelIndex = releaseLevelsDir[releaseLevel.lower()]
+            releaseCompareIndex = releaseLevelsDir[sys.version_info[3].lower()]
         except KeyError:
             result = False
         if releaseLevelIndex > releaseCompareIndex:
@@ -112,7 +110,7 @@ def pythonVersionRequire(
     return result
 
 
-class InternalError(exceptions.Exception):
+class InternalError(Exception):
     pass
 
 
@@ -132,7 +130,7 @@ def TimeToString(targ=None):
 __lrms = None
 def setProbeBatchManager(lrms):
     global __lrms
-    __lrms = string.lower(lrms)
+    __lrms = lrms.lower()
 
 def getProbeBatchManager():
     return __lrms
@@ -142,4 +140,8 @@ def genDefaultProbeName():
     meterName = 'auto:' + f.read().strip()
     f.close()
     return meterName
+
+# for python2/3 compat, when you have a bytes and want a str
+def bytes2str(s):
+    return s if isinstance(s, str) else s.decode(errors='ignore')
 

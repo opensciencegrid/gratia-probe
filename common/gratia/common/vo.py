@@ -84,7 +84,7 @@ def __InitializeDictionary__():
     try:
         __InitializeDictionary_internal(mapfile)
         __dictionaryErrorStatus = False
-    except IOError, e:
+    except IOError as e:
         DebugPrint(0, 'WARNING: IO error exception initializing user-vo-map mapfile %s: %s' % (mapfile, str(e)))
         DebugPrintTraceback()
 

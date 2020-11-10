@@ -47,9 +47,9 @@ def createCertRequest(pkey, digest='md5', **name):
 
 def createCertificate(
     req,
-    (issuerCert, issuerKey),
+    issuerCert__issuerKey,
     serial,
-    (notBefore, notAfter),
+    notBefore__notAfter,
     digest='md5',
     ):
     """
@@ -64,9 +64,14 @@ def createCertificate(
                notAfter   - Timestamp (relative to now) when the certificate
                             stops being valid
                digest     - Digest method to use for signing, default is md5
+
+    Note: two arguments are provided as tuples:
+        (issuerCert, issuerKey) = issuerCert__issuerKey
+        (notBefore, notAfter)   = notBefore__notAfter
     Returns:   The signed certificate in an X509 object
     """
-
+    (issuerCert, issuerKey) = issuerCert__issuerKey
+    (notBefore, notAfter) = notBefore__notAfter
     cert = crypto.X509()
     cert.set_serial_number(serial)
     cert.gmtime_adj_notBefore(notBefore)

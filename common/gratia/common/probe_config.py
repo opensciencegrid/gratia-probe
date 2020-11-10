@@ -2,8 +2,12 @@
 import os
 import re
 import sys
-import urllib
-import httplib
+try:
+    import urllib
+    import httplib
+except ImportError:
+    import urllib.parse as urllib
+    import http.client as httplib
 import xml.dom.minidom
 
 from OpenSSL import crypto
@@ -67,7 +71,7 @@ class ProbeConfiguration:
         if self.__doc == None:
             try:
                 self.__loadConfiguration__()
-            except xml.parsers.expat.ExpatError, ex:
+            except xml.parsers.expat.ExpatError as ex:
                 sys.stderr.write('Parse error in ' + self.__configname + ': ' + str(ex) + '\n')
                 raise
 
@@ -147,7 +151,7 @@ class ProbeConfiguration:
                                        'not really')])
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         qconnection.request('POST', self.get_RegistrationService(), queryString, headers)
-        responseString = qconnection.getresponse().read()
+        responseString = utils.bytes2str(qconnection.getresponse().read())
         resplist = responseString.split(':')
         if len(resplist) == 3 and resplist[0] == 'ok':
 

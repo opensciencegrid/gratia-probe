@@ -2,16 +2,13 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
-Release:            1%{?dist}
-
+Release:            2%{?dist}
 License:            GPL
-Group:              Applications/System
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
-BuildRequires:      python-devel
-
-BuildRequires: gcc-c++
+BuildRequires:      make
+BuildRequires:      gcc-c++
 
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
@@ -33,10 +30,11 @@ ExcludeArch: noarch
 
 %define customize_probeconfig(d:) sed -i "s#@PROBE_HOST@#%{meter_name}#" %{_sysconfdir}/gratia/%{-d*}/ProbeConfig
 
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+%if 0%{?rhel} >= 8
+%global __python /usr/bin/python3
 %endif
+
+%global debug_package %{nil}
 
 ########################################################################
 # Source and patch specifications
@@ -63,6 +61,11 @@ Prefix: /etc
 %install
 # Setup
 rm -rf $RPM_BUILD_ROOT
+
+%if 0%{?rhel} >= 8
+find . -type f -exec \
+    sed -ri '1s,^#!\s*(/usr)?/bin/(env *)?python.*,#!%{__python},' '{}' +
+%endif
 
 install -d $RPM_BUILD_ROOT/%{_datadir}/gratia
 install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
@@ -234,6 +237,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   # Copy the condor configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+  sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
@@ -409,16 +413,16 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
-# this is in common: %{python_sitelib}/gratia/__init__.py*
+# this is in common: %%{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
 %dir %{default_prefix}/gratia/common2
-# %{default_prefix}/gratia/common2/alarm.py
-# %{default_prefix}/gratia/common2/checkpoint.py
-# %{default_prefix}/gratia/common2/uuid_replacement.py
-# %{default_prefix}/gratia/common2/meter.py
-# %{default_prefix}/gratia/common2/pginput.py
-# %{default_prefix}/gratia/common2/probeinput.py
+# %%{default_prefix}/gratia/common2/alarm.py
+# %%{default_prefix}/gratia/common2/checkpoint.py
+# %%{default_prefix}/gratia/common2/uuid_replacement.py
+# %%{default_prefix}/gratia/common2/meter.py
+# %%{default_prefix}/gratia/common2/pginput.py
+# %%{default_prefix}/gratia/common2/probeinput.py
 
 %package condor
 Summary: A Condor probe
@@ -917,6 +921,13 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Nov 05 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-2
+- Build fix: specify python3 explicitly for el8 (SOFTWARE-4348)
+
+* Wed Nov 04 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-1
+- Add python3 support (SOFTWARE-4285, 4287, 4288, 4283)
+- Add docker testing container (SOFTWARE-4313)
+
 * Fri Jul 31 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.20.14-1
 - Fix unquoted cluster names in slurm probe sql (SOFTWARE-4189)
 - Detect condor vs htcondor-ce probe config (SOFTWARE-4195)

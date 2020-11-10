@@ -47,7 +47,7 @@ def RemoveFile(filename):
     result = True
     try:
         os.remove(filename)
-    except os.error, err:
+    except os.error as err:
         if err.errno == errno.ENOENT:
             result = False
         else:
@@ -61,7 +61,7 @@ def RemoveDir(dirname):
 
     try:
         os.rmdir(dirname)
-    except os.error, err:
+    except os.error as err:
         if err.errno == errno.ENOENT:
             pass
         else:

@@ -2,7 +2,6 @@
 import os
 import re
 import glob
-import string
 import fnmatch
 import xml.dom.minidom
 
@@ -21,7 +20,7 @@ def FixDN(DN):
 
     # Put DN into a known format: /-separated with USERID= instead of UID=
 
-    fixedDN = string.replace(string.join(string.split(DN, r', '), r'/'), r'/UID=', r'/USERID=')
+    fixedDN = '/'.join(DN.split(', ').replace('/UID=', '/USERID='))
     if fixedDN[0] != r'/':
         fixedDN = r'/' + fixedDN
     return fixedDN
@@ -175,12 +174,12 @@ def readCertInfoLog(localJobId):
                 for item in __quoteSplit.findall(line):
                     split_item = item.split('=', 1)
                     res[split_item[0]] = split_item[1]
-                if res.has_key('lrmsID') and res['lrmsID'] == str(localJobId):
-                    if res.has_key('userDN'):
+                if 'lrmsID' in res and res['lrmsID'] == str(localJobId):
+                    if 'userDN' in res:
                         res['DN'] = res['userDN']
                     else:
                         res['DN'] = None
-                    if res.has_key('userFQAN'):
+                    if 'userFQAN' in res:
                         res['FQAN'] = res['userFQAN']
                     else:
                         res['FQAN'] = None
@@ -211,7 +210,7 @@ def _findCertinfoFile(localJobId, probeName):
     if lrms == None:
         match = re.search(r'^(?P<Type>.*?):', probeName)
         if match:
-            lrms = string.lower(match.group('Type'))
+            lrms = match.group('Type').lower()
             DebugPrint(4, 'findCertInfoFile: obtained LRMS type ' + lrms + ' from ProbeName')
 
     # Ascertain local job ID
@@ -249,7 +248,7 @@ def _findCertinfoFile(localJobId, probeName):
             raise
         except SystemExit:
             raise
-        except Exception, e:
+        except Exception as e:
             DebugPrint(0, 'ERROR: Unable to parse XML file ' + certinfo, ': ', e)
             continue
 
@@ -263,8 +262,7 @@ def _findCertinfoFile(localJobId, probeName):
 
                 # Check LRMS as recorded in certinfo matches our LRMS ascertained from system or probe.
 
-                certinfo_lrms = string.lower(GetNodeData(certinfo_nodes[0].getElementsByTagName('BatchManager'
-                                             ), 0))
+                certinfo_lrms = GetNodeData(certinfo_nodes[0].getElementsByTagName('BatchManager'), 0).lower()
                 DebugPrint(4, 'findCertInfoFile: want LRMS ' + lrms + ': found ' + certinfo_lrms)
                 if certinfo_lrms == lrms:  # Match
                     found = 1

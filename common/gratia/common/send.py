@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import glob
-import string
 import xml.dom.minidom
 
 from gratia.common.config import ConfigProxy
@@ -47,7 +46,7 @@ def Send(record):
         # Parse it into nodes, etc
 
         DebugPrint(4, 'DEBUG: parsing XML')
-        xmlDoc = safeParseXML(string.join(record.XmlData, r''))
+        xmlDoc = safeParseXML(''.join(record.XmlData))
         DebugPrint(4, 'DEBUG: parsing XML: OK')
 
         if not xmlDoc:
@@ -198,7 +197,7 @@ def Send(record):
         raise
     except SystemExit:
         raise
-    except Exception, e:
+    except Exception as e:
         DebugPrint(0, 'ERROR: ' + str(e) + ' exception caught while processing record ')
         DebugPrint(0, '       This record has been LOST')
         DebugPrintTraceback()
@@ -425,7 +424,7 @@ def SendHandshake(record):
 
     # Parse it into nodes, etc (transitional: this will eventually be native format)
 
-    xmlDoc = safeParseXML(string.join(record.XmlData, r''))
+    xmlDoc = safeParseXML(''.join(record.XmlData))
 
     if not xmlDoc:
         failedHandshakes += 1

@@ -199,6 +199,9 @@ def createCertinfoFile(classad, directory):
     if not full_filename.startswith(directory):
         return False
 
+    if not isinstance(xmldoc, bytes):
+        # bytes is required for os.write()
+        xmldoc = xmldoc.encode()
     try:
         # Note the combination of flags: Gratia typically runs as root and
         # processes a world-writable sticky directory.  Hence, we need
@@ -207,7 +210,7 @@ def createCertinfoFile(classad, directory):
             | os.O_EXCL, stat.S_IRUSR | stat.S_IWUSR)
         os.write(fd, xmldoc)
         os.close(fd)
-    except OSError, oe:
+    except OSError as oe:
         # There are quite a few cases where we might try to write out a
         # certinfo file that exists (e.g., the condor_ce_q case).
         # Accordingly, we signal success in this case.
@@ -235,7 +238,7 @@ def classadToCertinfo(filename, output_dir):
     DebugPrint(4, "Converting ClassAd %s to certinfo file." % filename)
     try:
         fd = open(filename)
-    except IOError, ie:
+    except IOError as ie:
         DebugPrint(1, "Unable to open ClassAd %s for certinfo conversion" \
             ": %s" % (filename, str(ie)))
         return
@@ -278,7 +281,7 @@ def processHistoryDir():
             raise
         except SystemExit:
             raise
-        except Exception, e:
+        except Exception as e:
             DebugPrint(0, "Failure when trying to process Condor-CE history %s" \
                 " into a certinfo file: %s" % (filename, str(e)))
             DebugPrintTraceback(e)

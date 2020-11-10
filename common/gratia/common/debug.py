@@ -1,8 +1,9 @@
 
+from __future__ import print_function
+
 import os
 import sys
 import time
-import string
 import syslog
 import traceback
 
@@ -33,7 +34,7 @@ def GenerateOutput(prefix, *arg):
 
 def Error(*arg):
     out = GenerateOutput('Error in Gratia probe: ', *arg)
-    print >> sys.stderr, time.strftime(r'%Y-%m-%d %H:%M:%S %Z', time.localtime()) + ' ' + out
+    print(time.strftime(r'%Y-%m-%d %H:%M:%S %Z', time.localtime()) + ' ' + out, file=sys.stderr)
     if getGratiaConfig() and getGratiaConfig().get_UseSyslog():
         LogToSyslog(-1, GenerateOutput(r'', *arg))
     else:
@@ -58,7 +59,7 @@ def DebugPrint(level, *arg):
         if  level < getGratiaConfig().get_DebugLevel():
             out = time.strftime(r'%Y-%m-%d %H:%M:%S %Z', time.localtime()) + ' ' + GenerateOutput('Gratia: ',
                     *arg)
-            print >> sys.stderr, out
+            print(out, file=sys.stderr)
         if getGratiaConfig() and level < getGratiaConfig().get_LogLevel():
             out = GenerateOutput('Gratia: ', *arg)
             if getGratiaConfig().get_UseSyslog():
@@ -101,7 +102,7 @@ def LogToFile(message):
 
         if os.path.exists(filename) and not os.access(filename, os.W_OK):
             os.chown(filename, os.getuid(), os.getgid())
-            os.chmod(filename, 0755)
+            os.chmod(filename, 0o755)
 
         # Open/Create a log file for today's date
 
@@ -117,8 +118,8 @@ def LogToFile(message):
 
             # Print the error message only once
 
-            print >> sys.stderr, 'Gratia: Unable to log to file:  ', filename, ' ', sys.exc_info(), '--', \
-                sys.exc_info()[0], '++', sys.exc_info()[1]
+            print('Gratia: Unable to log to file:  ', filename, ' ', sys.exc_info(), '--', \
+                sys.exc_info()[0], '++', sys.exc_info()[1], file=sys.stderr)
         __logFileIsWriteable__ = False
 
     if current_file != None:
@@ -151,8 +152,8 @@ def LogToSyslog(level, message):
 
             # Print the error message only once
 
-            print >> sys.stderr, 'Gratia: Unable to log to syslog:  ', sys.exc_info(), '--', sys.exc_info()[0], \
-                '++', sys.exc_info()[1]
+            print('Gratia: Unable to log to syslog:  ', sys.exc_info(), '--', sys.exc_info()[0], \
+                '++', sys.exc_info()[1], file=sys.stderr)
         __logFileIsWriteable__ = False
 
     syslog.closelog()
@@ -160,7 +161,7 @@ def LogToSyslog(level, message):
 
 def DebugPrintTraceback(debugLevel=4):
     DebugPrint(4, 'In traceback print (0)')
-    message = string.join(traceback.format_exception(*sys.exc_info()), r'')
+    message = ''.join(traceback.format_exception(*sys.exc_info()))
     DebugPrint(4, 'In traceback print (1)')
     DebugPrint(debugLevel, message)
 

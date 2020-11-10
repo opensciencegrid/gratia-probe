@@ -7,6 +7,8 @@ The aim is to prevent the need for a "wrapper script" in shell that
 proceeds the setup of the probe.
 """
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -115,7 +117,7 @@ def ExclusiveLock(given_lock_location = None, timeout=3600):
             pid_with_lock = os.getpid()
             fd.flush()
             return
-        except IOError, ie:
+        except IOError as ie:
             if not ((ie.errno == errno.EACCES) or (ie.errno == errno.EAGAIN)):
                 raise
             if check_lock(fd, timeout):
@@ -131,7 +133,7 @@ def ExclusiveLock(given_lock_location = None, timeout=3600):
                     pid_with_lock = os.getpid()
                     fd.flush()
                     return
-                except IOError, ie:
+                except IOError as ie:
                     if not ((ie.errno == errno.EACCES) or (ie.errno == errno.EAGAIN)):
                         raise
         fd.close()
@@ -204,7 +206,7 @@ def get_lock_pid(my_fd):
         else:
             arg = struct.pack(linux_struct_flock, fcntl.F_WRLCK, 0, 0, 0, 0)
         result = fcntl.fcntl(my_fd, fcntl.F_GETLK, arg)
-    except IOError, ie:
+    except IOError as ie:
         if ie.errno != errno.EINVAL:
             raise
         DebugPrint(0, "Unable to determine which PID has the lock due to a "
@@ -228,9 +230,9 @@ if __name__ == "__main__":
     ExclusiveLock("lock_test")
     if os.fork() == 0:
         ExclusiveLock("lock_test")
-        print "Child got the lock.  Sleep 5, then exit"
+        print("Child got the lock.  Sleep 5, then exit")
         time.sleep(5)
         os._exit(0) #pylint: disable=W0212
-    print "Parent got the lock.  Sleep 5, then exit"
+    print("Parent got the lock.  Sleep 5, then exit")
     time.sleep(5)
 
