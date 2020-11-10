@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.21.0
-Release:            2%{?dist}
+Release:            3%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -30,8 +30,11 @@ ExcludeArch: noarch
 
 %define customize_probeconfig(d:) sed -i "s#@PROBE_HOST@#%{meter_name}#" %{_sysconfdir}/gratia/%{-d*}/ProbeConfig
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 7
 %global __python /usr/bin/python3
+%global condor_python python3-condor
+%else
+%global condor_python python2-condor
 %endif
 
 %global debug_package %{nil}
@@ -62,7 +65,7 @@ Prefix: /etc
 # Setup
 rm -rf $RPM_BUILD_ROOT
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 7
 find . -type f -exec \
     sed -ri '1s,^#!\s*(/usr)?/bin/(env *)?python.*,#!%{__python},' '{}' +
 %endif
@@ -428,7 +431,7 @@ Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: condor
-Requires: condor-python
+Requires: %{condor_python}
 
 %description condor
 The Condor probe for the Gratia OSG accounting system.
@@ -901,6 +904,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Tue Nov 10 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-3
+- Fix condor-python requirement for python3
+- Require python3 explicitly for el7, too (SOFTWARE-4348)
+
 * Thu Nov 05 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-2
 - Build fix: specify python3 explicitly for el8 (SOFTWARE-4348)
 
