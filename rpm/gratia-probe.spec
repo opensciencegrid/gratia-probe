@@ -32,6 +32,9 @@ ExcludeArch: noarch
 
 %if 0%{?rhel} >= 8
 %global __python /usr/bin/python3
+%global condor_python python3-condor
+%else
+%global condor_python python2-condor
 %endif
 
 %global debug_package %{nil}
@@ -429,7 +432,7 @@ Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: condor
-Requires: condor-python
+Requires: %{condor_python}
 
 %description condor
 The Condor probe for the Gratia OSG accounting system.
