@@ -103,7 +103,7 @@ try:
         else:
             if 0 < tsec < 86400:
                 format_str = format_no_day
-            k = [x[1] for x in list(f.parse(format_str))]
+            k = [x[1] for x in f.parse(format_str)]
 
             for i in ('D', 'H', 'M', 'S'):
                 if i in k and i in list(l.keys()):
