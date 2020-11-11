@@ -17,7 +17,7 @@ import socket   # to get hostname
 import optparse
 #import re  # rpm parsing
 import signal  # is in the system library
-from alarm import Alarm
+from .alarm import Alarm
 
 # Python profiler
 import hotshot
@@ -34,8 +34,8 @@ from gratia.common.debug import DebugPrint, LogFileName
 import gratia.common.GratiaWrapper as GratiaWrapper
 
 # in same package gratia.common2
-import timeutil
-from probeinput import ProbeInput
+from . import timeutil
+from .probeinput import ProbeInput
 
 prog_version = "%%%RPMVERSION%%%"
 
@@ -96,7 +96,7 @@ class GratiaProbe(object):
         # Option parsing must be after defaults
         try:
             self._opts, self._args = self.parse_opts()
-        except Exception, e:
+        except Exception as e:
             DebugPrint(1, "Error parsing the command line: %s" % e)
             # print >> sys.stderr, str(e)
             sys.exit(1)
@@ -405,7 +405,7 @@ class GratiaProbe(object):
         if self._probeinput:
             try:
                 input_version = self._probeinput.get_version()
-            except Exception, e:
+            except Exception as e:
                 DebugPrint(1, "Unable to get input version: %s" % str(e))
                 raise
             return input_version
@@ -442,7 +442,7 @@ class GratiaProbe(object):
             raise
         except KeyboardInterrupt:
             raise
-        except Exception, e:
+        except Exception as e:
             DebugPrint(0, "Unable to get input version: %s" % str(e))
             raise
 
