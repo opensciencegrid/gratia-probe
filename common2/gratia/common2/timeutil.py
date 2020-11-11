@@ -28,7 +28,7 @@ try:
     from gratia.common.debug import DebugPrint
 except ImportError:
     def DebugPrint(val, msg):
-        print(("DEBUG LEVEL %s: %s" % (val, msg)))
+        print("DEBUG LEVEL %s: %s" % (val, msg))
 
 
 
