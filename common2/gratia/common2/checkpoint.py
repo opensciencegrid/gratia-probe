@@ -1,6 +1,7 @@
 #!/usr/bin/python
 __author__ = 'marcom'
 
+from __future__ import print_function
 
 import sys  # used for main and DebugPrint replacement
 import os
@@ -9,9 +10,9 @@ import stat
 import tempfile
 from datetime import datetime, timedelta
 try:
-    import cPickle
+    import cPickle as pickle
 except ImportError:
-    import pickle as cPickle
+    import pickle
 
 try:
     from gratia.common.debug import DebugPrint
@@ -95,7 +96,8 @@ class Checkpoint(object):
         if makedir and not os.path.exists(dir):
             try:
                 os.makedirs(dirname)
-            except IOError, (errno, strerror):
+            except IOError as e:
+                (errno, strerror) = e.args
                 raise IOError("Could not create checkpoint directory %s: %s" %
                               (dirname, strerror))
         try:
@@ -130,7 +132,7 @@ class SimpleCheckpoint(Checkpoint):
             try:
                 fd = os.open(target, os.O_RDWR | os.O_CREAT)
                 self._fp = os.fdopen(fd, 'r+')
-                self._val = long(self._fp.readline())
+                self._val = int(self._fp.readline())
                 if self._val < min_val:
                     self._val = min_val
                 DebugPrint(3, "Resuming from checkpoint in %s" % target)
@@ -152,7 +154,7 @@ class SimpleCheckpoint(Checkpoint):
 
     def set_val(self, val):
         """Set checkpoint value"""
-        self._val = long(val)
+        self._val = int(val)
         if self._fp:
             self._fp.seek(0)
             self._fp.write(str(self._val) + "\n")
@@ -244,7 +246,13 @@ class DateTransactionCheckpoint(Checkpoint):
         # loading from file
         try:
             self._load(target)
-        except IOError, (errno, strerror):
+        except IOError as e:
+            (errno, strerror) = e.args
+            # This is not really an error, since it might be the first
+            # time we try to make this checkpoint.
+            # We log a warning, just in case some nice person has
+            # deleted the checkpoint file.
+            #log = logging.getLogger('checkpoint')
             # This is not really an error, since it might be the first
             # time we try to make this checkpoint.
             # We log a warning, just in case some nice person has
@@ -271,7 +279,7 @@ class DateTransactionCheckpoint(Checkpoint):
 
     def _load(self, target):
         pkl_file = open(target, 'rb')
-        self._dateStamp, self._transaction = cPickle.load(pkl_file)
+        self._dateStamp, self._transaction = pickle.load(pkl_file)
         pkl_file.close()
 
     def get_val(self):
@@ -354,7 +362,7 @@ class DateTransactionCheckpoint(Checkpoint):
 
         if self._tmp_fp:
             self._tmp_fp.seek(0)
-            cPickle.dump([datestamp, txn], self._tmp_fp, -1)
+            pickle.dump([datestamp, txn], self._tmp_fp, -1)
             self._tmp_fp.truncate()
             self._tmp_fp.flush()
             # make sure that the file is on disk
@@ -401,7 +409,8 @@ class DateTransactionCheckpoint(Checkpoint):
             self._tmp_filename = ''
             self._tmp_fp = None  # will trigger the creation of a new temp file
 
-        except OSError, (errno, strerror):
+        except OSError as e:
+            (errno, strerror) = e.args
             raise IOError("Checkpoint.commit could not rename %s to %s: %s" %
                           (self._tmp_filename, self._target, strerror))
 
@@ -466,7 +475,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
         # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
         # Using a list instead of unpacking allows to upgrade from DateTransactionCheckpoint to
         # DateTransactionAuxCheckpoint
-        vlist = cPickle.load(pkl_file)
+        vlist = pickle.load(pkl_file)
         self._dateStamp = vlist[0]
         self._transaction = vlist[1]
         if len(vlist) > 2:
@@ -515,7 +524,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
 
         if self._tmp_fp:
             self._tmp_fp.seek(0)
-            cPickle.dump([datestamp, txn, aux], self._tmp_fp, -1)
+            pickle.dump([datestamp, txn, aux], self._tmp_fp, -1)
             self._tmp_fp.truncate()
             self._tmp_fp.flush()
             # make sure that the file is on disk
@@ -563,7 +572,8 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
             self._tmp_filename = ''
             self._tmp_fp = None  # will trigger the creation of a new temp file
 
-        except OSError, (errno, strerror):
+        except OSError as e:
+            (errno, strerror) = e.args
             raise IOError("Checkpoint.commit could not rename %s to %s: %s" %
                           (self._tmp_filename, self._target, strerror))
 
@@ -615,12 +625,13 @@ def load_checkpoint(target):
     vlist = []
     try:
         pkl_file = open(target, 'rb')
-        vlist = cPickle.load(pkl_file)
-    except IOError, (errno, strerror):
-        print "Couldn't read the checkpoint file %s: %s." % (target, strerror)
+        vlist = pickle.load(pkl_file)
+    except IOError as e:
+        (errno, strerror) = e.args
+        print("Couldn't read the checkpoint file %s: %s." % (target, strerror))
         raise
     except EOFError:
-        print "The checkpoint file %s is empty or has wrong data (EOFError)." % (target,)
+        print("The checkpoint file %s is empty or has wrong data (EOFError)." % (target,))
         raise
     # Assume that 3 parameters is DTA, 2 is DT, 1 is simple cp
     if len(vlist) == 3:
@@ -633,14 +644,14 @@ def load_checkpoint(target):
         p = DateTransactionAuxCheckpoint(target)
         cp.set_val(vlist)
     else:
-        print "Invalid length of checkpoint arguments %s (%s)" % (vlist, len(vlist))
+        print("Invalid length of checkpoint arguments %s (%s)" % (vlist, len(vlist)))
     return cp
 
 
 def test():
-    print "Checkpoint test"
-    print "File list (in %s)" % os.curdir
-    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print("Checkpoint test")
+    print("File list (in %s)" % os.curdir)
+    print("%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')])
     c1 = SimpleCheckpoint()  # ('checkpoint-file')
     c1.value = '55'
     c2 = SimpleCheckpoint('cptestfile-simplecheckpoint')
@@ -648,20 +659,20 @@ def test():
     c3 = DateTransactionCheckpoint('cptestfile-dtcheckpoint')
     c3.value = {'date': datetime.now(),
                 'transaction': 77}
-    print "Before close"
-    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print("Before close")
+    print("%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')])
     c3.close()
-    print "After close"
-    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print("After close")
+    print("%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')])
     cc1 = SimpleCheckpoint()
     cc2 = SimpleCheckpoint('cptestfile-simplecheckpoint')
     cc3 = DateTransactionCheckpoint('cptestfile-dtcheckpoint')
-    print "Checkpoint values: %s, %s, %s." % (cc1.value, cc2.value, cc3.value)
-    print "Before final close"
-    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print("Checkpoint values: %s, %s, %s." % (cc1.value, cc2.value, cc3.value))
+    print("Before final close")
+    print("%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')])
     cc3.close()
-    print "At end"
-    print "%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')]
+    print("At end")
+    print("%s" % [i for i in os.listdir(os.curdir) if i.startswith('cptest')])
 
 
 def usage(name):
@@ -676,7 +687,7 @@ Options:
  -t CP_TYPE - checkpoint type [simple|dt(DateTransactionCheckpoint)|dta(DateTransactionAuxCheckpoint)]
               default:dt
     """
-    print outstr % ({'name': name})
+    print(outstr % ({'name': name}))
 
 if __name__ == "__main__":
     import getopt
@@ -686,7 +697,7 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "hvf:t:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
-        print str(err)
+        print(str(err))
         usage(sys.argv[0])
         sys.exit(2)
     cp_fname = None
@@ -704,15 +715,15 @@ if __name__ == "__main__":
             try:
                 cp_type = CHECKPOINTS[a]
             except KeyError:
-                print "Invalid checkpoint type: %s" % a
+                print("Invalid checkpoint type: %s" % a)
                 usage(sys.argv[0])
                 sys.exit(2)
         else:
-            print "Invalid option %s" % o
+            print("Invalid option %s" % o)
             usage(sys.argv[0])
             sys.exit(2)
     if not args:
-        print "Must have at least one argument (%s)" % args
+        print("Must have at least one argument (%s)" % args)
         usage(sys.argv[0])
         sys.exit(2)
 
@@ -731,24 +742,24 @@ if __name__ == "__main__":
             # checkpoint type is specified)
             cp = load_checkpoint(cp_fname)
         if isinstance(cp, DateTransactionCheckpoint):
-            print "Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction())
+            print("Checkpoint (%s) value:\n%s\n%s" % (cp.get_target(), cp.date(), cp.transaction()))
             if isinstance(cp, DateTransactionAuxCheckpoint):
                 # print also this
-                print "%s" % (repr(cp.aux()),)
+                print("%s" % (repr(cp.aux()),))
         else:
-            print "Checkpoint (%s/%s) value:\n%s" % (cp.get_target(), type(cp), repr(cp.get_val()))
+            print("Checkpoint (%s/%s) value:\n%s" % (cp.get_target(), type(cp), repr(cp.get_val())))
     elif args[0] == 'write':
         if cp is None:
             # DateTransactionCheckpoint is the default for write (read tries to guess the type in the file)
             cp = DateTransactionCheckpoint(cp_fname)
         if len(args) < 2:
-            print "Must provide at least one value to write (%s)" % args[1:]
+            print("Must provide at least one value to write (%s)" % args[1:])
             usage(sys.argv[0])
             sys.exit(2)
         for i in range(len(args), 4):
             args.append(None)
         try:
-            args[2] = long(args[2])
+            args[2] = int(args[2])
         except (ValueError, TypeError):
             pass
         try:
@@ -762,7 +773,7 @@ if __name__ == "__main__":
                 # python >= 2.5: tmp_date = datetime.strptime(sys.argv[3], "%Y-%m-%d")
                 tmp_date = datetime(*(time.strptime(args[1], "%Y-%m-%d")[0:6]))
         except ValueError:
-            print "Warning: %s is not a valid time" % args[1]
+            print("Warning: %s is not a valid time" % args[1])
             tmp_date = args[1]
 
         if isinstance(cp, DateTransactionAuxCheckpoint):
@@ -771,8 +782,8 @@ if __name__ == "__main__":
             cp.set_date_transaction(tmp_date, args[2])
         else:
             cp.set_val(tmp_date)
-        print "Checkpoint saved"
+        print("Checkpoint saved")
     else:
-        print "Invalid argument (%s)" % args
+        print("Invalid argument (%s)" % args)
         usage(sys.argv[0])
         sys.exit(2)

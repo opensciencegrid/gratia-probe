@@ -1,19 +1,17 @@
 #!/usr/bin/python
 
+from __future__ import absolute_import
+
 import sys
 import traceback
 
 # For PostgresSQL
 import psycopg2
 import psycopg2.extras
-try:
-    import uuid  # for unique cursor name
-except ImportError:
-    # for python < 2.5 (uuid not available)
-    import uuid_replacement as uuid
+import uuid
 
 from gratia.common.Gratia import DebugPrint
-from probeinput import DbInput
+from .probeinput import DbInput
 
 
 class PgInput(DbInput):
@@ -77,9 +75,9 @@ class PgInput(DbInput):
             self._connection = psycopg2.connect(dburl)
             self._cursor = self._get_cursor(self._connection)
         except:
-            tblist = traceback.format_exception(sys.exc_type,
-                                                sys.exc_value,
-                                                sys.exc_traceback)
+            tblist = traceback.format_exception(sys.exc_info()[0],
+                                                sys.exc_info()[1],
+                                                sys.exc_info()[2])
             errmsg = 'Failed to connect to %s:\n%s' % (dburl, "\n".join(tblist))
             DebugPrint(1, errmsg)
             raise
@@ -191,7 +189,7 @@ class PgInput(DbInput):
         DebugPrint(4, "Executing SQL: %s" % sql)
         try:
             cursor.execute(sql)
-        except psycopg2.ProgrammingError, er:
+        except psycopg2.ProgrammingError as er:
             DebugPrint(2, "ERROR, error running the query: %s" % er)
         if cursor.rowcount is None:
             DebugPrint(2, "WARNING, problems running the query: %s" % sql)

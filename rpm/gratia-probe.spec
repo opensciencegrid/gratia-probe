@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.21.0
-Release:            3%{?dist}
+Version:            1.21.1
+Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -904,6 +904,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Nov 11 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.1-1
+- Add python2/3 compat for common2 to fix el7 build (SOFTWARE-4348)
+
 * Tue Nov 10 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.0-3
 - Fix condor-python requirement for python3
 - Require python3 explicitly for el7, too (SOFTWARE-4348)

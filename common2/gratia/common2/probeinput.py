@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import absolute_import
+
 # inputs for probes
 
 import os
@@ -9,7 +11,7 @@ import pwd, grp   # for user utility
 
 from gratia.common.Gratia import DebugPrint
 
-from checkpoint import SimpleCheckpoint, DateTransactionCheckpoint
+from .checkpoint import SimpleCheckpoint, DateTransactionCheckpoint
 
 class IgnoreRecordException(Exception):
     """Allows to skip code when ignoring a record

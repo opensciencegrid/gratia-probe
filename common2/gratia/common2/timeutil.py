@@ -15,6 +15,8 @@ __author__ = 'marcom'
 #
 ###########################################################################
 
+from __future__ import print_function
+
 # Standard libraries
 import os
 import time
@@ -26,7 +28,7 @@ try:
     from gratia.common.debug import DebugPrint
 except ImportError:
     def DebugPrint(val, msg):
-        print ("DEBUG LEVEL %s: %s" % (val, msg))
+        print("DEBUG LEVEL %s: %s" % (val, msg))
 
 
 
@@ -42,7 +44,7 @@ def total_seconds(td, positive=True):
     """
     # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
     # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600)
+    retv = int(td.seconds + td.days * 24 * 3600)
     if positive and retv < 0:
         return 0
     return retv
@@ -57,7 +59,7 @@ def total_seconds_precise(td, positive=True):
     """
     # More accurate: (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
     # Only int # of seconds is needed
-    retv = long(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
+    retv = int(td.seconds + td.days * 24 * 3600 + td.microseconds/1e6)
     if positive and retv < 0:
         return 0
     return retv
@@ -87,24 +89,24 @@ try:
         f = Formatter()
         d = {}
         l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        rem = long(tsec)
+        rem = int(tsec)
 
         if format_str == "P":
             # variable format
             if 0 < tsec < 86400:
                 format_str = "PT"
             for i in ('D', 'H', 'M', 'S'):
-                if i in l.keys():
+                if i in list(l.keys()):
                     d[i], rem = divmod(rem, l[i])
                     if d[i] != 0:
                         format_str = "%s{%s}%s" % (format_str, i, i)
         else:
             if 0 < tsec < 86400:
                 format_str = format_no_day
-            k = map(lambda x: x[1], list(f.parse(format_str)))
+            k = [x[1] for x in f.parse(format_str)]
 
             for i in ('D', 'H', 'M', 'S'):
-                if i in k and i in l.keys():
+                if i in k and i in list(l.keys()):
                     d[i], rem = divmod(rem, l[i])
 
         return f.format(format_str, **d)
@@ -130,7 +132,7 @@ except ImportError:
             return format_zero
         d = {}
         l = {'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
-        rem = long(tsec)
+        rem = int(tsec)
 
         for i in ('D', 'H', 'M'):  # needed because keys are not sorted
             d[i], rem = divmod(rem, l[i])
@@ -315,16 +317,16 @@ def parse_datetime(date_string_in, return_seconds=False, assume_local=False):
             try:
                 # try second string format
                 result = time.strptime(date_string, "%Y%m%d")
-            except ValueError, e:
+            except ValueError as e:
                 # No valid format
                 DebugPrint(2, "Wrong format, Date parsing failed for %s: %s" % (date_string_in, e))
                 #return None
                 raise
-            except Exception, e:
+            except Exception as e:
                 DebugPrint(2, "Date parsing failed for %s: %s" % (date_string_in, e))
                 #return None
                 raise
-    except Exception, e:
+    except Exception as e:
         # TODO: which other exception can happen?
         DebugPrint(2, "Date parsing failed for %s: %s" % (date_string_in, e))
         #return None
@@ -332,10 +334,10 @@ def parse_datetime(date_string_in, return_seconds=False, assume_local=False):
     if return_seconds:
         if is_utc and not assume_local:
             # time.mktime() uses local time, not UTC
-            return long(round(calendar.timegm(result)))
+            return int(round(calendar.timegm(result)))
         else:
             # assume local time for naive time
-            return long(round(time.mktime(result)))
+            return int(round(time.mktime(result)))
     if is_utc:
         return datetime(*result[0:6], tzinfo=UTC)
     return datetime(*result[0:6])
@@ -387,7 +389,7 @@ def format_datetime(date_in, iso8601=True):
             result = time.strftime("%Y-%m-%dT%H:%M:%SZ", date_in)
         else:
             result = time.strftime("%Y-%m-%d %H:%M:%S", date_in)
-    except Exception, e:
+    except Exception as e:
         DebugPrint(2, "Date conversion failed for %s: %s" % (date_in, e))
         raise
     return result

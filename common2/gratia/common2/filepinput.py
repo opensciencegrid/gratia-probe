@@ -4,6 +4,8 @@
 # By Marco Mambelli; Jun 9, 2014
 #
 
+from __future__ import absolute_import
+
 import os
 import re
 import glob
@@ -107,7 +109,7 @@ alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
 # mmap ? mf = mmap.mmap(fin.fileno(), 0, access=mmap.ACCESS_READ)
 
 
-from probeinput import ProbeInput, IgnoreRecordException
+from .probeinput import ProbeInput, IgnoreRecordException
 
 
 class FileInput(ProbeInput):
@@ -453,7 +455,7 @@ class OldFileInput(ProbeInput):
         # Open the file and send it to process
         try:
             fd = open(logfile, 'r')
-        except IOError, ie:
+        except IOError as ie:
             DebugPrint(2, "Cannot process %s: (errno=%d) %s" % (logfile, ie.errno,
                 ie.strerror))
             return 0, 0
@@ -514,11 +516,11 @@ class OldFileInput(ProbeInput):
                 raise
             except SystemExit:
                 raise
-            except IgnoreRecordException, e:
+            except IgnoreRecordException as e:
                 DebugPrint(3, "Ignoring Record: %s" % str(e))
                 count_submit += 1
                 continue
-            except Exception, e:
+            except Exception as e:
                 DebugPrint(2, "Exception while processing the record: %s" % str(e))
                 continue
 
