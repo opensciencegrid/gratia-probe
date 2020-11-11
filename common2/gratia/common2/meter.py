@@ -1,10 +1,11 @@
-
 #!/usr/bin/python
 
 ###########################################################################
 # Base classes for Gratia probes
 #
 ###########################################################################
+
+from __future__ import absolute_import
 
 # Standard libraries
 import sys

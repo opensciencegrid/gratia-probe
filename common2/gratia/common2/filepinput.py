@@ -4,6 +4,8 @@
 # By Marco Mambelli; Jun 9, 2014
 #
 
+from __future__ import absolute_import
+
 import os
 import re
 import glob
