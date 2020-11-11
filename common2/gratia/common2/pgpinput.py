@@ -8,11 +8,7 @@ import traceback
 # For PostgresSQL
 import psycopg2
 import psycopg2.extras
-try:
-    import uuid  # for unique cursor name
-except ImportError:
-    # for python < 2.5 (uuid not available)
-    from . import uuid_replacement as uuid
+import uuid
 
 from gratia.common.Gratia import DebugPrint
 from .probeinput import DbInput
