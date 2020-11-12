@@ -18,6 +18,8 @@
 # Copyright 2011 David Irvine
 #
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import os
 import csv
@@ -30,20 +32,20 @@ p.add_option("-f", "--file", dest="filename",help="Read from lsb accounting FILE
 (options, args)=p.parse_args()
 
 if not options.filename:
-	print "No filename specified."
+	print("No filename specified.")
 	sys.exit(253)
 	
 if not os.path.isfile(options.filename):
-	print "File does not exist: %s" % options.filename
+	print("File does not exist: %s" % options.filename)
 	sys.exit(255)
 	
 try:
 	acctf=open(options.filename,'r')
 except IOError as e:
-	print 'File cannot be opened.'
+	print('File cannot be opened.')
 	sys.exit(254)
 	
 
 
 for i in AcctFile(acctf):
-	print i.queue
+	print(i.queue)
