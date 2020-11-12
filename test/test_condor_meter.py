@@ -16,7 +16,7 @@ class CondorMeterTests(unittest.TestCase):
         jobad = classad.ClassAd()
         for attr, val in [(x, condor_meter.PROC_ATTRS.index(x)) for x in reversed(condor_meter.PROC_ATTRS)]:
             jobad[attr] = val
-            self.assertEquals(condor_meter.get_num_procs(jobad), val)
+            self.assertEqual(condor_meter.get_num_procs(jobad), val)
 
     def test_proc_expr(self):
         """get_num_procs() should be able to handle attributes set to ClassAd expressions
@@ -25,7 +25,7 @@ class CondorMeterTests(unittest.TestCase):
             jobad = classad.ClassAd()
             jobad[attr] = classad.ExprTree('2 + 2')
             procs = condor_meter.get_num_procs(jobad)
-            self.assertEquals(procs, 4)
+            self.assertEqual(procs, 4)
 
     def test_proc_int(self):
         """The Processors field should always return an integer
