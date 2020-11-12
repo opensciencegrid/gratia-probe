@@ -63,10 +63,10 @@ class _EnstoreStorageInputStub:
         for i in _EnstoreStorageInputStub.value_matrix:
             retv = {'date': timeutil.parse_datetime(i[0]),
                     'storage_group': i[1],
-                    'active_bytes': long(i[2]),
-                    'total_bytes': long(i[3]),
-                    'active_files': long(i[4]),
-                    'total_files': long(i[5])
+                    'active_bytes': int(i[2]),
+                    'total_bytes': int(i[3]),
+                    'active_files': int(i[4]),
+                    'total_files': int(i[5])
                     }
             yield retv
     get_records = staticmethod(get_records)
