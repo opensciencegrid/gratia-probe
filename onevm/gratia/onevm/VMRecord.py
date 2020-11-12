@@ -11,6 +11,9 @@
 #"DISK_TYPE": [None, "swap", "fs"], 
 #"IP": "192.168.154.153", "DISK_ID": ["0", "1", "2"], "DISK_SIZE": [None, "5120", "4096"], 
 #"GNAME": "docs", "STATE": "3", "CPU": "0", "ETIME": "0", "LCM_STATE": "3", 
+
+from __future__ import print_function
+
 import time
 import sys
 
@@ -74,8 +77,8 @@ class Record:
     def getStatus(self):
         return self.status
     def dump(self):
-        print >> sys.stdout,"Start_Time: %s, End_Time: %s , Host: %s, State: %s, Reason %s, Status: %s" % (self.stime,self.endtime,self.host,
-		self.state, self.reason, self.status)
+        print("Start_Time: %s, End_Time: %s , Host: %s, State: %s, Reason %s, Status: %s" % (self.stime,self.endtime,self.host,
+		self.state, self.reason, self.status), file=sys.stdout)
     
 class VMRecord:
     def __init__(self,jid,info):
@@ -85,7 +88,7 @@ class VMRecord:
          	self.jid=jid
         self.info=info
         self.job_name=self.info["NAME"]
-	if self.info.has_key("VCPU"):
+	if "VCPU" in self.info:
         	self.vcpu=self.info["VCPU"]
 	else:
 		self.vcpu=0
@@ -93,7 +96,7 @@ class VMRecord:
         self.user_name=self.info["USERNAME"]
         self.state=self.info["STATE_STR"]
         self.ip=""
-        if self.info.has_key("IP"):
+        if "IP" in self.info:
             if type(self.info["IP"])==list:
                 for ip in self.info["IP"]:
 		    if self.ip=="":
@@ -102,7 +105,7 @@ class VMRecord:
                     	self.ip="%s/%s" % (self.ip,ip)
             else:
                 self.ip=self.info["IP"]
-	if self.info.has_key("DN"):
+	if "DN" in self.info:
 		if type(self.info["DN"])==list and len(self.info["DN"]):
 			#don't know what to do with multiple dn
 			self.dn=self.info["DN"][0].replace("\\20"," ")
@@ -167,11 +170,11 @@ class VMRecord:
                 self.createRecord(ct,stime,self.info["HISTORY_ETIME"][i],
                            self.info["HOSTNAME"][i],self.state,self.info['HISTORY_REASON'][i])
         else:
-	    if not self.info.has_key('HISTORY_REASON'):
+	    if 'HISTORY_REASON' not in self.info:
 		reason=0
 	    else:
 		reason=self.info['HISTORY_REASON']
-            if not self.info.has_key('HOSTNAME'):
+            if 'HOSTNAME' not in self.info:
                 hostname=""
             else:
                 hostname=self.info['HOSTNAME']
@@ -185,7 +188,7 @@ class VMRecord:
         return self.user_name
         
     def getUserKeyInfo(self):
-        if self.info.has_key("DN"):
+        if "DN" in self.info:
             return self.dn
         else:
             return None
@@ -210,6 +213,6 @@ class VMRecord:
     def getMachineName(self):
         return self.ip
     def dump(self):
-        print >> sys.stdout, "JobID: %s, Job_Name: %s, DN: %s, VCPU: %s, Memory: %s, User_Name: %s, State: %s, IP %s" % (self.jid,self.job_name,self.dn,self.vcpu,self.memory,self.user_name,self.state,self.ip)
+        print("JobID: %s, Job_Name: %s, DN: %s, VCPU: %s, Memory: %s, User_Name: %s, State: %s, IP %s" % (self.jid,self.job_name,self.dn,self.vcpu,self.memory,self.user_name,self.state,self.ip), file=sys.stdout)
 	for r in self.records:
 		r.dump()
