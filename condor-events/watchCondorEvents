@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -7,7 +9,6 @@ import socket
 import signal
 import xml.sax
 import threading
-import ConfigParser
 import xml.sax.expatreader
 
 from xml.sax import saxutils
@@ -118,8 +119,8 @@ class ClassAdHandler(ContentHandler):
                 elif self.attrType == 'r':
                     self.curCaInfo[self.attrName] = float(self.attrInfo)
             except:
-                print >> sys.stderr, "Malformed attribute; type %s; value %s" \
-                    "; key %s" % (self.attrType, self.attrInfo, self.attrName)
+                print("Malformed attribute; type %s; value %s" \
+                    "; key %s" % (self.attrType, self.attrInfo, self.attrName), file=sys.stderr)
         elif name == 'classads':
             self.emit(self.prevCaInfo)
         else:
@@ -145,10 +146,10 @@ class ClassAdHandler(ContentHandler):
         if cur.get('MyType', 'UNKNOWN') == 'JobAdInformationEvent':
             if prev.get('MyType', 'UNKNOWN') == 'JobAdInformationEvent':
                 # Two info events in a row
-                print >> sys.stderr, "Two JobAdInformationEvents in a row!"
+                print("Two JobAdInformationEvents in a row!", file=sys.stderr)
                 return
             # A real event followed by an info event; combine and emit one.
-            for key, val in cur.items():
+            for key, val in list(cur.items()):
                 prev.setdefault(key, val)
             self.emit(prev)
         else:
@@ -282,7 +283,7 @@ class CondorUploader(object):
             record.Status(str(etype))
 
         if toSend == True:
-            print Gratia.Send(record)
+            print(Gratia.Send(record))
 
 def initializeEnvironment():
     is_init = False
@@ -291,7 +292,7 @@ def initializeEnvironment():
         if os.path.exists(probeConf):
             Gratia.Initialize(probeConf)
             is_init = True
-            print "Using probe config file %s" % probeConf
+            print("Using probe config file %s" % probeConf)
             break
     if not is_init:
         raise Exception("Unable to find a suitable ProbeConfig; searched "\
@@ -306,16 +307,16 @@ def initializeEnvironment():
 
 def main():
 
-    print "Initializing environment..."
+    print("Initializing environment...")
     initializeEnvironment()
 
-    print "Checking environment..."
+    print("Checking environment...")
     eventlog = checkEnviron()
-    print "Creating information client..."
+    print("Creating information client...")
     client = EventLogXmlClient(eventlog)
-    print "Creating uploader..."
+    print("Creating uploader...")
     uploader = CondorUploader()
-    print "Subscribing uploader to information client."
+    print("Subscribing uploader to information client.")
     client.subscribe(uploader.eventCallback)
 
 if __name__ == '__main__':
