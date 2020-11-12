@@ -19,8 +19,8 @@ import traceback
 
 class VMGratiaProbe:
     def __init__(self,config,version,verbose):
-	if verbose:
-		GratiaCore.Config.set_DebugLevel(5)
+        if verbose:
+                GratiaCore.Config.set_DebugLevel(5)
         self._dataFolder=config.get_DataFolder()
         #self._maxAge = should get from Config
         self._maxAge =365
@@ -28,11 +28,11 @@ class VMGratiaProbe:
         if  self._dataFolder != None:
             vmChkptFN = os.path.join(self._dataFolder, vmChkptFN)
         self._lastChkpt = Checkpoint(vmChkptFN, self._maxAge)
-	self.version=version
+        self.version=version
         self.resourceType="OneVM"
         self.project="FermiCloud"
     def getVersion(self,version):
-	return self.version
+        return self.version
     #check when was the last time we have run - if timestamp exist
     #if it exists 
     #send all jobs that are currently running (started and endtime=Now) 
@@ -41,12 +41,12 @@ class VMGratiaProbe:
         current_time=time.time()
         for key,vmr in records.items():
             if not vmr.isValid():
-		   DebugPrint(5,"The machine %s didn't really started for some reason" % (key))
+                   DebugPrint(5,"The machine %s didn't really started for some reason" % (key))
                    continue
             recs=vmr.getRecords()    
             for i in range(len(recs)):   
                 if (recs[i].getEndTime() != None) and (0 < float(recs[i].getEndTime()) < self._lastChkpt.getLastCheckPoint()):
-		    DebugPrint(5,"Skipping record %s, %s - we have already reported that VM" % (key, i))
+                    DebugPrint(5,"Skipping record %s, %s - we have already reported that VM" % (key, i))
                     continue # we have already reported that VM
                 r = Gratia.UsageRecord()
                 r.LocalUserId(vmr.getLocalUserId())
@@ -58,7 +58,7 @@ class VMGratiaProbe:
                 r.LocalJobId(vmr.getLocalJobId())
                 r.GlobalJobId(vmr.getLocalJobId()+"#"+repr(time.time()))
                 r.JobName(vmr.getJobName())
-		status,description=recs[i].getStatus()
+                status,description=recs[i].getStatus()
                 r.Status(status,description)
                 r.Njobs(1,"")
                 r.Memory(vmr.getMemory(),"KB")
@@ -66,12 +66,12 @@ class VMGratiaProbe:
                 r.Processors(vmr.getNumberOfCPU(),0,"total")
                 stime=self._lastChkpt.getLastCheckPoint()
                 if recs[i].isRunning():
-		    DebugPrint(5," VM %s, %s is running" % (key, i))
+                    DebugPrint(5," VM %s, %s is running" % (key, i))
                     #this is actively running VM
                     if float(recs[i].getStartTime()) >stime:
                         stime=float(recs[i].getStartTime()) #VM started after we ran
                 else:
-		    DebugPrint(5," VM %s, %s is done" % (key, i))
+                    DebugPrint(5," VM %s, %s is done" % (key, i))
                     if float(recs[i].getStartTime()) >stime:
                         stime=float(recs[i].getStartTime()) #VM started after we ran
                 
@@ -83,11 +83,11 @@ class VMGratiaProbe:
                 r.WallDuration(etime-stime)
                 r.CpuDuration(etime-stime,'user')
                 r.CpuDuration(0,'system')
-		if recs[i].getSubmitHost() != None:
-                	r.SubmitHost(recs[i].getSubmitHost())
+                if recs[i].getSubmitHost() != None:
+                        r.SubmitHost(recs[i].getSubmitHost())
                 r.ProjectName(self.project)
                 r.ResourceType(self.resourceType)
-		r.AdditionalInfo("Version",self.version)
+                r.AdditionalInfo("Version",self.version)
                 Gratia.Send(r)
         self._lastChkpt.createCheckPoint(current_time)
 def parse_opts():
@@ -108,22 +108,22 @@ def parse_opts():
     if not opts.one_query_file or not os.path.isfile(opts.one_query_file):
         raise Exception("One_query file, %s , does not exist." % opts.one_query_file)
     if not opts.gratia_config or not os.path.isfile(opts.gratia_config):
-	raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
+        raise Exception("Gratia config, %s, does not exist." % opts.gratia_config)
     return opts, args
 
 if __name__ == '__main__':
    try:
-	opts, dirs = parse_opts()
-      	reader=OneReader(opts.one_query_file,opts.verbose)
+        opts, dirs = parse_opts()
+        reader=OneReader(opts.one_query_file,opts.verbose)
         reader.readFile()
         records=reader.getRecords()
-	#config=VMGratiaProbeConfig.VMGratiaProbeConfig(opts.gratia_config)
-    	Gratia.Initialize(opts.gratia_config)
-	GratiaWrapper.CheckPreconditions()
-    	vmProbe=VMGratiaProbe(Gratia.Config,opts.version,opts.verbose)
-    	vmProbe.process(records)
+        #config=VMGratiaProbeConfig.VMGratiaProbeConfig(opts.gratia_config)
+        Gratia.Initialize(opts.gratia_config)
+        GratiaWrapper.CheckPreconditions()
+        vmProbe=VMGratiaProbe(Gratia.Config,opts.version,opts.verbose)
+        vmProbe.process(records)
    except Exception as e:
-      	print(e, file=sys.stderr)
+        print(e, file=sys.stderr)
         sys.exit(1)
    sys.exit(0)
     

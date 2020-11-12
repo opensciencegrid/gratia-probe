@@ -45,7 +45,7 @@ class Record:
         #4     CANCEL    The VM was migrated because of an explicit cancel 
 
         status=None
-	result=-1
+        result=-1
         if self.reason!=None:
             result=int(self.reason)
         description='VM exit code'
@@ -78,20 +78,20 @@ class Record:
         return self.status
     def dump(self):
         print("Start_Time: %s, End_Time: %s , Host: %s, State: %s, Reason %s, Status: %s" % (self.stime,self.endtime,self.host,
-		self.state, self.reason, self.status), file=sys.stdout)
+                self.state, self.reason, self.status), file=sys.stdout)
     
 class VMRecord:
     def __init__(self,jid,info):
- 	if type(jid)== int:
- 		self.jid=repr(jid)
- 	else:
-         	self.jid=jid
+        if type(jid)== int:
+                self.jid=repr(jid)
+        else:
+                self.jid=jid
         self.info=info
         self.job_name=self.info["NAME"]
-	if "VCPU" in self.info:
-        	self.vcpu=self.info["VCPU"]
-	else:
-		self.vcpu=0
+        if "VCPU" in self.info:
+                self.vcpu=self.info["VCPU"]
+        else:
+                self.vcpu=0
         self.memory=self.info["MEMORY"]
         self.user_name=self.info["USERNAME"]
         self.state=self.info["STATE_STR"]
@@ -99,18 +99,18 @@ class VMRecord:
         if "IP" in self.info:
             if type(self.info["IP"])==list:
                 for ip in self.info["IP"]:
-		    if self.ip=="":
-			self.ip=ip
-		    else:
-                    	self.ip="%s/%s" % (self.ip,ip)
+                    if self.ip=="":
+                        self.ip=ip
+                    else:
+                        self.ip="%s/%s" % (self.ip,ip)
             else:
                 self.ip=self.info["IP"]
-	if "DN" in self.info:
-		if type(self.info["DN"])==list and len(self.info["DN"]):
-			#don't know what to do with multiple dn
-			self.dn=self.info["DN"][0].replace("\\20"," ")
-		else:
-			self.dn=self.info["DN"]
+        if "DN" in self.info:
+                if type(self.info["DN"])==list and len(self.info["DN"]):
+                        #don't know what to do with multiple dn
+                        self.dn=self.info["DN"][0].replace("\\20"," ")
+                else:
+                        self.dn=self.info["DN"]
         self.records=[]
         self.setRecords()
         
@@ -121,22 +121,22 @@ class VMRecord:
             return True
 
     def createRecord(self,ct, stime,etime,hn,state,reason):
-	from datetime import date, datetime
- 	if (stime == None or int(stime) == 0):
- 		return
+        from datetime import date, datetime
+        if (stime == None or int(stime) == 0):
+                return
         end=int(etime)
         st=int(stime)
-	d=date.fromtimestamp(st)
+        d=date.fromtimestamp(st)
         # we want to report until the end of the day of GMT
-	# otherwise summarization is skewed in gratia
+        # otherwise summarization is skewed in gratia
         tdelta=datetime.utcnow()-datetime.now()
-	h=23
-	if tdelta.days == 0:
-		h=h-int(round(tdelta.seconds/3600.))
+        h=23
+        if tdelta.days == 0:
+                h=h-int(round(tdelta.seconds/3600.))
         et=time.mktime(time.strptime("%s %s %s %s %s %s" % (d.year,d.month,d.day,h,59,59),'%Y %m %d %H %M %S'))
         if end != 0:
             ct=end
-		
+                
         while et < ct:
             tmp=Record(st,et,hn,"ACTIVE",0)
             if tmp.isValid():
@@ -152,28 +152,28 @@ class VMRecord:
         ct=time.time()
         if type(self.info['HISTORY_STIME'])==list:
             for i in range(len(self.info['HISTORY_STIME'])):
-		stime=self.info["HISTORY_STIME"][i]
-		if (i==0):
-			if ( stime == None) or (int(stime)==0):
-				stime=self.info["STIME"]
-		else:
-			if ( stime == None ) or (int(stime) == 0):
-				#something is wrong with HISTORY_STIME - skiping the rest
-				return
+                stime=self.info["HISTORY_STIME"][i]
+                if (i==0):
+                        if ( stime == None) or (int(stime)==0):
+                                stime=self.info["STIME"]
+                else:
+                        if ( stime == None ) or (int(stime) == 0):
+                                #something is wrong with HISTORY_STIME - skiping the rest
+                                return
 
-		if self.info["HISTORY_ETIME"][i]==None:
-			self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
-			#another weird case HISTORY_ETIME=0 but ETIME is not 0
-		else:
-			if int(self.info["HISTORY_ETIME"][i]) == 0 and  int(self.info["ETIME"]) != 0:
-				self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
+                if self.info["HISTORY_ETIME"][i]==None:
+                        self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
+                        #another weird case HISTORY_ETIME=0 but ETIME is not 0
+                else:
+                        if int(self.info["HISTORY_ETIME"][i]) == 0 and  int(self.info["ETIME"]) != 0:
+                                self.info["HISTORY_ETIME"][i]=self.info["ETIME"]
                 self.createRecord(ct,stime,self.info["HISTORY_ETIME"][i],
                            self.info["HOSTNAME"][i],self.state,self.info['HISTORY_REASON'][i])
         else:
-	    if 'HISTORY_REASON' not in self.info:
-		reason=0
-	    else:
-		reason=self.info['HISTORY_REASON']
+            if 'HISTORY_REASON' not in self.info:
+                reason=0
+            else:
+                reason=self.info['HISTORY_REASON']
             if 'HOSTNAME' not in self.info:
                 hostname=""
             else:
@@ -183,7 +183,7 @@ class VMRecord:
                            hostname,self.state,reason)
                     
     def getRecords(self):
-	return self.records
+        return self.records
     def getLocalUserId(self):
         return self.user_name
         
@@ -214,5 +214,5 @@ class VMRecord:
         return self.ip
     def dump(self):
         print("JobID: %s, Job_Name: %s, DN: %s, VCPU: %s, Memory: %s, User_Name: %s, State: %s, IP %s" % (self.jid,self.job_name,self.dn,self.vcpu,self.memory,self.user_name,self.state,self.ip), file=sys.stdout)
-	for r in self.records:
-		r.dump()
+        for r in self.records:
+                r.dump()
