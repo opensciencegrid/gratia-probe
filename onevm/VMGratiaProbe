@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+from __future__ import print_function
+
 import gratia.common.Gratia as Gratia
 import gratia.common.GratiaCore as GratiaCore
 import gratia.common.GratiaWrapper as GratiaWrapper
@@ -119,8 +122,8 @@ if __name__ == '__main__':
 	GratiaWrapper.CheckPreconditions()
     	vmProbe=VMGratiaProbe(Gratia.Config,opts.version,opts.verbose)
     	vmProbe.process(records)
-   except Exception, e:
-      	print >> sys.stderr, str(e)
+   except Exception as e:
+      	print(e, file=sys.stderr)
         sys.exit(1)
    sys.exit(0)
     
