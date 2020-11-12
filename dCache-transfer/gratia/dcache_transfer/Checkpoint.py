@@ -51,12 +51,8 @@ class Checkpoint:
             ds = self._dateStamp
             self._dateStamp = datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
             pklFile.close()
-        except IOError as xxx_todo_changeme1:
-            # This is not really an error, since it might be the first
-            # time we try to make this checkpoint.
-            # We log a warning, just in case some nice person has
-            # deleted the checkpoint file.
-            (errno, strerror) = xxx_todo_changeme1.args
+        except IOError as e:
+            (errno, strerror) = e.args
             # This is not really an error, since it might be the first
             # time we try to make this checkpoint.
             # We log a warning, just in case some nice person has
