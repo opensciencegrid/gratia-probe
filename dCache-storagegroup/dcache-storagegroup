@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import cPickle
+from __future__ import print_function
+
+import pickle
 import os
 import random
 import sys
@@ -54,25 +56,25 @@ This reduces the load on the Gratia collector.""",
 
 def sendRecords(fn):
 
-    user_space=cPickle.load(open(fn,"r"))
+    user_space=pickle.load(open(fn,"r"))
     t = os.stat(fn).st_ctime
 
     storage_groups={}
     totals_by_sg={}
-    for pg,item1 in user_space.iteritems():
+    for pg,item1 in user_space.items():
         storage_groups[pg] = {}
-        for pool, item2 in item1.iteritems():
-            for sg, value in item2.iteritems():
+        for pool, item2 in item1.items():
+            for sg, value in item2.items():
                 # All probes report bytes. This one should too (value instead of value/1024/1024)
-                storage_groups[pg][sg] = storage_groups[pg].get(sg, 0) + long(value)
-                totals_by_sg[sg] = totals_by_sg.get(sg, 0) + long(value)
+                storage_groups[pg][sg] = storage_groups[pg].get(sg, 0) + int(value)
+                totals_by_sg[sg] = totals_by_sg.get(sg, 0) + int(value)
 
     site = GratiaCore.Config.getConfigAttribute("SiteName")
     version = "1.2.3"
     status = "Production"
     timestamp = time.time()
 
-    for pg, value in storage_groups.iteritems():
+    for pg, value in storage_groups.items():
         sa = StorageElement()
         sar = StorageElementRecord()
         parent_id = '%s:SE:%s' % (site, site)
@@ -93,7 +95,7 @@ def sendRecords(fn):
         sar.UsedSpace(sum(value.values()))
         Gratia.Send(sa)
         Gratia.Send(sar)
-        for sg, used_space in value.iteritems():
+        for sg, used_space in value.items():
             sa = StorageElement()
             sar = StorageElementRecord()
             unique_id = '%s:StorageGroup:%s_%s' % (site,sg,pg)
@@ -123,8 +125,8 @@ def main():
         raise
     except KeyboardInterrupt:
         raise
-    except Exception, e:
-        print >> sys.stderr, str(e)
+    except Exception as e:
+        print(str(e), file=sys.stderr)
         sys.exit(1)
 
     # Sanity checks for the probe's runtime environment.
