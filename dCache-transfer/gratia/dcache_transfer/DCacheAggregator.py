@@ -35,6 +35,8 @@ TODO list for this probe:
    2) Remove python logging in favor of Gratia logging.
 """
 
+from __future__ import absolute_import
+
 import os
 import sys
 import logging
@@ -49,13 +51,13 @@ import datetime
 import re
 
 import gratia.common.Gratia as Gratia
-from Checkpoint import Checkpoint
-from Alarm import Alarm
+from .Checkpoint import Checkpoint
+from .Alarm import Alarm
 
-import TimeBinRange
-import Collapse
-import BillingRecSimulator
-import TestContainer
+from . import TimeBinRange
+from . import Collapse
+from . import BillingRecSimulator
+from . import TestContainer
 
 
 DCACHE_AGG_FIELDS = ['initiator', 'client', 'protocol', 'errorcode', 'isnew']
@@ -234,9 +236,9 @@ class DCacheAggregator:
 		self._connection = psycopg2.connect(DBurl)
 		self._cur = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except:
-            tblist = traceback.format_exception(sys.exc_type,
-                                                sys.exc_value,
-                                                sys.exc_traceback)
+            tblist = traceback.format_exception(sys.exc_info()[0],
+                                                sys.exc_info()[1],
+                                                sys.exc_info()[2])
             errmsg = 'Failed to connect to %s\n\n%s' % (DBurl, "\n".join(tblist))
             self._log.error(errmsg)
             raise
@@ -392,7 +394,7 @@ class DCacheAggregator:
                 numDone += self._processDBRow(row)
             except (KeyboardInterrupt, SystemExit, TestContainer.SimInterrupt):
                 raise
-            except Exception, e:
+            except Exception as e:
                 self._log.warning("Unable to make a record out of the " \
                     "following SQL row: %s." % str(row))
                 self._log.exception(e)
@@ -555,7 +557,7 @@ class DCacheAggregator:
             rec.LocalUserId(username)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, e:
+        except Exception as e:
             self._log.info("Failed to map UID %s to VO." % mappedUID)
         return rec
 
