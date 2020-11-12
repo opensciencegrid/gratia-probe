@@ -266,7 +266,7 @@ Records are selected and transformed for the probe consumption.
             if checkpoint_interval is None:
                 checkpoint_interval = 0
             else:
-                checkpoint_interval = long(checkpoint_interval)
+                checkpoint_interval = int(checkpoint_interval)
             if checkpoint_interval == 0:
                 # NO interval, OK to send from the beginning
                 DebugPrint(4, "Sending OK_TO_SEND - no interval in checkpoint (%s/%s)" %
