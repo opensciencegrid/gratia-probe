@@ -19,8 +19,11 @@ print("** Tests setup -t: %s" % time.time())
 sys.stdout.flush()
 
 #flength = 7
-import subprocess
-res = subprocess.getoutput('wc %s' % fname).split()
+try:
+    from commands import getoutput
+except ImportError:
+    from subprocess import getoutput
+res = getoutput('wc %s' % fname).split()
 flength = int(res[0])
 fsize = int(res[2])
 tests = "12345678"
