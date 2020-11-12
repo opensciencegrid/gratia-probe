@@ -1,12 +1,14 @@
 #!/usr/bin/python
 
+from __future__ import absolute_import
+
 import os
 import sys
 import string
 
 
 from gratia.onevm.cloud.scheduler import Queue
-from usermanager import OneUserManager
+from .usermanager import OneUserManager
 from gratia.onevm.process_utils import iexe_cmd
 from gratia.onevm.process_utils import representsInt
 from gratia.onevm.process_utils import isList
