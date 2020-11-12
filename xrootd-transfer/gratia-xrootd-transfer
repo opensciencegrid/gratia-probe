@@ -772,7 +772,7 @@ def main():
             try:
                 DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
                 time.sleep(SLEEP_TIME)
-            except KeyboardInterrupt as SystemExit:
+            except (KeyboardInterrupt, SystemExit) as _:
                 raise
             except Exception as e:
                 gratia_log_traceback(lvl=1)
@@ -793,4 +793,3 @@ if __name__ == '__main__':
     except:
         gratia_log_traceback()
         raise
-
