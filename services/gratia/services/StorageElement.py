@@ -87,7 +87,7 @@ class StorageElement(record.Record):
     def Timestamp(self,value):
         " The time the GlueCE was gathered "
         " Expressed in number of second since epoch or a string formated using the format xsd:dateTime. "
-        if isinstance(value, types.StringType):
+        if isinstance(value, str):
             realvalue = value
         else:
             realvalue = utils.TimeToString(time.gmtime(value))
