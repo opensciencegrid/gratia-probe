@@ -110,9 +110,7 @@ class TimeBinRange:
         Returns a list of the aggregated rows held by this object.
         """
         result = []
-        tms =  list(self.bins.keys())
-        tms.sort()
-        for tm in tms:
+        for tm in sorted(self.bins):
             result += self.bins[tm].list()
         return result
 
@@ -146,4 +144,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-
