@@ -149,7 +149,7 @@ class ClassAdHandler(ContentHandler):
                 print("Two JobAdInformationEvents in a row!", file=sys.stderr)
                 return
             # A real event followed by an info event; combine and emit one.
-            for key, val in list(cur.items()):
+            for key, val in cur.items():
                 prev.setdefault(key, val)
             self.emit(prev)
         else:
@@ -321,4 +321,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
