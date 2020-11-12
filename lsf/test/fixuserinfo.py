@@ -1,6 +1,8 @@
 #!/usr/bin/python
 __author__ = 'marcom'
 
+from __future__ import print_function
+
 USERVO_FILE = '../user-vo-map.txt'
 DEST_DIR = '../dst'
 usermap = {}
@@ -22,9 +24,9 @@ import sys
 import glob
 import re
 
-print "Adding user info from: %s" % USERVO_FILE
-print "To files in: %s" % sys.argv[1]
-print "Saving to: %s" % DEST_DIR
+print("Adding user info from: %s" % USERVO_FILE)
+print("To files in: %s" % sys.argv[1])
+print("Saving to: %s" % DEST_DIR)
 load_uvomap(USERVO_FILE)
 
 ID_STRING = """<UserIdentity>
@@ -46,7 +48,7 @@ USER_EXTRACT = re.compile(".*<LocalUserId>([^<]*)</LocalUserId>.*")
 USER_END = re.compile(".*</UserIdentity>.*")
 filelist = glob.iglob("%s/*" % sys.argv[1])
 for i in filelist:
-    print "Working on %s" % i
+    print("Working on %s" % i)
     inlines = open(i, 'r').readlines()
     before = True
     ctr = 0
@@ -69,7 +71,7 @@ for i in filelist:
                 try:
                     voname = usermap[lid]
                 except KeyError:
-                    print "** User not found %s" % lid
+                    print("** User not found %s" % lid)
                     raise
                 outlines += ["%s\n" % j for j in (ID_STRING % ({'lid': lid, 'voname': voname})).split('\n')]
             ctr += 1
