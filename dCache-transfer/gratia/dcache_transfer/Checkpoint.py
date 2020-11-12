@@ -9,7 +9,7 @@
 import os
 import logging
 import stat
-import cPickle
+import pickle
 from datetime import datetime, timedelta
 
 
@@ -43,13 +43,18 @@ class Checkpoint:
 
         try:
             pklFile = open(tablename, 'rb')
-            self._dateStamp, self._transaction = cPickle.load(pklFile)
+            self._dateStamp, self._transaction = pickle.load(pklFile)
             if self._dateStamp < minDay:
                 self._dateStamp = minDay
             ds = self._dateStamp
             self._dateStamp = datetime(ds.year, ds.month, ds.day, ds.hour, 0, 0)
             pklFile.close()
-        except IOError, (errno, strerror):
+        except IOError as xxx_todo_changeme1:
+            # This is not really an error, since it might be the first
+            # time we try to make this checkpoint.
+            # We log a warning, just in case some nice person has
+            # deleted the checkpoint file.
+            (errno, strerror) = xxx_todo_changeme1.args
             # This is not really an error, since it might be the first
             # time we try to make this checkpoint.
             # We log a warning, just in case some nice person has
@@ -79,21 +84,23 @@ class Checkpoint:
         if not os.path.exists(dir):
             try:
                 os.makedirs(dir)
-            except IOError, (errno, strerror):
-                print "Checkpoint.save: IOError creating directory %s: %s" % \
-                    (dir, strerror)
+            except IOError as xxx_todo_changeme:
+                (errno, strerror) = xxx_todo_changeme.args
+                print("Checkpoint.save: IOError creating directory %s: %s" % \
+                    (dir, strerror))
                 raise
         # Create new pending file.
         try:
             pklFile = open(self._tmpFile, 'wb')
-            cPickle.dump([datestamp, txn], pklFile, -1)
+            pickle.dump([datestamp, txn], pklFile, -1)
             pklFile.close()
             self._pending = True
             self._pending_dateStamp = datestamp
             self._pending_transaction = txn
-        except IOError, (errno, strerror):
-            print "Checkpoint.save: IOError creating file %s: %s" % \
-                (self._tmpFile, strerror)
+        except IOError as xxx_todo_changeme2:
+            (errno, strerror) = xxx_todo_changeme2.args
+            print("Checkpoint.save: IOError creating file %s: %s" % \
+                (self._tmpFile, strerror))
             raise
 
 
@@ -115,9 +122,10 @@ class Checkpoint:
             os.chmod(self._tablename, stat.S_IREAD)
             self._dateStamp = self._pending_dateStamp
             self._transaction = self._pending_transaction
-        except OSError, (errno, strerror):
-            print "Checkpoint.save could not rename %s to %s: %s" % \
-                  (self._tmpFile, self._tablename, strerror)
+        except OSError as xxx_todo_changeme3:
+            (errno, strerror) = xxx_todo_changeme3.args
+            print("Checkpoint.save could not rename %s to %s: %s" % \
+                  (self._tmpFile, self._tablename, strerror))
             raise
 
 
