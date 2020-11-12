@@ -93,10 +93,10 @@ class _EnstoreTransferInputStub:
         for i in _EnstoreTransferInputStub.value_matrix_summ:
             retv = {'date': timeutil.parse_datetime(i[0]),
                     'storage_group': i[1],
-                    'read': long(i[2]),
-                    'write': long(i[3]),
-                    'n_read': long(i[4]),
-                    'n_write': long(i[5])
+                    'read': int(i[2]),
+                    'write': int(i[3]),
+                    'n_read': int(i[4]),
+                    'n_write': int(i[5])
                     }
             yield retv
     get_records_summary = staticmethod(get_records_summary)
@@ -108,9 +108,9 @@ class _EnstoreTransferInputStub:
                     'username': i[2],
                     'src': i[3],
                     'dst': i[4],
-                    'size': long(i[5]),
+                    'size': int(i[5]),
                     'rw': i[6],
-                    'overall_rate': long(i[7]),
+                    'overall_rate': int(i[7]),
                     'mover_interface': i[8],
                     'storage_group': i[9],
                     'encp_id': i[10]
