@@ -100,7 +100,7 @@ class XrootdSummaryParser(ContentHandler):
     def emitData(self, key, val):
         try:
             self.dataCallback(key, val)
-        except SystemExit as KeyboardInterrupt:
+        except (SystemExit, KeyboardInterrupt) as _:
             raise
         except:
             pass
@@ -652,7 +652,7 @@ def main():
             try:
                 DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
                 time.sleep(SLEEP_TIME)
-            except KeyboardInterrupt as SystemExit:
+            except (KeyboardInterrupt, SystemExit) as _:
                 raise
             except Exception as e:
                 gratia_log_traceback(lvl=1)
