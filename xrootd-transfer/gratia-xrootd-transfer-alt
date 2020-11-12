@@ -10,7 +10,6 @@ import struct
 import signal
 import logging
 import optparse
-import cStringIO
 import threading
 import traceback
 import logging.handlers
@@ -58,14 +57,14 @@ def daemonize(pidfile):
 
    try:
       pid = os.fork()
-   except OSError, e:
+   except OSError as e:
       raise Exception("%s [%d]" % (e.strerror, e.errno))
 
    if (pid == 0):	# The first child.
       os.setsid()
       try:
          pid = os.fork()	# Fork a second child.
-      except OSError, e:
+      except OSError as e:
          raise Exception("%s [%d]" % (e.strerror, e.errno))
 
       if (pid == 0):	# The second child.
@@ -211,7 +210,7 @@ class GratiaHandler(object):
 
     def handle(self, packet, addr):
         #DebugPrint(4, "GratiaHandler processed message: %s" %  packet)
-        print packet
+        print(packet)
         if self.stop:
             raise self.stop_exception
         found_begin = False
@@ -327,7 +326,7 @@ def sendToGratia(gratia_info):
             try:
                 signal.alarm(5*60)
                 sendToGratia_child(info, records)
-            except Exception, e:
+            except Exception as e:
                 log.exception(e)
                 os._exit(0)
             os._exit(0)
@@ -342,7 +341,7 @@ def sendToGratia_child(info, record_list):
             
     try:
         GratiaCore.Initialize(ProbeConfig)
-    except Exception, e:
+    except Exception as e:
         log.exception(e)
         raise
     GratiaCore.Config.setSiteName(site)
@@ -350,7 +349,7 @@ def sendToGratia_child(info, record_list):
     GratiaCore.Handshake()
     try:
         GratiaCore.SearchOutstandingRecord()
-    except Exception, e:
+    except Exception as e:
         log.exception(e)
         raise
     GratiaCore.Reprocess()
@@ -384,7 +383,7 @@ class SiteMapper(object):
             for host_re_string in split_re.split(host_info):
                 try:
                     host_re = re.compile(host_re_string)
-                except re.error, rerror:
+                except re.error as rerror:
                     DebugPrint(2, "Invalid host regexp in %s: %s (%s)" % (filename, line, str(rerror)))
                     continue
                 self.regexps.append((host_re, site))
@@ -447,7 +446,7 @@ def parse_opts():
         os.makedirs(path)
     try:
         fp = open(logfile, 'w')
-    except Exception, e:
+    except Exception as e:
         raise Exception("Could not open %s-transfer logfile, %s, for " \
             "write.  Error: %s." % (XRD_NAME, logfile, str(e)))
     global log
@@ -531,7 +530,7 @@ def main():
         input = opts.input
         try:
             fp = open(input, 'r')
-        except Exception, e:
+        except Exception as e:
             raise Exception("Could not open input file, %s, for read due to " \
                 "exception %s." % (input, str(e)))
         try:
@@ -546,18 +545,18 @@ def main():
 	    try:
 	        DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
 	        time.sleep(SLEEP_TIME)
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
-            except GratiaTimeout, gt:
+            except GratiaTimeout as gt:
                 gratia_log_traceback(lvl=1)
 	    try:
 	        DebugPrint(1, "Creating a new Xrootd Gratia report.")
 	        gratia_handler.summary()
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
     finally:
         if not opts.print_only:
