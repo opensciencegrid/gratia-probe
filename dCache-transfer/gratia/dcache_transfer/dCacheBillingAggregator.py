@@ -5,6 +5,9 @@
 # This is a Python program that reads the dCache billing database, aggregates
 # any new content, and sends it to Gratia.
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -23,9 +26,9 @@ from logging.handlers import RotatingFileHandler
 import gratia.common.Gratia as Gratia
 from gratia.common.probe_config import ProbeConfiguration
 # Local modules
-import TestContainer
-from Alarm import Alarm
-from DCacheAggregator import DCacheAggregator, sleep_check
+from . import TestContainer
+from .Alarm import Alarm
+from .DCacheAggregator import DCacheAggregator, sleep_check
 
 ProgramName = "dCacheBillingAggregator"
 
@@ -94,7 +97,7 @@ class dCacheProbeConfig(ProbeConfiguration):
         if self._emailList[0] == 'notdefined':
             value = self.getConfigAttribute( 'EmailToList' )
             if value == '':
-                print "WARNING: EmailToList is empty. Will use stdout."
+                print("WARNING: EmailToList is empty. Will use stdout.")
             self._emailList = value.split( ", " )
         return self._emailList
 
@@ -193,7 +196,7 @@ def main():
 
         # Make sure that the logging directory is present
         if not os.path.isdir( logDir ):
-            os.mkdir( logDir, 0755 )
+            os.mkdir( logDir, 0o755 )
 
         logFileName = os.path.join( logDir, "dcacheTransfer.log" )
 
@@ -270,11 +273,11 @@ def main():
         raise
     except:
         # format the traceback into a string
-        tblist = traceback.format_exception( sys.exc_type,
-                                             sys.exc_value,
-                                             sys.exc_traceback )
+        tblist = traceback.format_exception( sys.exc_info()[0],
+                                             sys.exc_info()[1],
+                                             sys.exc_info()[2] )
         msg = ProgramName + " caught an exception:\n" + "".join(tblist)
-        print msg
+        print(msg)
         logger.error(msg)
 
     TestContainer.dumpStatistics(logger)
