@@ -1,5 +1,8 @@
 import popen2
-import cStringIO
+try:
+    import cStringIO
+except ImportError:
+    import io as cStringIO
 import fcntl
 import os
 import time
@@ -31,6 +34,7 @@ def iexe_cmd(cmd, stdin_data=None):
     error_lines = None
     exit_status = 0
     try:
+        # XXX: no popen2 in python3
         child = popen2.Popen3(cmd, capturestderr=True)
 
         if stdin_data != None:
@@ -76,10 +80,10 @@ def iexe_cmd(cmd, stdin_data=None):
         output_lines = outdata.readlines()
         error_lines = errdata.readlines()
 
-    except Exception, ex:
-        raise ExeError, "Unexpected Error running '%s'\nStdout:%s\nStderr:%s\n"\
+    except Exception as ex:
+        raise ExeError("Unexpected Error running '%s'\nStdout:%s\nStderr:%s\n"\
             "Exception OSError: %s" % (cmd, str(output_lines),
-                                       str(error_lines), ex)
+                                       str(error_lines), ex))
 
     return exit_status, output_lines, error_lines
 
