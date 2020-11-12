@@ -8,7 +8,10 @@ import time
 import socket
 import logging
 import optparse
-import cStringIO
+try:
+    import cStringIO
+except ImportError:
+    import io as cStringIO
 import threading
 import traceback
 import logging.handlers
@@ -56,14 +59,14 @@ def daemonize(pidfile):
 
    try:
       pid = os.fork()
-   except OSError, e:
+   except OSError as e:
       raise Exception("%s [%d]" % (e.strerror, e.errno))
 
    if (pid == 0):	# The first child.
       os.setsid()
       try:
          pid = os.fork()	# Fork a second child.
-      except OSError, e:
+      except OSError as e:
          raise Exception("%s [%d]" % (e.strerror, e.errno))
 
       if (pid == 0):	# The second child.
@@ -97,7 +100,7 @@ class XrootdSummaryParser(ContentHandler):
     def emitData(self, key, val):
         try:
             self.dataCallback(key, val)
-        except SystemExit, KeyboardInterrupt:
+        except SystemExit as KeyboardInterrupt:
             raise
         except:
             pass
@@ -243,7 +246,7 @@ class HostInfo(object):
         return self.area_info.get(area_name, {})
 
     def get_area_names(self):
-        return self.id_to_area.values()
+        return list(self.id_to_area.values())
 
     def get_hostname(self):
         return self.hostname
@@ -561,7 +564,7 @@ def parse_opts():
         os.makedirs(path)
     try:
         fp = open(logfile, 'w')
-    except Exception, e:
+    except Exception as e:
         raise Exception("Could not open %s-Storage logfile, %s, for " \
             "write.  Error: %s." % (XRD_NAME, logfile, str(e)))
     global log
@@ -636,7 +639,7 @@ def main():
         input = opts.input
         try:
             fp = open(input, 'r')
-        except Exception, e:
+        except Exception as e:
             raise Exception("Could not open input file, %s, for read due to " \
                 "exception %s." % (input, str(e)))
         try:
@@ -649,9 +652,9 @@ def main():
 	    try:
 	        DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
 	        time.sleep(SLEEP_TIME)
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
 
             if opts.print_only:
@@ -660,12 +663,12 @@ def main():
 	    try:
 	        DebugPrint(1, "Creating a new Xrootd Gratia report.")
 	        gratia_handler.summary()
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        gratia_log_traceback(lvl=0)
 	        gratia_handler.stop_exception()
 	        gratia_handler.stop = True
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
     finally:
         if not opts.print_only:
