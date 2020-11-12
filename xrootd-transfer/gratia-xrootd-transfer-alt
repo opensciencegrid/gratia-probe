@@ -60,14 +60,14 @@ def daemonize(pidfile):
    except OSError as e:
       raise Exception("%s [%d]" % (e.strerror, e.errno))
 
-   if (pid == 0):	# The first child.
+   if (pid == 0):       # The first child.
       os.setsid()
       try:
-         pid = os.fork()	# Fork a second child.
+         pid = os.fork()        # Fork a second child.
       except OSError as e:
          raise Exception("%s [%d]" % (e.strerror, e.errno))
 
-      if (pid == 0):	# The second child.
+      if (pid == 0):    # The second child.
          os.chdir(WORKDIR)
          os.umask(UMASK)
          for i in range(3):
@@ -82,9 +82,9 @@ def daemonize(pidfile):
          except:
              pass
       else:
-         os._exit(0)	# Exit parent (the first child) of the second child.
+         os._exit(0)    # Exit parent (the first child) of the second child.
    else:
-      os._exit(0)	# Exit parent of the first child.
+      os._exit(0)       # Exit parent of the first child.
 
 def file_handler(data_handler, input_file):
     cur_record = []
@@ -519,10 +519,10 @@ def main():
 
     if not opts.input:
         try:
-	    udpserverthread = threading.Thread(target=udp_server,args=(gratia_handler, opts.port, opts.bind))
-	    udpserverthread.setDaemon(True)
-	    udpserverthread.setName("Gratia udp_server Thread")
-	    udpserverthread.start()
+            udpserverthread = threading.Thread(target=udp_server,args=(gratia_handler, opts.port, opts.bind))
+            udpserverthread.setDaemon(True)
+            udpserverthread.setName("Gratia udp_server Thread")
+            udpserverthread.start()
         finally:
             if not opts.print_only:
                 gratia_handler.exit_summary()
@@ -541,23 +541,23 @@ def main():
             return
 
     try:
-	while 1 == 1:
-	    try:
-	        DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
-	        time.sleep(SLEEP_TIME)
-	    except KeyboardInterrupt as SystemExit:
-	        raise
-	    except Exception as e:
-	        gratia_log_traceback(lvl=1)
+        while 1 == 1:
+            try:
+                DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
+                time.sleep(SLEEP_TIME)
+            except KeyboardInterrupt as SystemExit:
+                raise
+            except Exception as e:
+                gratia_log_traceback(lvl=1)
             except GratiaTimeout as gt:
                 gratia_log_traceback(lvl=1)
-	    try:
-	        DebugPrint(1, "Creating a new Xrootd Gratia report.")
-	        gratia_handler.summary()
-	    except KeyboardInterrupt as SystemExit:
-	        raise
-	    except Exception as e:
-	        gratia_log_traceback(lvl=1)
+            try:
+                DebugPrint(1, "Creating a new Xrootd Gratia report.")
+                gratia_handler.summary()
+            except KeyboardInterrupt as SystemExit:
+                raise
+            except Exception as e:
+                gratia_log_traceback(lvl=1)
     finally:
         if not opts.print_only:
             gratia_handler.exit_summary()

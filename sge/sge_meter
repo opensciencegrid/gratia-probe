@@ -113,7 +113,7 @@ class SGE:
 
             # rest of the entry (before localuser) is dn
             dn=entry[:entry.rfind(localuser)]
-	    dn=dn.strip().strip("\"")
+            dn=dn.strip().strip("\"")
             if localuser==user:
                 return dn
         # if not found return empty string
@@ -279,8 +279,8 @@ class SGE:
         # 4.10 Extension
         # TBD lookup grid VO related information and add  it to record
 
-	return r	
-	
+        return r
+
 
     def printRecord(self):
         Gratia.DebugPrint(debug_level, "=================================")
@@ -446,7 +446,7 @@ def main():
    
 
     checkpoint=0
-    if opts.checkpoint:	
+    if opts.checkpoint:
         # Do some error checking if file io fails
         if os.path.isfile(checkpointFile):
             try:
@@ -479,7 +479,7 @@ def main():
         Gratia.DebugPrint(verbose_level, "Checking file ages: checkpoint file: " + str(chkage) + " previous file " + str(sgeage))
         if chkage<sgeage:
             #accounting file has rotated, need to look at previous file first
-	    Gratia.DebugPrint(verbose_level, "Account file has rotated, looking at previous file first. Checkpoint value at " + str(checkpoint))
+            Gratia.DebugPrint(verbose_level, "Account file has rotated, looking at previous file first. Checkpoint value at " + str(checkpoint))
             readsgefile(prevAccFileName,opts.checkpoint,checkpoint,checkpointFile)
             checkpoint=0
     Gratia.DebugPrint(verbose_level, "Looking at regular file. Checkpoint value at " + str(checkpoint))
