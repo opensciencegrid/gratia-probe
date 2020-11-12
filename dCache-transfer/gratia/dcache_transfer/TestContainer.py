@@ -5,14 +5,17 @@ We simulate the results of a DB query and make sure that it gets properly
 aggregated.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import re
 import time
 import random
 import datetime
 
-import TimeBinRange
-import Collapse
-import BillingRecSimulator
+from . import TimeBinRange
+from . import Collapse
+from . import BillingRecSimulator
 
 class SimInterrupt:
     pass
@@ -92,7 +95,8 @@ def dumpStatistics(log):
    log.info("Generated:")
    dump(log,createStatistics(BillingRecSimulator.sqlTableContent))
     
-def dump(log,(overall,initiator,errorcode,totalRecords)):
+def dump(log, infos):
+   (overall,initiator,errorcode,totalRecords) = infos
    log.info("Overall %s" % overall)
    log.info("initiator %s"% initiator)
    log.info("errorcode %s" % errorcode)
@@ -102,10 +106,10 @@ def dump(log,(overall,initiator,errorcode,totalRecords)):
 if __name__ == "__main__":
 
   recordsToSend = BillingRecSimulator.generateTableContent() 
-  print "Pre aggregation"
-  print createStatistics(recordsToSend)
+  print("Pre aggregation")
+  print(createStatistics(recordsToSend))
 
   recordsToSend = Collapse.collapse(recordsToSend,TimeBinRange.DictRecordAggregator(['initiator','client', 'protocol','errorcode','isnew' ],['njobs','transfersize','connectiontime']))
-  print "Post Aggregation"
-  print createStatistics(recordsToSend)
+  print("Post Aggregation")
+  print(createStatistics(recordsToSend))
 
