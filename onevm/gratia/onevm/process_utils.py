@@ -25,7 +25,8 @@ def iexe_cmd(cmd, stdin_data=None):
     error_lines = None
     exit_status = 0
     try:
-        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                       universal_newlines=True)
         out, err = p.communicate(stdin_data)
 
         exit_status = p.returncode
