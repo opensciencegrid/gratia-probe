@@ -215,7 +215,7 @@ if "3" in tests:
             assert func(fname) == flength
             counts[func].append(time.time() - start_time)
 
-    for key, vals in list(counts.items()):
+    for key, vals in counts.items():
         print(key.__name__, ":", sum(vals) / float(len(vals)))
 
     sys.stdout.flush()
