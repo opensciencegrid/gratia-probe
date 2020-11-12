@@ -1,11 +1,15 @@
 #===============================================================================
 # This is a temporary class to read information stored in query_one log
 #===============================================================================
+
+from __future__ import absolute_import
+from __future__ import print_function
+
 import time
 import sys
 import os
 
-from VMRecord import VMRecord
+from .VMRecord import VMRecord
 
 class OneReader:
     def __init__(self,fn,verbose=False):
@@ -20,7 +24,7 @@ class OneReader:
         tmp=eval(fd.read())
         for key,value in tmp.items():
             if self.verbose:
-		print >> sys.stdout, "Processing VM #%s: %s" % ( key, value)
+		print("Processing VM #%s: %s" % ( key, value), file=sys.stdout)
             vm=VMRecord(key,value)
             self.vms[key]=vm
     def getRecords(self):
@@ -51,8 +55,8 @@ if __name__ == "__main__":
       reader.readFile()
       if opts.verbose:
 	reader.dump()
-   except Exception, e:
-      print >> sys.stderr, str(e)
+   except Exception as e:
+      print(e, file=sys.stderr)
       sys.exit(1)
    sys.exit(0)
             
