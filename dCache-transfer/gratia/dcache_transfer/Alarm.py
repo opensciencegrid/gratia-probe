@@ -6,6 +6,8 @@
 # occured too frequently in the recent past, it will send a warning email
 # to the list of administrators provided for that alarm condition.
 
+from __future__ import print_function
+
 import sys
 import time
 import os
@@ -90,7 +92,7 @@ class Alarm:
         else:
             # There is no email list, so we write it to stdout and hope
             # somebody remembers to look in the stdout log.
-            print self._message
+            print(self._message)
 
 
     def reset( self ):
