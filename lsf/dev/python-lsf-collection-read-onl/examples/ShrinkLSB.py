@@ -19,6 +19,8 @@
 #
 #
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import os
 import csv
@@ -32,21 +34,21 @@ p.add_option("-o", "--output", dest="output",help="Write CSV data to file ", met
 (options, args)=p.parse_args()
 
 if not options.filename:
-	print "No filename specified."
+	print("No filename specified.")
 	sys.exit(253)
 	
 if not os.path.isfile(options.filename):
-	print "File does not exist: %s" % options.filename
+	print("File does not exist: %s" % options.filename)
 	sys.exit(255)
 	
 try:
 	acctf=open(options.filename,'r')
 except IOError as e:
-	print 'File cannot be opened.'
+	print('File cannot be opened.')
 	sys.exit(254)
 	
 if not options.output:
-	print 'No output filename specified.  You must specify a filename to write the data to.'
+	print('No output filename specified.  You must specify a filename to write the data to.')
 	sys.exit(252)
 
 try:
@@ -67,7 +69,7 @@ try:
 		'Total Wallclock Time',
    ])
 except IOError as e:
-	print 'Output file cannot be opened.'
+	print('Output file cannot be opened.')
 	sys.exit(253)
 
 
