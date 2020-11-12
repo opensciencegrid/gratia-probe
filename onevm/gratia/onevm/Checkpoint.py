@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import time
 import sys
 import os
@@ -15,7 +17,7 @@ class Checkpoint:
 			fd.close()
 		except:
 			etype,value,trace=sys.exc_info()
-			print "Failed to open file %s,%s,%s" % (etype,value,trace)
+			print("Failed to open file %s,%s,%s" % (etype,value,trace))
 	return lastChecked
     def getLastCheckPoint(self):
 	return self._lastChecked
@@ -26,7 +28,7 @@ class Checkpoint:
 		fd.close()
         except:
 		etype,value,trace=sys.exc_info()
-                print "Failed to write file %s,%s,%s" % (etype,value,trace)
+                print("Failed to write file %s,%s,%s" % (etype,value,trace))
 	
 
 
