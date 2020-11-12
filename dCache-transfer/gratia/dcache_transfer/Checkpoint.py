@@ -6,6 +6,8 @@
 # to the Gratia repository. This allows us to begin searching from this
 # checkpoint after a restart of the probe.
 
+from __future__ import print_function
+
 import os
 import logging
 import stat
