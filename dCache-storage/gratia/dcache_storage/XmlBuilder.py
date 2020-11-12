@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys,os
 
 from xml.sax import saxutils
@@ -16,7 +18,7 @@ class TestObject:
        self.c = c
 
    def foo(self):
-       print "Foo:",self.b
+       print("Foo:",self.b)
 
 class Result:
    def __init__(self):
@@ -73,8 +75,8 @@ class Xml2ObjectBuilder(ContentHandler):
            else:
               pos = name.rfind('.')
               if ( pos != -1 ):
-                exec "import "+name[:pos]
-              exec "current = "+name+"()"
+                exec("import "+name[:pos])
+              exec("current = "+name+"()")
               self._state.append(0)
       
            if ( self._root != None ):
@@ -102,7 +104,7 @@ class Xml2ObjectBuilder(ContentHandler):
                 else:
                    value = self._root.node
 
-                if ( self._attrs != None and self._attrs.has_key('type') ):
+                if ( self._attrs != None and 'type' in self._attrs ):
                    if (  self._attrs['type'] == 'numeric' ):
                       value = float(value)
 
@@ -130,8 +132,8 @@ if __name__ == '__main__':
   import sys
 
   fileName = sys.argv[1]
-  print fileName
+  print(fileName)
   f = file(fileName)
   pyO = Xml2ObjectBuilder(f)
-  print pyO.get().b
+  print(pyO.get().b)
 
