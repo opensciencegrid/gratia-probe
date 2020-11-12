@@ -9,7 +9,6 @@ import socket
 import struct
 import logging
 import optparse
-import cStringIO
 import threading
 import traceback
 import logging.handlers
@@ -54,14 +53,14 @@ def daemonize(pidfile):
 
    try:
       pid = os.fork()
-   except OSError, e:
+   except OSError as e:
       raise Exception("%s [%d]" % (e.strerror, e.errno))
 
    if (pid == 0):	# The first child.
       os.setsid()
       try:
          pid = os.fork()	# Fork a second child.
-      except OSError, e:
+      except OSError as e:
          raise Exception("%s [%d]" % (e.strerror, e.errno))
 
       if (pid == 0):	# The second child.
@@ -681,7 +680,7 @@ def parse_opts():
         os.makedirs(path)
     try:
         fp = open(logfile, 'w')
-    except Exception, e:
+    except Exception as e:
         raise Exception("Could not open %s-Storage logfile, %s, for " \
             "write.  Error: %s." % (XRD_NAME, logfile, str(e)))
     global log
@@ -760,7 +759,7 @@ def main():
         input = opts.input
         try:
             fp = open(input, 'r')
-        except Exception, e:
+        except Exception as e:
             raise Exception("Could not open input file, %s, for read due to " \
                 "exception %s." % (input, str(e)))
         try:
@@ -773,16 +772,16 @@ def main():
 	    try:
 	        DebugPrint(0, "Will send new Gratia data in %i seconds." % SLEEP_TIME)
 	        time.sleep(SLEEP_TIME)
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
 	    try:
 	        DebugPrint(1, "Creating a new Xrootd Gratia report.")
 	        gratia_handler.summary()
-	    except KeyboardInterrupt, SystemExit:
+	    except KeyboardInterrupt as SystemExit:
 	        raise
-	    except Exception, e:
+	    except Exception as e:
 	        gratia_log_traceback(lvl=1)
     finally:
         if not opts.print_only:
