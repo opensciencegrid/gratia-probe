@@ -663,7 +663,7 @@ def main():
             try:
                 DebugPrint(1, "Creating a new Xrootd Gratia report.")
                 gratia_handler.summary()
-            except KeyboardInterrupt as SystemExit:
+            except (KeyboardInterrupt, SystemExit) as _:
                 gratia_log_traceback(lvl=0)
                 gratia_handler.stop_exception()
                 gratia_handler.stop = True
@@ -681,4 +681,3 @@ if __name__ == '__main__':
     except:
         gratia_log_traceback()
         raise
-
