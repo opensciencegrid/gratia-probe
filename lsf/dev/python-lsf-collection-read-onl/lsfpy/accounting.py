@@ -542,9 +542,9 @@ class AcctFile:
 	## Iterator function is called each iteration and parses the next line of
 	#  the config file returning an event object for the specific event.
 	#\return An event object corresponding to the type of event in the log file.
-	def next(self):
+	def __next__(self):
 		try:
-			j=JobFinishEvent(self.reader.next())
+			j=JobFinishEvent(next(self.reader))
 		except:
-			j=JobFinishEvent(self.reader.next())
+			j=JobFinishEvent(next(self.reader))
 		return j

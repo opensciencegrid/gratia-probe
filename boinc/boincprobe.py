@@ -3,6 +3,8 @@
 
 # Gratia probe
 
+from __future__ import print_function
+
 import os
 import shutil
 
@@ -75,7 +77,7 @@ for var in flist:
             r.CpuDuration(0, 'system')
             r.VOName('LIGO')
 
-            print Gratia.Send(r)
+            print(Gratia.Send(r))
             shutil.move('/home/gprobe/Data/' + var, '/home/gprobe/Data/parsed/' + var)
         else:
 

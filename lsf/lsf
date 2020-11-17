@@ -144,7 +144,7 @@ class LsfInput(FileInput):
                             DebugPrint(4, "Saving New Checkpoint: %s (%s)" % (new_checkpoint, type(checkpoint)))
                             # new_checkpoint should be None or datetime
                             checkpoint.set_date_transaction(new_checkpoint[0], new_checkpoint[1])
-                    except ValueError, e:
+                    except ValueError as e:
                         DebugPrint(2, "Error parsing %s: %s" % (acct_file, e))
                 # The very last record may be incomplete or corrupted (written partially)
                 # If processing also the very last record
@@ -159,7 +159,7 @@ class LsfInput(FileInput):
                                     (this_r.eventTime, this_r.fileLineNumber), type(checkpoint)))
                             # new_checkpoint should be None or datetime
                             checkpoint.set_date_transaction(this_r.eventTime, this_r.fileLineNumber)
-            except IOError, e:
+            except IOError as e:
                 DebugPrint(2, "Unable to open LSF accounting file %s: %s" % (acct_file, e))
             except:
                 exc_type, exc_value, exc_traceback = sys.exc_info()

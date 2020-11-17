@@ -30,7 +30,7 @@ class UserManager:
         Given the user id return the username
         """
 
-        if self.users.has_key(id):
+        if id in self.users:
             return self.users[id]
 
         raise UserNotFound('User with id % not found' % id)

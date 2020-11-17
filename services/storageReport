@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -168,7 +170,7 @@ def printOpts(opt):
     else:
         str += 'We will NOT be sending data to Gratia.\n'
         
-    print str
+    print(str)
 
 valid_name = re.compile('[A-Za-z0-9_-]*')
 valid_vo = re.compile('[A-Za-z0-9_\-\*]*')
@@ -263,8 +265,8 @@ def sendReport(opt):
     if opt.fileCountLimit != None:
         state.FileCountLimit(opt.fileCountLimit)
 
-    print "SE Description to Gratia", Gratia.Send(desc)
-    print "SE State to Gratia", Gratia.Send(state)
+    print("SE Description to Gratia", Gratia.Send(desc))
+    print("SE State to Gratia", Gratia.Send(state))
     
 def main():
     parser = build_opts()

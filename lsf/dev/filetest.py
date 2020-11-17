@@ -3,6 +3,7 @@
 # very primitive
 
 from __future__ import with_statement
+from __future__ import print_function
 import time
 import timeit
 import sys
@@ -10,33 +11,36 @@ import sys
 fname = "infile"
 if len(sys.argv) > 1:
     if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-        print "%s [FNAME]  -  do the tests on FNAME (def: infile)"
+        print("%s [FNAME]  -  do the tests on FNAME (def: infile)")
         sys.exit(0)
     fname = sys.argv[1]
 
-print "** Tests setup -t: %s" % time.time()
+print("** Tests setup -t: %s" % time.time())
 sys.stdout.flush()
 
 #flength = 7
-import commands
-res = commands.getoutput('wc %s' % fname).split()
+try:
+    from commands import getoutput
+except ImportError:
+    from subprocess import getoutput
+res = getoutput('wc %s' % fname).split()
 flength = int(res[0])
 fsize = int(res[2])
 tests = "12345678"
 ITERATIONS = 10
 REPETITIONS = 3
 
-print "** Running tests %s (rep: %s) on file %s (%s)" % (tests, REPETITIONS, fname, flength)
+print("** Running tests %s (rep: %s) on file %s (%s)" % (tests, REPETITIONS, fname, flength))
 sys.stdout.flush()
 
 
 def do_time(statement, setup='pass', number=ITERATIONS, repeat=REPETITIONS):
     res = timeit.repeat(statement, setup, repeat=repeat, number=number)
-    print "*** Times: %s %s" % (min(res), res)
+    print("*** Times: %s %s" % (min(res), res))
 
 
 if "1" in tests:
-    print "** Test 1 - list file  -t: %s" % time.time()
+    print("** Test 1 - list file  -t: %s" % time.time())
     mark_int = int(flength/10)
     position = 0
     f = open(fname)
@@ -45,7 +49,7 @@ if "1" in tests:
         # should be returning the position before (pre) or after (f.tell()) the line?
         #print line, i, f.tell()
         if i > position:
-            print i, f.tell()
+            print(i, f.tell())
             position += mark_int
         pre = f.tell()
     f.close()
@@ -61,7 +65,7 @@ def markers(fname):
         # if r == 0:  - will rarely happen because of buffer and line size
         r = f.tell()
         if r > position:
-            print " mark %s, %s" % (position, r)
+            print(" mark %s, %s" % (position, r))
             position += mark20
     f.close()
 
@@ -73,7 +77,7 @@ def markers2(f):
         # if r == 0:  - will rarely happen because of buffer and line size
         r = f.tell()
         if r > position:
-            print " mark %s, %s" % (position, r)
+            print(" mark %s, %s" % (position, r))
             position += mark20
 def simplecount(fname):
     lines = 0
@@ -88,19 +92,19 @@ def simplecount2(f):
     return lines
 
 if "5" in tests:
-    print "** Test 5 markers/fname (only+ timeit) -t: %s" % time.time()
+    print("** Test 5 markers/fname (only+ timeit) -t: %s" % time.time())
     markers(fname)
-    print "- Markers with timeit: "
+    print("- Markers with timeit: ")
     sys.stdout.flush()
     do_time("markers(fname)", setup="from __main__ import markers, fname")
     sys.stdout.flush()
 
 if "6" in tests:
-    print "** Test 6 markers2/file (only+ timeit) -t: %s" % time.time()
+    print("** Test 6 markers2/file (only+ timeit) -t: %s" % time.time())
     f = open(fname)
     markers2(f)
     f.close()
-    print "- Markers with timeit: "
+    print("- Markers with timeit: ")
     sys.stdout.flush()
     f = open(fname)
     do_time("f = open(fname); markers2(f)", setup="from __main__ import markers2, fname")
@@ -108,20 +112,20 @@ if "6" in tests:
     sys.stdout.flush()
 
 if "4" in tests:
-    print "** Test 4 file vs name -t: %s" % time.time()
-    print "- Open file markers: "
+    print("** Test 4 file vs name -t: %s" % time.time())
+    print("- Open file markers: ")
     f = open(fname)
     do_time("f = open(fname); markers2(f)", setup="from __main__ import markers2, fname")
     f.close()
-    print "- Fname: "
+    print("- Fname: ")
     do_time("simplecount(fname)", setup="from __main__ import simplecount, fname")
-    print "- Open file: "
+    print("- Open file: ")
     f = open(fname)
     do_time("f = open(fname); simplecount2(f)", setup="from __main__ import simplecount2, fname")
     f.close()
-    print "- Fname 2: "
+    print("- Fname 2: ")
     do_time("simplecount(fname)", setup="from __main__ import simplecount, fname")
-    print "- Open file: 2"
+    print("- Open file: 2")
     f = open(fname)
     do_time("f = open(fname); simplecount2(f)", setup="from __main__ import simplecount2, fname")
     f.close()
@@ -151,12 +155,12 @@ def run_through_ctr_tell(f):
 
 
 if "2" in tests:
-    print "** Test 2 timing -t: %s" % time.time()
+    print("** Test 2 timing -t: %s" % time.time())
     for i in ['run_through', 'run_through_tell', 'run_through_enum_tell', 'run_through_ctr_tell']:
         cmd = "%s(f)" % i
-        print "Testing %s: " % cmd
+        print("Testing %s: " % cmd)
         f = open(fname)
-        print timeit.timeit(cmd, setup="from __main__ import %s, f" % i, number=REPETITIONS)
+        print(timeit.timeit(cmd, setup="from __main__ import %s, f" % i, number=REPETITIONS))
         f.close()
     sys.stdout.flush()
 
@@ -202,7 +206,7 @@ def opcount(fname):
 
 
 if "3" in tests:
-    print "** Test 3 functions: -t: %s" % time.time()
+    print("** Test 3 functions: -t: %s" % time.time())
     counts = defaultdict(list)
 
     for i in range(5):
@@ -212,8 +216,8 @@ if "3" in tests:
             counts[func].append(time.time() - start_time)
 
     for key, vals in counts.items():
-        print key.__name__, ":", sum(vals) / float(len(vals))
+        print(key.__name__, ":", sum(vals) / float(len(vals)))
 
     sys.stdout.flush()
 
-print "** End of all tests -t: %s" % time.time()
+print("** End of all tests -t: %s" % time.time())

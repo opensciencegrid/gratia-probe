@@ -39,7 +39,7 @@ class DictRecordAggregator:
                 if ( item1[aggField] != item2[aggField] ):
                     return 0
             return 1
-        except KeyError,ex:
+        except KeyError as ex:
             pass
         return 0
 
@@ -110,9 +110,7 @@ class TimeBinRange:
         Returns a list of the aggregated rows held by this object.
         """
         result = []
-        tms =  self.bins.keys()
-        tms.sort()
-        for tm in tms:
+        for tm in sorted(self.bins):
             result += self.bins[tm].list()
         return result
 
@@ -142,8 +140,7 @@ def test():
 
 
     for l in tr.list():
-       print l
+       print(l)
 
 if __name__ == '__main__':
     test()
-

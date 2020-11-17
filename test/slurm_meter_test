@@ -11,6 +11,8 @@
 # Copyright 2013 University of Nebraska-Lincoln. Released under GPL v2.
 ###########################################################################
 
+from __future__ import print_function
+
 import sys, os
 import time
 import optparse
@@ -66,8 +68,8 @@ class SlurmTest():
     def __init__(self):
         try:
             self.opts, self.args = self.parse_opts()
-        except Exception, e:
-            print >> sys.stderr, str(e)
+        except Exception as e:
+            print(e, file=sys.stderr)
             sys.exit(1)
 
     def main(self):
@@ -92,8 +94,8 @@ class SlurmTest():
         else:
             raise ValueError('SLURM schema %d is unknown' % (self.opts.schema))
 
-        print "Retrieving jobs completed after %s" % \
-            time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(self.opts.start))
+        print("Retrieving jobs completed after %s" % \
+            time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(self.opts.start)))
 
         for job in self.sacct.completed_jobs(self.opts.start):
             time_end = time.gmtime(job['time_end'])
@@ -108,12 +110,12 @@ class SlurmTest():
             total_time += wall
 
         # Print results
-        print "Date      \tJobs   \tHours "
-        print "----------\t-------\t-------"
-        for d in iter(sorted(total_by_day.iteritems())):
-            print "%s\t%d\t%d" % (d[0], d[1]['jobs'], d[1]['wall']/3600)
-        print "----------\t-------\t-------"
-        print "%s\t%d\t%d" % ("total     ", total_jobs, total_time/3600)
+        print("Date      \tJobs   \tHours ")
+        print("----------\t-------\t-------")
+        for d in iter(sorted(total_by_day.items())):
+            print("%s\t%d\t%d" % (d[0], d[1]['jobs'], d[1]['wall']/3600))
+        print("----------\t-------\t-------")
+        print("%s\t%d\t%d" % ("total     ", total_jobs, total_time/3600))
 
 if __name__ == "__main__":
     SlurmTest().main()

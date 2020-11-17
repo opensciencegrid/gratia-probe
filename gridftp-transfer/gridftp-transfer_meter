@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -52,7 +54,7 @@ def get_last_time(log_fp):
             if checkpoint.get('digest') != log_digest:
                 return 0
             return checkpoint.get('timestamp', 0)
-    except Exception, e:
+    except Exception as e:
         GratiaCore.DebugPrint(1, "Failed to parse checkpoint file: %s", str(e))
         return 0
 
@@ -389,8 +391,8 @@ def main():
 
     try:
         opts, dirs = parse_opts()
-    except Exception, e:
-        print >> sys.stderr, str(e)
+    except Exception as e:
+        print(str(e), file=sys.stderr)
         sys.exit(1)
 
     # Sanity checks for the probe's runtime environment.
@@ -410,7 +412,7 @@ def main():
     GratiaCore.DebugPrint(2, "Starting GridFTP probe.")
     try:
         run_probe()
-    except Exception, e:
+    except Exception as e:
         GratiaCore.Error("GridFTP probe failed with error: %s" % str(e))
         raise
     GratiaCore.DebugPrint(2, "GridFTP probe is done.")

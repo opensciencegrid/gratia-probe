@@ -7,7 +7,6 @@ import time
 import socket
 import datetime
 import optparse
-import ConfigParser
 
 import gratia.common.Gratia as Gratia
 import gratia.dcache_storage.GratiaConnector as GratiaConnector
@@ -70,7 +69,7 @@ def main():
     ynMap = { 'no' : 1 , 'false' : 1 , 'n':1 , '0' : 1 }
     noPoolsArg = ""
  
-    if ( poolsUsage != None and ynMap.has_key(poolsUsage.lower())):
+    if ( poolsUsage != None and poolsUsage.lower() in ynMap):
        noPoolsArg = "-PARAM nopools 1"
 
     timeNow = int(time.time())

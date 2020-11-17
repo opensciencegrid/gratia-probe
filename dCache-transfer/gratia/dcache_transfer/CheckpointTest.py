@@ -4,12 +4,15 @@
 #
 # This program performs some basic unit tests on the Checkpoint module.
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import sys
 import stat
 from datetime import datetime
 
-from Checkpoint import Checkpoint
+from .Checkpoint import Checkpoint
 
 TestFileName = "chkpt_test"
 stmp4 = datetime( 2006, 1, 1, 1, 0, 0, 2, None )
@@ -18,13 +21,13 @@ txn4 = "85432"
 
 def checkok( testid, c, stamp, txn ):
     if c.lastDateStamp() != stamp or c.lastTransaction() != txn:
-        print "ERROR " + testid + ": expected stamp = ", stamp, \
-              " current stamp = ", c.lastDateStamp()
-        print "ERROR " + testid + ": txn = ", txn, \
-              " current txn = ", c.lastTransaction()
+        print("ERROR " + testid + ": expected stamp = ", stamp, \
+              " current stamp = ", c.lastDateStamp())
+        print("ERROR " + testid + ": txn = ", txn, \
+              " current txn = ", c.lastTransaction())
         sys.exit(1) # stop trying - something is wrong
     else:
-        print "Test " + testid + ": passed"
+        print("Test " + testid + ": passed")
 
 def deleteTestFile():
     """ Get rid of extant test file file """

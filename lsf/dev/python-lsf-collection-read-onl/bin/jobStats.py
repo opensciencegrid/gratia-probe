@@ -18,6 +18,8 @@
 # Copyright 2011 David Irvine
 #
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import os
 import csv
@@ -30,17 +32,17 @@ p.add_option("-f", "--file", dest="filename",help="Read from lsb accounting FILE
 (options, args)=p.parse_args()
 
 if not options.filename:
-	print "No filename specified."
+	print("No filename specified.")
 	sys.exit(253)
 	
 if not os.path.isfile(options.filename):
-	print "File does not exist: %s" % options.filename
+	print("File does not exist: %s" % options.filename)
 	sys.exit(255)
 	
 try:
 	acctf=open(options.filename,'r')
 except IOError as e:
-	print 'File cannot be opened.'
+	print('File cannot be opened.')
 	sys.exit(254)
 	
 
@@ -100,21 +102,21 @@ for i in AcctFile(acctf):
 
 # Print out a summary per queue.
 for q in qs.values():
-	print "Name: %s" % q['name']
-	print " Total Jobs:      %d" % q['numJobs']
-	print " Failed Jobs:     %d" % q['numFJobs']
-	print " Total Wait Time: %s" % q['waitTime']
-	print " Total Wall Time: %s" % q['wallTime']
-	print " Total CPU Time:  %s" % q['runTime']
-	print " Total Terminated CPU Time: %s" %q['wasteTime']
+	print("Name: %s" % q['name'])
+	print(" Total Jobs:      %d" % q['numJobs'])
+	print(" Failed Jobs:     %d" % q['numFJobs'])
+	print(" Total Wait Time: %s" % q['waitTime'])
+	print(" Total Wall Time: %s" % q['wallTime'])
+	print(" Total CPU Time:  %s" % q['runTime'])
+	print(" Total Terminated CPU Time: %s" %q['wasteTime'])
 
 
 # Print out a summary per user, highest abuser at the top.
 for u in sorted(us.values(), key=lambda k: k['wasteTime'], reverse=True):
-	print "Name: %s" % u['name']
-	print " Total Jobs:      %d" % u['numJobs']
-	print " Failed Jobs:     %d" % u['numFJobs']
-	print " Total Wait Time: %s" % u['waitTime']
-	print " Total Wall Time: %s" % u['wallTime']
-	print " Total CPU Time:  %s" % u['runTime']
-	print " Total Terminated CPU Time: %s" %u['wasteTime']
+	print("Name: %s" % u['name'])
+	print(" Total Jobs:      %d" % u['numJobs'])
+	print(" Failed Jobs:     %d" % u['numFJobs'])
+	print(" Total Wait Time: %s" % u['waitTime'])
+	print(" Total Wall Time: %s" % u['wallTime'])
+	print(" Total CPU Time:  %s" % u['runTime'])
+	print(" Total Terminated CPU Time: %s" %u['wasteTime'])

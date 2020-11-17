@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -7,7 +9,6 @@ import time
 import socket
 import datetime
 import optparse
-import ConfigParser
 import xml.sax.saxutils
 
 has_gratia = True
@@ -38,7 +39,7 @@ class GratiaConnector:
         except:
             raise
     if not has_gratia:
-        print "Unable to import Gratia and Storage modules!"
+        print("Unable to import Gratia and Storage modules!")
         sys.exit(1)
 
     Gratia.Initialize()

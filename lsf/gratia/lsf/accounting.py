@@ -21,6 +21,7 @@
 # Copyright 2011 David Irvine
 #### end python LSF collection statement
 
+from __future__ import print_function
 
 import datetime
 import csv
@@ -564,8 +565,8 @@ class AcctFile:
     #  the config file returning an event object for the specific event.
     #\return An event object corresponding to the type of event in the log file.
     # can raise ValueError if the record is malformed
-    def next(self):
-        j = JobFinishEvent(self.reader.next(), self.line_counter)
+    def __next__(self):
+        j = JobFinishEvent(next(self.reader), self.line_counter)
         self.line_counter += 1
         return j
 
@@ -578,10 +579,10 @@ if __name__ == "__main__":
     fname = "lsb.acct"
     if len(sys.argv) > 1:
         if sys.argv[1] == "-h" or sys.argv[1] == "--help":
-            print "%s [LSF_ACCOUNTING_FILE] - (default: lsb.acct)" % sys.argv[0]
+            print("%s [LSF_ACCOUNTING_FILE] - (default: lsb.acct)" % sys.argv[0])
             sys.exit(0)
         fname = sys.argv[1]
 
     #import unittest
     for i in AcctFile(open(fname, 'r')):
-        print i.queue, i.jobID
+        print(i.queue, i.jobID)

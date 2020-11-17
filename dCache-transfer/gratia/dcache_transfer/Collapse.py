@@ -4,10 +4,13 @@ The Collapse module primarily exports one function, collapse, that aggregates
 similar records (where each record is assumed to be a python dictionary
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import time
 import random
 import datetime
-import TimeBinRange
+from . import TimeBinRange
 
 """
 class RecordProxy:
@@ -104,6 +107,6 @@ def test():
    return result
 
 if __name__ == "__main__":
-   print "AAAA"
+   print("AAAA")
    for r in test():
-      print r
+      print(r)

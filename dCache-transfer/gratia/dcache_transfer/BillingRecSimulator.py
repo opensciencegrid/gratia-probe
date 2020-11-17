@@ -1,11 +1,14 @@
+
+from __future__ import absolute_import
+
 import datetime
 import time
 import re
 import random
 
-import TestContainer
-import Collapse
-import TimeBinRange
+from . import TestContainer
+from . import Collapse
+from . import TimeBinRange
 
 def generateTableContent():
 
