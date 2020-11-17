@@ -1,7 +1,8 @@
 #!/usr/bin/python
-__author__ = 'marcom'
 
 from __future__ import print_function
+
+__author__ = 'marcom'
 
 USERVO_FILE = '../user-vo-map.txt'
 DEST_DIR = '../dst'

@@ -1,7 +1,8 @@
 #!/usr/bin/python
-__author__ = 'marcom'
 
 from __future__ import print_function
+
+__author__ = 'marcom'
 
 import sys  # used for main and DebugPrint replacement
 import os
