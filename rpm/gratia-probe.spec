@@ -738,6 +738,9 @@ License: See LICENSE.
 %description osg-pilot-container
 osg pilot container probe
 
+%post osg-pilot-container
+%customize_probeconfig -d osg-pilot-container
+
 %files osg-pilot-container
 %defattr(-,root,root,-)
 %doc %{default_prefix}/gratia/slurm/README.html
