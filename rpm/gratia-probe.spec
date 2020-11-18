@@ -243,7 +243,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   # Install osg pilot container files
-  install -m 644 osg-pilot-container/gratia-probe-osgpilot.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-osgpilot.cron
+  install -m 644 osg-pilot-container/gratia-probe-osg-pilot-container.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
@@ -266,7 +266,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/Dockerfile
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/gratia-probe-osgpilot.cron
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/gratia-probe-osg-pilot-container.cron
 
   # TODO: allow test directory, remove from RPM
 
@@ -749,7 +749,7 @@ osg pilot container probe
 %{default_prefix}/gratia/osg-pilot-container/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osgpilot.cron
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
 
 %package slurm
 Summary: A SLURM probe
