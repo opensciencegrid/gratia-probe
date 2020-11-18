@@ -391,7 +391,8 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
-%if 0%{?rhel} >= 7
+%if 0%{?rhel} == 7
+# XXX: for some reason this __pycache__ does not appear in el8
 %{python_sitelib}/gratia/__pycache__/
 %endif
 %{python_sitelib}/gratia/__init__.py*
