@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
-__author__ = 'marcom'
 
 ###########################################################################
 #
@@ -16,6 +15,8 @@ __author__ = 'marcom'
 ###########################################################################
 
 from __future__ import print_function
+
+__author__ = 'marcom'
 
 # Standard libraries
 import os
