@@ -34,3 +34,6 @@ RUN sed -i -e '/SiteName=/s/"Generic site"/"OSG Pilot Container Probe"/' \
            -e '/EnableProbe=/s/"0"/"1"/' \
            /etc/gratia/*/ProbeConfig
 
+# enable the gratia-probes-cron service
+RUN touch /var/lock/subsys/gratia-probes-cron
+
