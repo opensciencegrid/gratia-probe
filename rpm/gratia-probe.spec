@@ -391,6 +391,9 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
+%if 0%{?rhel} >= 7
+%{python_sitelib}/gratia/__pycache__/
+%endif
 %{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common
 %dir %{default_prefix}/gratia/common
@@ -737,6 +740,10 @@ The SLURM probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %doc %{default_prefix}/gratia/slurm/README.html
 %dir %{default_prefix}/gratia/slurm
+%if 0%{?rhel} == 7
+# XXX: for some reason this __pycache__ does not appear in el8
+%{default_prefix}/gratia/slurm/__pycache__/
+%endif
 %{default_prefix}/gratia/slurm/SlurmProbe.py*
 %{default_prefix}/gratia/slurm/slurm_meter
 %{default_prefix}/gratia/slurm/slurm_meter_running
