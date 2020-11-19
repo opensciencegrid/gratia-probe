@@ -1,7 +1,8 @@
 # run from top-level gratia-probe dir with:
 #   docker build -f osg-pilot-container/Dockerfile .
 
-FROM opensciencegrid/software-base:fresh
+# build rpms in a temporary container
+FROM opensciencegrid/software-base:fresh as build-container
 
 LABEL name="OSG Pilot Container Probe Container"
 
@@ -27,8 +28,14 @@ RUN ver=$(awk '/Version:/ {print $2}' gratia-probe/rpm/gratia-probe.spec) \
 
 RUN osg-build rpmbuild /root/bld
 
+
+# build real container; copying in rpm results
+FROM opensciencegrid/software-base:fresh
+
+COPY --from=build-container /root/bld/_build_results /root/RPMS
+
 # install probe rpms
-RUN yum install -y /root/bld/_build_results/gratia-probe-{osg-pilot-container,common}-*-*.rpm
+RUN yum install -y /root/RPMS/gratia-probe-{osg-pilot-container,common}-*-*.rpm
 
 # do minimal probe configuration
 RUN sed -i -e '/SiteName=/s/"Generic site"/"OSG Pilot Container Probe"/' \
