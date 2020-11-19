@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 import time
+import random
 import hashlib
 import sqlite3
 import optparse
@@ -530,6 +531,12 @@ def parse_opts():
         help="Do not limit records to those with IsOsgVoContainer.",
         default=False, action="store_true", dest="any_records")
 
+    parser.add_option("-s", "--sleep",
+        help="""This should be used with normal cron usage. It sets a random
+amount of sleep, up to the specified number of seconds before running.
+This reduces the load on the Gratia collector.""",
+        dest="sleep", default=0, type="int")
+
     opts, args = parser.parse_args()
 
     # Initialize Gratia
@@ -557,6 +564,12 @@ def main():
     opts, args = parse_opts()
 
     GratiaWrapper.CheckPreconditions()
+
+    if opts.sleep:
+        rnd = random.randint(1, int(opts.sleep))
+        DebugPrint(INFO, "Sleeping for %d seconds before proceeding." % rnd)
+        time.sleep(rnd)
+
     #GratiaWrapper.ExclusiveLock()
 
     register_gratia()
