@@ -77,7 +77,7 @@ SEND_ATTRS = [
                      #                        off from the partitionable slot
     'Processors',    # Cpus
     'Memory',        # MemoryUsage
-    'Site',          # GLIDEIN_Site (or GLIDEIN_ResourceName)
+    'SiteName',      # GLIDEIN_Site (or GLIDEIN_ResourceName)
     'MachineName',   # Machine
 ]
 
@@ -210,7 +210,7 @@ schema_sql = [
          , Cpus                           as Processors
          , MemoryUsage                    as Memory
          , ifnull(GLIDEIN_Site,
-                  GLIDEIN_ResourceName)   as Site
+                  GLIDEIN_ResourceName)   as SiteName
          , Machine                        as MachineName
       from finished;
     """,
@@ -478,7 +478,7 @@ def outbox_row_to_jur(row):
     r.Processors   ( row.Processors, metric="max" )
     if row.Memory:
         r.Memory   ( row.Memory, "MB", description="RSS")
-    #r.Site         ( row.Site )
+    r.SiteName     ( row.SiteName )
     r.MachineName  ( row.MachineName )
     r.Grid         ( grid_type )
     r.LocalUserId  ( LOCAL_USER )
