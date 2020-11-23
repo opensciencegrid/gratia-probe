@@ -82,7 +82,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
   # Obtain files
 
-%define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf
+%define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf osg-pilot-container
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -262,6 +262,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/Dockerfile
 
   # TODO: allow test directory, remove from RPM
 
@@ -269,6 +270,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
+  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/osg-pilot-container
 
 
   # PBS / LSF probe
@@ -725,6 +727,29 @@ Gratia OSG accounting system probe for providing VM accounting.
 %post onevm
 %customize_probeconfig -d onevm
 
+%package osg-pilot-container
+Summary: osg pilot container probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+#Requires: python-sqlite
+Requires: %{condor_python}
+License: See LICENSE.
+
+%description osg-pilot-container
+osg pilot container probe
+
+%post osg-pilot-container
+%customize_probeconfig -d osg-pilot-container
+
+%files osg-pilot-container
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/slurm/README.html
+%dir %{default_prefix}/gratia/osg-pilot-container
+%{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
+%{default_prefix}/gratia/osg-pilot-container/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
+%dir %{_localstatedir}/lib/gratia/osg-pilot-container
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
 
 %package slurm
 Summary: A SLURM probe
