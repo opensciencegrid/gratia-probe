@@ -579,6 +579,73 @@ def main():
     send_updates(opts)
 
 
+def send_alternate_records(gratia_info):
+    """
+    For any accumulated records with an alternate probe/site name, send in a sub-process.
+    """
+    if not gratia_info:
+        return
+    GratiaCore.Disconnect()
+    for info, records in gratia_info.items():
+        pid = os.fork()
+        if pid == 0: # I am the child
+            try:
+                signal.alarm(5*60)
+                send_alternate_records_child(info, records)
+            except Exception as e:
+                DebugPrint(2, "Failed to send alternate records: %s" % str(e))
+                DebugPrintTraceback(2)
+                os._exit(0)
+            os._exit(0)
+        else: # I am parent
+            try:
+                os.waitpid(pid, 0)
+            except:
+                raise
+
+
+def send_alternate_records_child(info, record_list):
+    probe, site = info
+
+    try:
+        GratiaCore.Initialize(g_probe_config)
+    except Exception as e:
+        DebugPrint(2, "Failed to send alternate records: %s" % str(e))
+        DebugPrintTraceback(2)
+        raise
+    config.Config.setSiteName(site)
+    config.Config.setMeterName(probe)
+    GratiaCore.Handshake()
+    try:
+        GratiaCore.SearchOutstandingRecord()
+    except Exception as e:
+        DebugPrint(2, "Failed to send alternate records: %s" % str(e)) 
+        DebugPrintTraceback(2)
+        raise
+    GratiaCore.Reprocess()
+
+    DebugPrint(2, "Sending alternate records for probe %s / site %s." % (probe, site))
+    DebugPrint(2, "Gratia collector to use: %s" % GratiaCore.Config.get_SOAPHost())
+
+    count_found = 0
+    count_submit = 0
+    for record in record_list:
+        count_found += 1
+        record.ProbeName(probe)
+        record.SiteName(site)
+        response = GratiaCore.Send(record)
+        if response[:2] == 'OK':
+            count_submit += 1
+        DebugPrint(4, "Sending record for probe %s in site %s to Gratia: %s."% \
+            (probe, site, response))
+
+    DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
+    DebugPrint(2, "Number of usage records found: %d" % count_found)
+
+    os._exit(0)
+
+
+
 if __name__ == '__main__':
     main()
 
