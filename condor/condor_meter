@@ -836,7 +836,7 @@ def htcondor_configured():
             args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
             DebugPrint(4, 'Running command to check condor config: ' + args)
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
-        (cmd_stdout, cmd_stderr) = map(utils.bytes2str, cmd.communicate())
+        cmd_stdout = utils.bytes2str(cmd.communicate()[0])
         # cmd_stdout contains the directory path, removing spaces
         # It will always be a string even if returncode != 0 
         cmd_stdout = cmd_stdout.strip()
