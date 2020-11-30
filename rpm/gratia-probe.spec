@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.21.2
+Version:            1.22.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -937,6 +937,11 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Mon Nov 30 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.22.0-1
+- Initial release of osg-container-pilot probe (SOFTWARE-4169)
+- More el8 / python3 build fixes (SOFTWARE-4348)
+- Fix bug in cmd.communicate() handling of stderr (SOFTWARE-4348)
+
 * Tue Nov 17 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.21.1-2
 - More el7 / python3 build fixes (SOFTWARE-4348)
 
