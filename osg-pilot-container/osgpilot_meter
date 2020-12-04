@@ -500,18 +500,30 @@ def send_updates(opts):
     count_submit = 0
     count_delete = 0
     cur = sqldb.execute("select * from outbox;")
+
+    persite_info = collections.defaultdict(list)
+    delete_ids = []
     for row in cur:
         row = OutboxRow(*row)
-
         rec = outbox_row_to_jur(row)
-        response = GratiaCore.Send(rec)
-        DebugPrint(DEBUG, "Sending record to gracc; response: %s."
-                          % response)
+        sitekey = rec.GetProbeName(), rec.GetSiteName()
+        persite_info[sitekey].append(rec)
+        delete_ids.append(row.ID)
 
-        if response[:2] == 'OK':
+    send_alternate_records(persite_info, opts.gratia_config)
+
+    #   response = GratiaCore.Send(rec)
+    #   DebugPrint(DEBUG, "Sending record to gracc; response: %s."
+    #                     % response)
+
+    #   if response[:2] == 'OK':
+
+    # XXX: we are deleting our outbox records without checking the response
+    #      from gracc  :(
+    for rowid in delete_ids:
             count_submit += 1
             delete_sql = "delete from outbox where id = ?"
-            count_delete += sqldb.execute(delete_sql, (row.ID,)).rowcount
+            count_delete += sqldb.execute(delete_sql, (rowid,)).rowcount
 
     sqldb.commit()
 
@@ -585,7 +597,7 @@ def main():
     send_updates(opts)
 
 
-def send_alternate_records(gratia_info):
+def send_alternate_records(gratia_info, gratia_config):
     """
     For any accumulated records with an alternate probe/site name, send in a sub-process.
     """
@@ -597,7 +609,7 @@ def send_alternate_records(gratia_info):
         if pid == 0: # I am the child
             try:
                 signal.alarm(5*60)
-                send_alternate_records_child(info, records)
+                send_alternate_records_child(info, records, gratia_config)
             except Exception as e:
                 DebugPrint(2, "Failed to send alternate records: %s" % str(e))
                 DebugPrintTraceback(2)
@@ -610,11 +622,11 @@ def send_alternate_records(gratia_info):
                 raise
 
 
-def send_alternate_records_child(info, record_list):
+def send_alternate_records_child(info, record_list, gratia_config):
     probe, site = info
 
     try:
-        GratiaCore.Initialize(g_probe_config)
+        GratiaCore.Initialize(gratia_config)
     except Exception as e:
         DebugPrint(2, "Failed to send alternate records: %s" % str(e))
         DebugPrintTraceback(2)
