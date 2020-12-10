@@ -363,7 +363,11 @@ This product includes software developed by The EU EGEE Project
 %package common
 Summary: Common files for Gratia OSG accounting system probes
 Group: Applications/System
+%if 0%{?rhel} < 7
 Requires: pyOpenSSL
+%else
+Requires: python36-pyOpenSSL
+%endif
 Requires(post): chkconfig
 Requires(preun): chkconfig
 Obsoletes: gratia-probe-bdii-status < 1.18.2-1
