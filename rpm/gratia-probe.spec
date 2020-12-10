@@ -32,9 +32,17 @@ ExcludeArch: noarch
 
 %if 0%{?rhel} >= 7
 %global __python /usr/bin/python3
-%global condor_python python3-condor
+%global condor_python   python3-condor
+%global python_mysql    python36-mysql
+%global python_openssl  python36-pyOpenSSL
+%global python_psycopg2 python3-psycopg2
+%global python_tz       python36-pytz
 %else
-%global condor_python python2-condor
+%global condor_python   python2-condor
+%global python_mysql    MySQL-python
+%global python_openssl  pyOpenSSL
+%global python_psycopg2 python-psycopg2
+%global python_tz       pytz
 %endif
 
 %global debug_package %{nil}
@@ -363,11 +371,7 @@ This product includes software developed by The EU EGEE Project
 %package common
 Summary: Common files for Gratia OSG accounting system probes
 Group: Applications/System
-%if 0%{?rhel} < 7
-Requires: pyOpenSSL
-%else
-Requires: python36-pyOpenSSL
-%endif
+Requires: %{python_openssl}
 Requires(post): chkconfig
 Requires(preun): chkconfig
 Obsoletes: gratia-probe-bdii-status < 1.18.2-1
@@ -519,7 +523,7 @@ The metric probe for the Gratia OSG accounting system.
 Summary: Gratia OSG accounting system probe for dCache billing.
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
-Requires:  python-psycopg2
+Requires: %{python_psycopg2}
 License: See LICENSE.
 
 Obsoletes: dCache-transfer < 1.07.02e-15
@@ -580,7 +584,7 @@ Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: globus-gridftp-osg-extensions
 Requires: globus-gridftp-server-progs >= 7.20-1.3
-Requires: pytz
+Requires: %{python_tz}
 License: See LICENSE.
 
 %description gridftp-transfer
@@ -760,7 +764,7 @@ Summary: A SLURM probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: slurm
-Requires: MySQL-python
+Requires: %{python_mysql}
 License: See LICENSE.
 
 %description slurm
@@ -841,7 +845,7 @@ The alternative LSF probe for the Gratia OSG accounting system.
 Summary: Enstore transfer probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
-Requires: python-psycopg2
+Requires: %{python_psycopg2}
 License: See LICENSE.
 
 %description enstore-transfer
@@ -866,7 +870,7 @@ Summary: Enstore storage probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
-Requires: python-psycopg2
+Requires: %{python_psycopg2}
 License: See LICENSE.
 
 %description enstore-storage
@@ -891,7 +895,7 @@ Summary: Enstore tapedrive probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
-Requires: python-psycopg2
+Requires: %{python_psycopg2}
 License: See LICENSE.
 
 %description enstore-tapedrive
@@ -918,7 +922,7 @@ Summary: dCache storagegroup probe
 Group: Applications/System
 Requires: %{name}-common >= %{version}-%{release}
 Requires: %{name}-services >= %{version}-%{release}
-Requires: python-psycopg2
+Requires: %{python_psycopg2}
 License: See LICENSE.
 
 %description dcache-storagegroup
