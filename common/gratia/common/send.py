@@ -15,7 +15,6 @@ import gratia.common.bundle as bundle
 import gratia.common.connect_utils as connect_utils
 import gratia.common.global_state as global_state
 import gratia.common.reprocess as reprocess
-import gratia.common.utils as utils
 
 Config = ConfigProxy()
 
@@ -76,7 +75,7 @@ def Send(record):
         # Generate the XML
 
         DebugPrint(4, 'DEBUG: Generating data to send')
-        record.XmlData = utils.bytes2str(safeEncodeXML(xmlDoc)).splitlines(True)
+        record.XmlData = safeEncodeXML(xmlDoc).splitlines(True)
         DebugPrint(4, 'DEBUG: Generating data to send: OK')
 
         # Close and clean up the document2
@@ -438,7 +437,7 @@ def SendHandshake(record):
 
     # Generate the XML
 
-    record.XmlData = utils.bytes2str(safeEncodeXML(xmlDoc)).splitlines(True)
+    record.XmlData = safeEncodeXML(xmlDoc).splitlines(True)
 
     # Close and clean up the document
 
