@@ -5,11 +5,6 @@ import pwd
 import xml.sax.saxutils
 import xml.dom.minidom
 
-try:
-    import StringIO
-except ImportError:
-    import io as StringIO
-
 import gratia.common.vo as vo
 import gratia.common.utils as utils
 import gratia.common.config as config
@@ -27,17 +22,7 @@ def safeEncodeXML(xmlDoc):
 
 
 def safeParseXML(xmlString):
-    if utils.pythonVersionRequire(2, 3):
-        return xml.dom.minidom.parseString(xmlString)
-    else:
-
-          # python < 2.3
-        # parseString is not UTF-safe: use StringIO instead
-
-        stringBuf = StringIO.StringIO(xmlString)
-        xmlDoc = xml.dom.minidom.parse(stringBuf)
-        stringBuf.close()
-        return xmlDoc
+    return xml.dom.minidom.parseString(xmlString)
 
 
 def escapeXML(xmlData):
