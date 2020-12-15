@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import time
 import random
+import signal
 import hashlib
 import sqlite3
 import optparse
