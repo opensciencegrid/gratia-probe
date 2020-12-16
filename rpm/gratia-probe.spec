@@ -33,14 +33,16 @@ ExcludeArch: noarch
 %if 0%{?rhel} >= 7
 %global __python /usr/bin/python3
 %global condor_python   python3-condor
-%global python_mysql    python36-mysql
 %global python_psycopg2 python3-psycopg2
-%global python_tz       python36-pytz
 
 %if 0%{?rhel} >= 8
 %global python_openssl  python3-pyOpenSSL
+%global python_mysql    python3-mysql
+%global python_tz       python3-pytz
 %else
 %global python_openssl  python36-pyOpenSSL
+%global python_mysql    python36-mysql
+%global python_tz       python36-pytz
 %endif
 
 %else
