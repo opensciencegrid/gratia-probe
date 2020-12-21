@@ -141,6 +141,10 @@ def Maintenance():
 
     reprocess.Reprocess()
 
+    ProcessCurrentBundle()
+
+
+def ProcessCurrentBundle():
     if global_state.bundle_size > 1 and global_state.CurrentBundle.nItems > 0:
         responseString, _ = bundle.ProcessBundle(global_state.CurrentBundle)
         DebugPrint(0, responseString)

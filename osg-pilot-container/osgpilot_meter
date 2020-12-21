@@ -660,6 +660,8 @@ def send_alternate_records_child(info, record_list, gratia_config):
     DebugPrint(2, "Number of usage records submitted: %d" % count_submit)
     DebugPrint(2, "Number of usage records found: %d" % count_found)
 
+    GratiaCore.ProcessCurrentBundle()
+
     os._exit(0)
 
 
