@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import os
+import re
 import time
 import random
 import signal
@@ -458,8 +459,8 @@ def query_and_update_db(opts):
 
 
 def site_ProbeName(site):
-    sitehash = sha1sum(site)[:7]
-    return "osg-pilot-container:%s.gratia.opensciencegrid.org" % sitehash
+    site_dns = re.sub(r'[^a-zA-Z0-9-]', '-', site).strip('-')  # sanitize site
+    return "osg-pilot-container:%s.gratia.opensciencegrid.org" % site_dns
 
 
 def outbox_row_to_jur(row):
