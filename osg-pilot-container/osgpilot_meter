@@ -603,10 +603,7 @@ def send_alternate_records(gratia_info, gratia_config):
                 os._exit(0)
             os._exit(0)
         else: # I am parent
-            try:
-                os.waitpid(pid, 0)
-            except:
-                raise
+            os.waitpid(pid, 0)
 
 
 def send_alternate_records_child(info, record_list, gratia_config):
