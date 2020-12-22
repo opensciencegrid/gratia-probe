@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            1.22.0
-Release:            1%{?dist}
+Release:            3%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -33,10 +33,18 @@ ExcludeArch: noarch
 %if 0%{?rhel} >= 7
 %global __python /usr/bin/python3
 %global condor_python   python3-condor
-%global python_mysql    python36-mysql
-%global python_openssl  python36-pyOpenSSL
 %global python_psycopg2 python3-psycopg2
+
+%if 0%{?rhel} >= 8
+%global python_openssl  python3-pyOpenSSL
+%global python_mysql    python3-mysql
+%global python_tz       python3-pytz
+%else
+%global python_openssl  python36-pyOpenSSL
+%global python_mysql    python36-mysql
 %global python_tz       python36-pytz
+%endif
+
 %else
 %global condor_python   python2-condor
 %global python_mysql    MySQL-python
@@ -945,6 +953,12 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Dec 16 2020  <karo@cs.wisc.edu> - 1.22.0-3
+- Fix python3 packaging deps for el7 vs el8 (SOFTWARE-4398)
+
+* Wed Dec 16 2020  <karo@cs.wisc.edu> - 1.22.0-2
+- Fix python3 packaging deps (SOFTWARE-4398)
+
 * Mon Nov 30 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.22.0-1
 - Initial release of osg-container-pilot probe (SOFTWARE-4169)
 - More el8 / python3 build fixes (SOFTWARE-4348)
