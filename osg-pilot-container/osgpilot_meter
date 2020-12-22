@@ -588,7 +588,7 @@ def main():
         DebugPrint(INFO, "Sleeping for %d seconds before proceeding." % rnd)
         time.sleep(rnd)
 
-    #GratiaWrapper.ExclusiveLock()
+    GratiaWrapper.ExclusiveLock()
 
     register_gratia()
     GratiaCore.Initialize(opts.gratia_config)
