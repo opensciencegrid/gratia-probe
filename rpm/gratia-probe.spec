@@ -10,6 +10,10 @@ Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 BuildRequires:      make
 BuildRequires:      gcc-c++
 
+%if 0%{?rhel} >= 7
+BuildRequires:      python3
+%endif
+
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
 
@@ -409,8 +413,7 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
-%if 0%{?rhel} == 7
-# XXX: for some reason this __pycache__ does not appear in el8
+%if 0%{?rhel} >= 7
 %{python_sitelib}/gratia/__pycache__/
 %endif
 %{python_sitelib}/gratia/__init__.py*
