@@ -446,7 +446,7 @@ def query_and_update_db(opts):
 
     sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)
-    #archive_new_ads(sqldb, ads, current_ts)
+    #archive_new_ads(sqldb, ads, current_ts)  # uncomment to keep full history
     update_slots_info(sqldb, ads)
     #sqldb.commit()
     #return
@@ -466,19 +466,12 @@ def outbox_row_to_jur(row):
     resource_type = 'Batch'
     r = Gratia.UsageRecord(resource_type)
 
-    #r.GlobalJobId(...)
-    #r.LocalJobId(...)
-
-#   for attr,val in row._asdict().items():
-#       if val is not None:
-#           getattr(r, attr)(val)
-
     SECONDS = "Was entered in seconds"
     USER = "user"
 
-    r.StartTime    ( row.StartTime,          SECONDS )
-    r.EndTime      ( row.EndTime,            SECONDS )
-    r.WallDuration ( row.WallDuration,       SECONDS )
+    r.StartTime    ( row.StartTime,               SECONDS )
+    r.EndTime      ( row.EndTime,                 SECONDS )
+    r.WallDuration ( row.WallDuration,            SECONDS )
     r.CpuDuration  ( row.CpuDuration or 0,  USER, SECONDS )
     r.Processors   ( row.Processors, metric="max" )
     if row.Memory:
@@ -512,14 +505,8 @@ def send_updates(opts):
 
     send_alternate_records(persite_info, opts.gratia_config)
 
-    #   response = GratiaCore.Send(rec)
-    #   DebugPrint(DEBUG, "Sending record to gracc; response: %s."
-    #                     % response)
-
-    #   if response[:2] == 'OK':
-
-    # XXX: we are deleting our outbox records without checking the response
-    #      from gracc  :(
+    # XXX: we are deleting our outbox records without checking that
+    #      sending them in the child process was successful
     for rowid in delete_ids:
             count_submit += 1
             delete_sql = "delete from outbox where id = ?"
