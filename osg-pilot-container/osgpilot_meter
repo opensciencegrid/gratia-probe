@@ -36,9 +36,10 @@ LOCAL_USER = "osgvo-container-pilot"
 
 grid_type = "OSG"
 
-DONE_IF_NOT_SEEN_AFTER = 1 * 60 * 60;
-
-POLL_INTERVAL = 15 * 60  # seconds
+# in seconds
+DONE_IF_NOT_SEEN_AFTER =  1 * 60 * 60
+POLL_INTERVAL          = 15 * 60
+PARTIAL_RECORD_CUTOFF  = 24 * 60 * 60
 
 # log levels
 CRITICAL = 0
@@ -375,6 +376,10 @@ def detect_finished_jobs(sqldb, current_ts):
 
     DebugPrint(INFO, "- inserted %s rows into outbox" % rc1)
     DebugPrint(INFO, "- deleted %s rows from jobs" % rc2)
+
+
+def report_partial_jobs(sqldb):
+    pass
 
 
 def update_active_jobs(sqldb):
