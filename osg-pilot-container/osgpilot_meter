@@ -458,7 +458,7 @@ def detect_new_jobs(sqldb, current_ts):
     DebugPrint(INFO, "- deleted %s rows from inbox" % rc2)
 
 
-def report_partial_jobs(sqldb):
+def detect_and_update_partial_jobs(sqldb):
     DebugPrint(INFO, "Reporting and breaking up partial jobs")
 
     insert_sql = """
