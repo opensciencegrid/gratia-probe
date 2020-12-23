@@ -496,7 +496,8 @@ def query_and_update_db(opts):
 
     detect_finished_jobs(sqldb, current_ts)
     update_active_jobs(sqldb)
-    detect_new_jobs(sqldb, current_ts) # XXX: this step must go last
+    detect_new_jobs(sqldb, current_ts) # XXX: must go after update_active_jobs
+    detect_and_update_partial_jobs(sqldb)
     sqldb.commit()
 
 
