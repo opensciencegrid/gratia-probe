@@ -378,6 +378,7 @@ def detect_finished_jobs(sqldb, current_ts):
         select *
           from finished2
          where EndTime < ?
+           and WallDuration > 0;
     """ % ", ".join(SEND_ATTRS)
 
     delete_sql = """
