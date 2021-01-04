@@ -477,8 +477,8 @@ def detect_and_update_partial_jobs(sqldb):
          where last_updated - DaemonStartTime >= {partial_record_cutoff};
     """.format(partial_record_cutoff=PARTIAL_RECORD_CUTOFF)
 
-    rc1 = sqldb.execute(insert_sql, (dead_cutoff,)).rowcount
-    rc2 = sqldb.execute(update_sql, (dead_cutoff,)).rowcount
+    rc1 = sqldb.execute(insert_sql).rowcount
+    rc2 = sqldb.execute(update_sql).rowcount
 
     DebugPrint(INFO, "- inserted %s rows into outbox" % rc1)
     DebugPrint(INFO, "- updated %s rows from jobs" % rc2)
