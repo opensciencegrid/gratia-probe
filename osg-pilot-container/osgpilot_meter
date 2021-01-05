@@ -482,6 +482,9 @@ def detect_and_update_partial_jobs(sqldb):
 
     DebugPrint(INFO, "- inserted %s rows into outbox" % rc1)
     DebugPrint(INFO, "- updated %s rows from jobs" % rc2)
+    if rc1 != rc2:
+        DebugPrint(ERROR, "Counts do not match for partial records"
+                          " inserted into inbox and updated from jobs")
 
 
 def query_and_update_db(opts):
