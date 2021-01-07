@@ -123,9 +123,9 @@ class Record(object):
         seconds = int(value * 100) % 6000 / 100.0
         value = int((value - seconds) / 60)
         minutes = value % 60
-        value = (value - minutes) / 60
+        value = (value - minutes) // 60
         hours = value % 24
-        value = (value - hours) / 24
+        value = (value - hours) // 24
         result = 'P'
         if value > 0:
             result = result + str(value) + 'D'
