@@ -79,7 +79,7 @@ SEND_ATTRS = [
                      #                        off from the partitionable slot
     'Processors',    # Cpus
     'Memory',        # MemoryUsage
-    'SiteName',      # GLIDEIN_Site (or GLIDEIN_ResourceName)
+    'SiteName',      # GLIDEIN_ResourceName (or GLIDEIN_Site)
     'MachineName',   # Machine
 ]
 
@@ -211,8 +211,8 @@ schema_sql = [
          , total_cpu                      as CpuDuration
          , Cpus                           as Processors
          , MemoryUsage                    as Memory
-         , ifnull(GLIDEIN_Site,
-                  GLIDEIN_ResourceName)   as SiteName
+         , ifnull(GLIDEIN_ResourceName,
+                  GLIDEIN_Site)           as SiteName
          , Machine                        as MachineName
       from finished;
     """,
@@ -247,8 +247,8 @@ schema_sql = [
          , total_cpu                      as CpuDuration
          , Cpus                           as Processors
          , MemoryUsage                    as Memory
-         , ifnull(GLIDEIN_Site,
-                  GLIDEIN_ResourceName)   as SiteName
+         , ifnull(GLIDEIN_ResourceName,
+                  GLIDEIN_Site)           as SiteName
          , Machine                        as MachineName
       from jobs
      where last_updated - DaemonStartTime >= {partial_record_cutoff};
