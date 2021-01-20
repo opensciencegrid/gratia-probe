@@ -677,7 +677,7 @@ def classadToJUR(classad):
     # Code added to send to arbitrary Ads SOFTWARE-2714
     ArbitraryJobAttrs = str(GratiaCore.Config.getConfigAttribute("ExtraAttributes"))
     DebugPrint(5, "Arbitrary Job Attributes: %s" % ArbitraryJobAttrs)
-    ArbitraryAttrslist = re.split(",?\s?", ArbitraryJobAttrs)
+    ArbitraryAttrslist = re.split(r'[,\s]+', ArbitraryJobAttrs)
     DebugPrint(0, "ArbritaryList: %s" % ArbitraryAttrslist)
     for arbitraryAttr in ArbitraryAttrslist:
         if arbitraryAttr in classad:
