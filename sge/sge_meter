@@ -27,7 +27,7 @@
 
 
 import gratia.common.Gratia as Gratia
-import os, copy, pwd, sys, string, collections
+import os, copy, pwd, sys, collections
 
 # This module requires python v2.3
 from optparse import OptionParser
@@ -330,7 +330,7 @@ def readsgefile(filename,docheckpoint,checkpoint,checkpointFile):
         if debug:
             xmlRec = copy.deepcopy(gratiaRec)
             xmlRec.XmlCreate()            
-            Gratia.DebugPrint(debug_level, string.join(xmlRec.XmlData, " "))
+            Gratia.DebugPrint(debug_level, " ".join(xmlRec.XmlData))
 
         # send UsageRecord
         Gratia.Send(gratiaRec)
