@@ -1,2 +1,0 @@
-0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/sge/ProbeConfig  && perl -e 'sleep rand 900' && /usr/share/gratia/sge/sge_meter.cron.sh
-

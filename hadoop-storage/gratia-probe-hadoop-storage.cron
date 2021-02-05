@@ -1,1 +1,0 @@
-0 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/hadoop-storage/ProbeConfig  && perl -e 'sleep rand 3600' && /usr/share/gratia/hadoop-storage/hadoop_storage_probe -c /etc/gratia/hadoop-storage/storage.cfg

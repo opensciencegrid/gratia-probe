@@ -1,14 +1,11 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.23.1
-Release:            1%{?dist}
+Version:            2.0.0
+Release:            0%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
-
-BuildRequires:      make
-BuildRequires:      gcc-c++
 
 %if 0%{?rhel} >= 7
 BuildRequires:      python3
@@ -20,8 +17,7 @@ BuildRequires:      git
 BuildRequires:      git-core
 %endif
 
-# just do a single arch build until we drop the compiled tool in pbs-lsf
-ExcludeArch: noarch
+BuildArch: noarch
 
 %define default_prefix /usr/share
 
@@ -85,7 +81,6 @@ Prefix: /etc
 %setup -q
 
 %build
-%{__make} -C pbs-lsf/urCollector-src
 
 %install
 # Setup
@@ -112,7 +107,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Obtain files
 
-%define noarch_packs common condor sge metric dCache-transfer dCache-storage gridftp-transfer services hadoop-storage condor-events xrootd-transfer xrootd-storage onevm slurm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup lsf osg-pilot-container
+%define noarch_packs common condor common2 osg-pilot-container
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -159,19 +154,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
     # Collector strings
     case $probe in
-    enstore-* | dCache-storagegroup )
-      # must be first to catch enstrore-transfer/storage
-      endpoint=%{enstore_collector}:%{default_collector_port}
-      ssl_endpoint=%{enstore_collector}:%{ssl_port}
-      ;;
-    *-transfer | *-storage )
-      endpoint=%{osg_transfer_collector}:%{default_collector_port}
-      ssl_endpoint=%{osg_transfer_collector}:%{ssl_port}
-      ;;
-    metric )
-      endpoint=%{osg_metric_collector}:%{metric_port}
-      ssl_endpoint=%{osg_metric_collector}:%{ssl_port}
-      ;;
     * )
       endpoint=%{osg_collector}:%{default_collector_port}
       ssl_endpoint=%{osg_collector}:%{ssl_port}
@@ -184,39 +166,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
         $PROBE_DIR/ProbeConfig
 
     # Other Probe-specific customizations
-    if [ $probe == "sge" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#SGEAccountingFile=""#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "metric" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#metricMonitorLog="/var/log/metric/metric_monitor.log"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "dCache-transfer" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#Summarize="0" \
-    UpdateFrequency="120" \
-    DBHostName="localhost" \
-    DBLoginName="srmdcache" \
-    DBPassword="srmdcache" \
-    StopFileName="stopGratiaFeed" \
-    DCacheServerHost="BILLING_HOST" \
-    EmailServerHost="localhost" \
-    EmailFromAddress="dCacheProbe@localhost" \
-    EmailToList="" \
-    AggrLogLevel="warn" \
-    OnlySendInterSiteTransfers="true" \
-    MaxBillingHistoryDays="31" \
-    DBName="billing"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "gridftp-transfer" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#GridftpLogDir="/var/log/"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "dCache-storage" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#TitleDCacheStorage="dCache-storage-specific attributes" \
-    InfoProviderUrl="http://DCACHE_HOST:2288/info" \
-    ReportPoolUsage="0"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "slurm" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#SlurmDbHost="db.cluster.example.edu" \
-    SlurmDbPort="3306" \
-    SlurmDbUser="slurm" \
-    SlurmDbPasswordFile="/etc/gratia/slurm/pwfile" \
-    SlurmDbName="slurm_acct_db" \
-    SlurmCluster="mycluster"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "condor" ]; then
+    if [ $probe == "condor" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
@@ -231,7 +181,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Remove unnecessary links
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/gridftp-transfer/ProbeConfig
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -240,19 +189,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # dCache-transfer init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
-  install -m 755 dCache-transfer/gratia-dcache-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-dcache-transfer
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer.init
-
-  # Xrootd-storage init script
-  install -m 755 $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-storage/gratia-xrootd-storage.init $RPM_BUILD_ROOT%{_initrddir}/gratia-xrootd-storage
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-storage/gratia-xrootd-storage.init
-
-  # Xrootd-transfer init script
-  install -m 755 $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-xrootd-transfer
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init
-
-  mv $RPM_BUILD_ROOT%{_datadir}/gratia/hadoop-storage/storage.cfg \
-     $RPM_BUILD_ROOT%{_sysconfdir}/gratia/hadoop-storage/storage.cfg
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
@@ -274,9 +210,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/sge/test
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/test
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storage/test.xml
 
   # Remove remaining cruft
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/gratia.repo
@@ -286,9 +220,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.pl
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/metric/samplemetric.py
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
@@ -301,42 +232,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
   chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
   install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/osg-pilot-container
-
-
-  # PBS / LSF probe
-  PROBE_DIR=$RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf
-  PROBE_ETC_DIR=$RPM_BUILD_ROOT%{_sysconfdir}/gratia/pbs-lsf
-  install -d -m 0755 $PROBE_DIR/urCollector
-  install -d -m 0755 $PROBE_ETC_DIR
-  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/pbs-lsf/{lock,tmp/urCollector}
-  install -d $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
-
-  # Install Gratia executables and urCollector software
-  install -m 0644 pbs-lsf/README $PROBE_DIR/README
-  install -m 0755 pbs-lsf/{pbs-lsf,pbs-lsf_meter.cron.sh,pbs-lsf_meter.pl} $PROBE_DIR/
-  pushd pbs-lsf/urCollector-src
-    install -m 0755 urCreator urCollector.pl $PROBE_DIR
-    install -m 0644 LICENSE $PROBE_DIR
-    install -d -m 0755 $RPM_BUILD_ROOT%{perl_vendorlib}/urCollector/
-    install -m 0644 urCollector/{Common,Configuration}.pm $RPM_BUILD_ROOT%{perl_vendorlib}/urCollector/
-  popd
-
-  # ProbeConfig customization
-  install -m 0644 common/ProbeConfigTemplate.osg $PROBE_ETC_DIR/ProbeConfig
-  install -m 0644 pbs-lsf/urCollector-src/urCollector.conf-template $PROBE_ETC_DIR/urCollector.conf
-  endpoint=%{osg_collector}:%{default_collector_port}
-  sed -i -e "s#@COLLECTOR_ENDPOINT@#$endpoint#" \
-         -e "s#@SSL_ENDPOINT@#%{osg_collector}:%{ssl_port}#" \
-         -e "s#@SSL_REGISTRATION_ENDPOINT@#$endpoint#" \
-         -e 's#@PROBE_SPECIFIC_DATA@##' \
-         -e "s#@PROBE_NAME@#pbs-lsf#" \
-        $PROBE_ETC_DIR/ProbeConfig
-  install -m 644 pbs-lsf/gratia-probe-pbs-lsf.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
-  ln -sf %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig $PROBE_DIR/ProbeConfig
-  ln -s %{_sysconfdir}/gratia/pbs-lsf/urCollector.conf $PROBE_DIR/urCollector.conf
-
-  # Remove test cruft
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/pbs-lsf/test
 
 
 # Burn in the RPM version into the python files.
@@ -353,41 +248,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %description
 Probes for the Gratia OSG accounting system
-
-
-%package pbs-lsf
-Summary: Gratia OSG accounting system probe for PBS and LSF batch systems.
-Group: Applications/System
-Requires: %{name}-common >= 0.12f
-License: See LICENSE.
-
-%description pbs-lsf
-Gratia OSG accounting system probe for PBS and LSF batch systems.
-
-This product includes software developed by The EU EGEE Project
-(http://cern.ch/eu-egee/).
-
-%post pbs-lsf
-%customize_probeconfig -d pbs-lsf
-
-%files pbs-lsf
-%defattr(-,root,root,-)
-%dir %{_localstatedir}/lib/gratia/pbs-lsf/lock
-%doc %{_datadir}/gratia/pbs-lsf/LICENSE
-%doc %{_datadir}/gratia/pbs-lsf/README
-%dir %{_datadir}/gratia/pbs-lsf
-%{_datadir}/gratia/pbs-lsf/ProbeConfig
-%{_datadir}/gratia/pbs-lsf/urCollector.conf
-%{_datadir}/gratia/pbs-lsf/pbs-lsf_meter.cron.sh
-%{_datadir}/gratia/pbs-lsf/pbs-lsf_meter.pl
-%{_datadir}/gratia/pbs-lsf/pbs-lsf
-%{_datadir}/gratia/pbs-lsf/urCreator
-%{_datadir}/gratia/pbs-lsf/urCollector.pl
-%{perl_vendorlib}/urCollector/Common.pm
-%{perl_vendorlib}/urCollector/Configuration.pm
-%config(noreplace) %{_sysconfdir}/gratia/pbs-lsf/urCollector.conf
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/pbs-lsf/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-pbs-lsf.cron
 
 
 %package common
@@ -483,279 +343,6 @@ The Condor probe for the Gratia OSG accounting system.
 %post condor
 %customize_probeconfig -d condor
 
-%package glideinwms
-Summary: Configuration for Gratia GlideinWMS integration.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-condor >= %{version}-%{release}
-
-%description glideinwms
-The Condor probe for the Gratia OSG accounting system.
-
-%files glideinwms
-%defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
-
-
-
-%package sge
-Summary: An SGE probe
-Group: Applications/System
-%if %{?python:0}%{!?python:1}
-%endif
-Requires: %{name}-common >= %{version}-%{release}
-
-%description sge
-The SGE probe for the Gratia OSG accounting system.
-
-%files sge
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/sge/README
-%{default_prefix}/gratia/sge/ProbeConfig
-%{default_prefix}/gratia/sge/sge_meter.cron.sh
-%{default_prefix}/gratia/sge/sge_meter
-%dir %{default_prefix}/gratia/sge
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/sge/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-sge.cron
-
-%post sge
-%customize_probeconfig -d sge
-
-%package metric
-Summary: A probe for OSG metrics
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-
-%description metric
-The metric probe for the Gratia OSG accounting system.
-
-%files metric
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/metric/README
-%{python_sitelib}/gratia/metric
-%dir %{default_prefix}/gratia/metric
-%{default_prefix}/gratia/metric/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/metric/ProbeConfig
-
-%post metric
-%customize_probeconfig -d metric
-
-%package dcache-transfer
-Summary: Gratia OSG accounting system probe for dCache billing.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{python_psycopg2}
-License: See LICENSE.
-
-Obsoletes: dCache-transfer < 1.07.02e-15
-Provides: dCache-transfer = %{version}-%{release}
-
-%description dcache-transfer
-Gratia OSG accounting system probe for dCache transfers.
-Contributed by Greg Sharp and the dCache project.
-
-%files dcache-transfer
-%defattr(-,root,root,-)
-%{_initrddir}/gratia-dcache-transfer
-%doc %{default_prefix}/gratia/dCache-transfer/README-experts-only.txt
-%doc %{default_prefix}/gratia/dCache-transfer/README
-%{default_prefix}/gratia/dCache-transfer/ProbeConfig
-%{default_prefix}/gratia/dCache-transfer/gratia-dcache-transfer
-%{python_sitelib}/gratia/dcache_transfer
-%dir %{default_prefix}/gratia/dCache-transfer
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-transfer/ProbeConfig
-
-%post dcache-transfer
-/sbin/chkconfig --add gratia-dcache-transfer
-%customize_probeconfig -d dCache-transfer
-
-%package dcache-storage
-Summary: Gratia OSG accounting system probe for dCache storage.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services
-Requires: xalan-j2
-License: See LICENSE.
-
-Obsoletes: dCache-storage < 1.07.02e-15
-Provides: dCache-storage = %{version}-%{release}
-
-%description dcache-storage
-Gratia OSG accounting system probe for available space in dCache.
-Contributed by Andrei Baranovksi of the OSG Storage team. 
-
-%files dcache-storage
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/dCache-storage/README.txt
-%{python_sitelib}/gratia/dcache_storage
-%dir %{default_prefix}/gratia/dCache-storage
-%{default_prefix}/gratia/dCache-storage/ProbeConfig
-%{default_prefix}/gratia/dCache-storage/create_se_record.xsl
-%{default_prefix}/gratia/dCache-storage/dCache-storage_meter.cron.sh
-%{default_prefix}/gratia/dCache-storage/dCache_storage_probe
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storage/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dCache-storage.cron
-
-%post dcache-storage
-%customize_probeconfig -d dCache-storage
-
-%package gridftp-transfer
-Summary: Gratia OSG accounting system probe for gridftp transfers.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: globus-gridftp-osg-extensions
-Requires: globus-gridftp-server-progs >= 7.20-1.3
-Requires: %{python_tz}
-License: See LICENSE.
-
-%description gridftp-transfer
-Gratia OSG accounting system probe for available space in dCache.
-Contributed by Andrei Baranovski of the OSG storage team.
-
-%files gridftp-transfer
-%defattr(-,root,root,-)
-%dir %{default_prefix}/gratia/gridftp-transfer
-%{default_prefix}/gratia/gridftp-transfer/gridftp-transfer_meter
-%doc %{default_prefix}/gratia/gridftp-transfer/README.md
-%doc %{default_prefix}/gratia/gridftp-transfer/LICENSE
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/gridftp-transfer/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-gridftp-transfer.cron
-
-%post gridftp-transfer
-%customize_probeconfig -d gridftp-transfer
-
-%package services
-Summary: Gratia OSG accounting system probe API for services.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-License: See LICENSE.
-
-%description services
-Gratia OSG accounting system probe API for services.
-Contributed by University of Nebraska Lincoln.
-
-%files services
-%defattr(-,root,root,-)
-%{python_sitelib}/gratia/services
-%{default_prefix}/gratia/services/ProbeConfig
-%{default_prefix}/gratia/services/storageReport
-%dir %{default_prefix}/gratia/services
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
-
-%post services
-%customize_probeconfig -d services
-
-%package hadoop-storage
-Summary: HDFS Storage Probe for Gratia OSG accounting system.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services
-License: See LICENSE.
-
-%description hadoop-storage
-HDFS Storage Probe for Gratia OSG accounting system.
-Contributed by University of Nebraska Lincoln.
-
-%files hadoop-storage
-%defattr(-,root,root,-)
-%{default_prefix}/gratia/hadoop-storage/hadoop_storage_probe
-%{default_prefix}/gratia/hadoop-storage/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/hadoop-storage/ProbeConfig
-%config(noreplace) %{_sysconfdir}/gratia/hadoop-storage/storage.cfg
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-hadoop-storage.cron
-
-%post hadoop-storage
-%customize_probeconfig -d hadoop-storage
-
-%package condor-events
-Summary: Probe that emits a record for each event in the Condor system.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-License: See LICENSE.
-
-%description condor-events
-Condor Events Probe for Gratia OSG accounting system.
-Contributed by University of Nebraska Lincoln.
-
-%files condor-events
-%defattr(-,root,root,-)
-%{_datadir}/gratia/condor-events/watchCondorEvents
-%{_datadir}/gratia/condor-events/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-events/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-events.cron
-
-%post condor-events
-%customize_probeconfig -d condor-events
-
-%package xrootd-transfer
-Summary: Probe that emits a record for each file transfer in Xrootd.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-License: See LICENSE.
-
-%description xrootd-transfer
-Xrootd Transfer Probe for Gratia OSG accounting system.
-Contributed by University of Nebraska Lincoln.
-
-%files xrootd-transfer
-%defattr(-,root,root,-)
-%{_initrddir}/gratia-xrootd-transfer
-%{default_prefix}/gratia/xrootd-transfer/gratia-xrootd-transfer
-%{default_prefix}/gratia/xrootd-transfer/ProbeConfig
-%dir %{default_prefix}/gratia/xrootd-transfer
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
-
-%post xrootd-transfer
-%customize_probeconfig -d xrootd-transfer
-
-%package xrootd-storage
-Summary: Gratia probe to monitor Xrootd storage usage.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services = %{version}-%{release}
-License: See LICENSE.
-
-%description xrootd-storage
-Xrootd Transfer Probe for Gratia OSG accounting system.
-Contributed by Brian Bockelman at University of Nebraska Lincoln.
-Contributed as effort from OSG-Storage.
-
-%files xrootd-storage
-%defattr(-,root,root,-)
-%{_initrddir}/gratia-xrootd-storage
-%{default_prefix}/gratia/xrootd-storage/gratia-xrootd-storage
-%{default_prefix}/gratia/xrootd-storage/ProbeConfig
-%dir %{default_prefix}/gratia/xrootd-storage
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-storage/ProbeConfig
-
-%post xrootd-storage
-%customize_probeconfig -d xrootd-storage
-
-%package onevm
-Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: ruby
-License: See LICENSE.
-
-%description onevm
-Gratia OSG accounting system probe for providing VM accounting.
-
-%files onevm
-%defattr(-,root,root,-)
-%{python_sitelib}/gratia/onevm
-%{default_prefix}/gratia/onevm/onevm_probe.cron.sh
-%dir %{default_prefix}/gratia/onevm
-%{default_prefix}/gratia/onevm/ProbeConfig
-%{default_prefix}/gratia/onevm/VMGratiaProbe
-%{default_prefix}/gratia/onevm/query_one_lite.rb
-
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/onevm/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-onevm.cron
-
-%post onevm
-%customize_probeconfig -d onevm
-
 %package osg-pilot-container
 Summary: osg pilot container probe
 Group: Applications/System
@@ -772,43 +359,12 @@ osg pilot container probe
 
 %files osg-pilot-container
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/slurm/README.html
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
 %{default_prefix}/gratia/osg-pilot-container/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
-
-%package slurm
-Summary: A SLURM probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: slurm
-Requires: %{python_mysql}
-License: See LICENSE.
-
-%description slurm
-The SLURM probe for the Gratia OSG accounting system.
-
-%files slurm
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/slurm/README.html
-%dir %{default_prefix}/gratia/slurm
-%if 0%{?rhel} == 7
-# XXX: for some reason this __pycache__ does not appear in el8
-%{default_prefix}/gratia/slurm/__pycache__/
-%endif
-%{default_prefix}/gratia/slurm/SlurmProbe.py*
-%{default_prefix}/gratia/slurm/slurm_meter
-%{default_prefix}/gratia/slurm/slurm_meter_running
-%{default_prefix}/gratia/slurm/ProbeConfig
-
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/slurm/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-slurm.cron
-
-%post slurm
-%customize_probeconfig -d slurm
 
 %package htcondor-ce
 Summary: A HTCondor-CE probe
@@ -832,140 +388,10 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %customize_probeconfig -d htcondor-ce
 
 
-
-# lsf probe, following the new format
-
-%package lsf
-Summary: A LSF probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-# Requires: lsf (can get the version form the configuration)
-License: See LICENSE.
-
-%description lsf
-The alternative LSF probe for the Gratia OSG accounting system.
-
-%files lsf
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/lsf/README
-%dir %{default_prefix}/gratia/lsf
-%{python_sitelib}/gratia/lsf
-%{default_prefix}/gratia/lsf/lsf
-%{default_prefix}/gratia/lsf/ProbeConfig
-
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/lsf/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-lsf.cron
-
-%post lsf
-%customize_probeconfig -d lsf
-
-
-# Enstore probes: enstore-transfer, enstore-storage, enstore-tapedrive
-
-%package enstore-transfer
-Summary: Enstore transfer probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{python_psycopg2}
-License: See LICENSE.
-
-%description enstore-transfer
-The Enstore transfer probe for the Gratia OSG accounting system.
-
-%files enstore-transfer
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-transfer/README.html
-%dir %{default_prefix}/gratia/enstore-transfer
-%{default_prefix}/gratia/enstore-transfer/enstore-transfer
-
-%{default_prefix}/gratia/enstore-transfer/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
-
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
-
-%post enstore-transfer
-%customize_probeconfig -d enstore-transfer
-
-%package enstore-storage
-Summary: Enstore storage probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
-Requires: %{python_psycopg2}
-License: See LICENSE.
-
-%description enstore-storage
-The Enstore storage probe for the Gratia OSG accounting system.
-
-%files enstore-storage
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-storage/README.html
-%dir %{default_prefix}/gratia/enstore-storage
-%{default_prefix}/gratia/enstore-storage/enstore-storage
-
-%{default_prefix}/gratia/enstore-storage/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
-
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
-
-%post enstore-storage
-%customize_probeconfig -d enstore-storage
-
-%package enstore-tapedrive
-Summary: Enstore tapedrive probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
-Requires: %{python_psycopg2}
-License: See LICENSE.
-
-%description enstore-tapedrive
-The Enstore tape drive probe for the Gratia OSG accounting system.
-
-%files enstore-tapedrive
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-tapedrive/README.html
-%dir %{default_prefix}/gratia/enstore-tapedrive
-%{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
-
-%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
-
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
-
-%post enstore-tapedrive
-%customize_probeconfig -d enstore-tapedrive
-
-# dCache storagegroup
-
-%package dcache-storagegroup
-Summary: dCache storagegroup probe
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
-Requires: %{python_psycopg2}
-License: See LICENSE.
-
-%description dcache-storagegroup
-The dCache storagegroup probe for the Gratia OSG accounting system.
-
-%files dcache-storagegroup
-%defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/dCache-storagegroup/README.html
-%dir %{default_prefix}/gratia/dCache-storagegroup
-%{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
-
-%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
-
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron
-
-%post dcache-storagegroup
-%customize_probeconfig -d dCache-storagegroup
-
-
-
 %changelog
+* Wed Feb 10 2021  <edquist@cs.wisc.edu> - 2.0.0-0
+- Drop lots of probes (SOFTWARE-4467)
+
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
 - Add 'QueueTime' collection (SOFTWARE-4479)
