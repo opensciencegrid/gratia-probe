@@ -661,6 +661,8 @@ def classadToJUR(classad):
 
     setIfExists(r.StartTime, classad, 'JobStartDate', "Was entered in seconds")
 
+    setIfExists(r.QueueTime, classad, 'QDate', "Was entered in seconds")
+
     if 'LastRemoteHost' in classad:
         host = classad['LastRemoteHost'].split("@")[-1]
         host_descr = determine_host_description(classad)
@@ -957,4 +959,3 @@ if __name__ == "__main__":
         DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
         DebugPrintTraceback()
         raise
-

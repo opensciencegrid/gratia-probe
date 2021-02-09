@@ -243,6 +243,13 @@ class UsageRecord(record.Record):
             realvalue = TimeToString(time.gmtime(value))
         self.RecordData = self.AddToList(self.RecordData, 'StartTime', self.Description(description), realvalue)
 
+    def QueueTime(self, value, description=r''):
+        if type(value) == str:
+            realvalue = value
+        else:
+            realvalue = TimeToString(time.gmtime(value))
+        self.RecordData = self.AddToList(self.RecordData, 'QueueTime', self.Description(description), realvalue)
+
     def TimeDuration(
         self,
         value,
