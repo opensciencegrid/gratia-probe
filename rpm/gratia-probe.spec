@@ -14,6 +14,12 @@ BuildRequires:      gcc-c++
 BuildRequires:      python3
 %endif
 
+%if 0%{?rhel} < 8
+BuildRequires:      git
+%else
+BuildRequires:      git-core
+%endif
+
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
 
@@ -99,6 +105,10 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %else
     rm common/tmpfiles.d/gratia.conf
 %endif
+
+
+git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
+
 
   # Obtain files
 
@@ -330,10 +340,10 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
 
 # Burn in the RPM version into the python files.
-grep -rIle '%%%%%%RPMVERSION%%%%%%' $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} | while read file; do \
-  perl -wpi.orig -e 's&%%%%%%RPMVERSION%%%%%%&%{version}-%{release}&g' "$file" && \
-    rm -fv "$file.orig"
-done
+rpmver=%{version}-%{release}.${git_commit_id:0:7}
+find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
+  -type f -exec fgrep -ZIle '%%%%%%RPMVERSION%%%%%%' {} + | xargs -0 \
+  sed -i "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
