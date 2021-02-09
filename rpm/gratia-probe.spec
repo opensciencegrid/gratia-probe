@@ -14,7 +14,11 @@ BuildRequires:      gcc-c++
 BuildRequires:      python3
 %endif
 
+%if 0%{?rhel} < 8
 BuildRequires:      git
+%else
+BuildRequires:      git-core
+%endif
 
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
