@@ -14,6 +14,8 @@ BuildRequires:      gcc-c++
 BuildRequires:      python3
 %endif
 
+BuildRequires:      git
+
 # just do a single arch build until we drop the compiled tool in pbs-lsf
 ExcludeArch: noarch
 
@@ -99,6 +101,10 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 %else
     rm common/tmpfiles.d/gratia.conf
 %endif
+
+
+git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
+
 
   # Obtain files
 
@@ -330,11 +336,7 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
 
 # Burn in the RPM version into the python files.
-rpmver=%{version}-%{release}
-if [[ $GIT_COMMIT_ID ]]; then
-  rpmver=$rpmver.${GIT_COMMIT_ID:0:7}
-fi
-
+rpmver=%{version}-%{release}.${git_commit_id:0:7}
 find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
   -type f -exec fgrep -ZIle '%%%%%%RPMVERSION%%%%%%' {} + | xargs -0 \
   perl -wpi -e "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
