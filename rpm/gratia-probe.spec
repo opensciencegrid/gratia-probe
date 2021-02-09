@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.22.3
+Version:            1.23.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -966,6 +966,11 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Tue Feb 09 2021  <edquist@cs.wisc.edu> - 1.23.0-1
+- Add python2/3 compat for sge probe (SOFTWARE-4286)
+- Add 'QueueTime' collection (SOFTWARE-4479)
+- Add 'GratiaVersion' to UsageRecords (SOFTWARE-4455)
+
 * Tue Jan 19 2021  <edquist@cs.wisc.edu> - 1.22.3-1
 - Fix re.split warning for el8 (SOFTWARE-4283)
 
