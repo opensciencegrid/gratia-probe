@@ -334,10 +334,10 @@ rpmver=%{version}-%{release}
 if [[ $GIT_COMMIT_ID ]]; then
   rpmver=$rpmver.${GIT_COMMIT_ID:0:7}
 fi
-grep -rIle '%%%%%%RPMVERSION%%%%%%' $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} | while read file; do \
-  perl -wpi.orig -e "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g" "$file" && \
-    rm -fv "$file.orig"
-done
+
+find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
+  -type f -exec fgrep -ZIle '%%%%%%RPMVERSION%%%%%%' {} + | xargs -0 \
+  perl -wpi -e "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
