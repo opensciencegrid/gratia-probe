@@ -330,8 +330,12 @@ install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
 
 # Burn in the RPM version into the python files.
+rpmver=%{version}-%{release}
+if [[ $GIT_COMMIT_ID ]]; then
+  rpmver=$rpmver.${GIT_COMMIT_ID:0:7}
+fi
 grep -rIle '%%%%%%RPMVERSION%%%%%%' $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} | while read file; do \
-  perl -wpi.orig -e 's&%%%%%%RPMVERSION%%%%%%&%{version}-%{release}&g' "$file" && \
+  perl -wpi.orig -e "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g" "$file" && \
     rm -fv "$file.orig"
 done
 
