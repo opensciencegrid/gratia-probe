@@ -452,7 +452,7 @@ class UsageRecord(record.Record):
         self.GenericAddToList('Njobs', str(self.__Njobs), self.__NjobsDescription)
         if self.__ResourceType != None:
             self.Resource('ResourceType', self.__ResourceType)
-        self.GenericAddToList('GratiaVersion', __GratiaVersion, "")
+        self.GenericAddToList('GratiaVersion', self.__GratiaVersion, "")
 
     def VerifyUserInfo(self):
         ''' Verify user information: check for LocalUserId and add VOName and ReportableVOName if necessary'''
