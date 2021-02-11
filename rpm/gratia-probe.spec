@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            2.0.0
-Release:            0%{?dist}
+Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -23,13 +23,9 @@ BuildArch: noarch
 
 # Default probe configuration items for post-install.
 %global default_collector_port 80
-%global metric_port 8880
 %global ssl_port 443
 
 %global osg_collector gratia-osg-prod.opensciencegrid.org
-%global osg_transfer_collector gratia-osg-transfer.opensciencegrid.org
-%global osg_metric_collector rsv.grid.iu.edu
-%global enstore_collector dmscollectorgpvm01.fnal.gov
 
 # Default ProbeName
 %{!?meter_name: %global meter_name `hostname -f`}
@@ -121,7 +117,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   for probe in %{noarch_packs}
   do
     # Install the cronjob
-    if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storage" -o $probe == "dCache-storagegroup" ]; then
+    if [ -e $probe/gratia-probe-$probe.cron ]; then
       # wildcards not working in this test: if [ -e "$probe/gratia-probe-*.cron" ]; then
       install -m 644 $probe/*.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
       rm $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/*.cron
@@ -385,7 +381,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Wed Feb 10 2021  <edquist@cs.wisc.edu> - 2.0.0-0
+* Thu Feb 11 2021  <edquist@cs.wisc.edu> - 2.0.0-1
 - Drop lots of probes (SOFTWARE-4467)
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
