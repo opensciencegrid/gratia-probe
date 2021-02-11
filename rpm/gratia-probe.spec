@@ -381,8 +381,8 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Thu Feb 11 2021  <edquist@cs.wisc.edu> - 2.0.0-1
-- Drop lots of probes (SOFTWARE-4467)
+* Mon Feb 15 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.0-1
+- Only keep condor & osg-pilot-container probes for OSG 3.6 (SOFTWARE-4467)
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
