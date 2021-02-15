@@ -966,15 +966,15 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Wed Feb 10 2021  <edquist@cs.wisc.edu> - 1.23.1-1
+* Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
 - Add 'QueueTime' collection (SOFTWARE-4479)
 - Add 'GratiaVersion' to UsageRecords (SOFTWARE-4455)
 
-* Tue Jan 19 2021  <edquist@cs.wisc.edu> - 1.22.3-1
+* Tue Jan 19 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.22.3-1
 - Fix re.split warning for el8 (SOFTWARE-4283)
 
-* Thu Jan 07 2021  <edquist@cs.wisc.edu> - 1.22.2-1
+* Thu Jan 07 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.22.2-1
 - Fix duration formatting in xml for python3 (SOFTWARE-4416)
 - Report partial jobs for osg pilot container probe (SOFTWARE-4404)
 
@@ -982,10 +982,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Add multi-site handling for osg-pilot-container probe (SOFTWARE-4386)
 - More python3 packaging fixes for el8 (SOFTWARE-4398)
 
-* Wed Dec 16 2020  <karo@cs.wisc.edu> - 1.22.0-3
+* Wed Dec 16 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.22.0-3
 - Fix python3 packaging deps for el7 vs el8 (SOFTWARE-4398)
 
-* Wed Dec 16 2020  <karo@cs.wisc.edu> - 1.22.0-2
+* Wed Dec 16 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.22.0-2
 - Fix python3 packaging deps (SOFTWARE-4398)
 
 * Mon Nov 30 2020 Carl Edquist <edquist@cs.wisc.edu> - 1.22.0-1
