@@ -215,6 +215,9 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # dCache-transfer init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
+  install -m 755 dCache-transfer/gratia-dcache-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-dcache-transfer
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer.init
+
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
@@ -235,6 +238,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/test
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storage/test.xml
 
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
