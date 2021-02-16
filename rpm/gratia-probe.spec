@@ -26,6 +26,8 @@ BuildArch: noarch
 %global ssl_port 443
 
 %global osg_collector gratia-osg-prod.opensciencegrid.org
+%global osg_transfer_collector gratia-osg-transfer.opensciencegrid.org
+%global enstore_collector dmscollectorgpvm01.fnal.gov
 
 # Default ProbeName
 %{!?meter_name: %global meter_name `hostname -f`}
@@ -103,7 +105,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Obtain files
 
-%define noarch_packs common condor common2 osg-pilot-container
+%define noarch_packs common condor dCache-transfer onevm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup osg-pilot-container
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -117,7 +119,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   for probe in %{noarch_packs}
   do
     # Install the cronjob
-    if [ -e $probe/gratia-probe-$probe.cron ]; then
+    if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storagegroup" ]; then
       # wildcards not working in this test: if [ -e "$probe/gratia-probe-*.cron" ]; then
       install -m 644 $probe/*.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
       rm $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/*.cron
@@ -150,6 +152,15 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
     # Collector strings
     case $probe in
+    enstore-* | dCache-storagegroup )
+      # must be first to catch enstrore-transfer/storage
+      endpoint=%{enstore_collector}:%{default_collector_port}
+      ssl_endpoint=%{enstore_collector}:%{ssl_port}
+      ;;
+    *-transfer | *-storage )
+      endpoint=%{osg_transfer_collector}:%{default_collector_port}
+      ssl_endpoint=%{osg_transfer_collector}:%{ssl_port}
+      ;;
     * )
       endpoint=%{osg_collector}:%{default_collector_port}
       ssl_endpoint=%{osg_collector}:%{ssl_port}
@@ -212,6 +223,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
@@ -335,6 +347,60 @@ The Condor probe for the Gratia OSG accounting system.
 %post condor
 %customize_probeconfig -d condor
 
+%package dcache-transfer
+Summary: Gratia OSG accounting system probe for dCache billing.
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{python_psycopg2}
+License: See LICENSE.
+
+Obsoletes: dCache-transfer < 1.07.02e-15
+Provides: dCache-transfer = %{version}-%{release}
+
+%description dcache-transfer
+Gratia OSG accounting system probe for dCache transfers.
+Contributed by Greg Sharp and the dCache project.
+
+%files dcache-transfer
+%defattr(-,root,root,-)
+%{_initrddir}/gratia-dcache-transfer
+%doc %{default_prefix}/gratia/dCache-transfer/README-experts-only.txt
+%doc %{default_prefix}/gratia/dCache-transfer/README
+%{default_prefix}/gratia/dCache-transfer/ProbeConfig
+%{default_prefix}/gratia/dCache-transfer/gratia-dcache-transfer
+%{python_sitelib}/gratia/dcache_transfer
+%dir %{default_prefix}/gratia/dCache-transfer
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-transfer/ProbeConfig
+
+%post dcache-transfer
+/sbin/chkconfig --add gratia-dcache-transfer
+%customize_probeconfig -d dCache-transfer
+
+%package onevm
+Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: ruby
+License: See LICENSE.
+
+%description onevm
+Gratia OSG accounting system probe for providing VM accounting.
+
+%files onevm
+%defattr(-,root,root,-)
+%{python_sitelib}/gratia/onevm
+%{default_prefix}/gratia/onevm/onevm_probe.cron.sh
+%dir %{default_prefix}/gratia/onevm
+%{default_prefix}/gratia/onevm/ProbeConfig
+%{default_prefix}/gratia/onevm/VMGratiaProbe
+%{default_prefix}/gratia/onevm/query_one_lite.rb
+
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/onevm/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-onevm.cron
+
+%post onevm
+%customize_probeconfig -d onevm
+
 %package osg-pilot-container
 Summary: osg pilot container probe
 Group: Applications/System
@@ -380,9 +446,114 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %customize_probeconfig -d htcondor-ce
 
 
+# Enstore probes: enstore-transfer, enstore-storage, enstore-tapedrive
+
+%package enstore-transfer
+Summary: Enstore transfer probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{python_psycopg2}
+License: See LICENSE.
+
+%description enstore-transfer
+The Enstore transfer probe for the Gratia OSG accounting system.
+
+%files enstore-transfer
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-transfer/README.html
+%dir %{default_prefix}/gratia/enstore-transfer
+%{default_prefix}/gratia/enstore-transfer/enstore-transfer
+
+%{default_prefix}/gratia/enstore-transfer/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
+
+%post enstore-transfer
+%customize_probeconfig -d enstore-transfer
+
+%package enstore-storage
+Summary: Enstore storage probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: %{python_psycopg2}
+License: See LICENSE.
+
+%description enstore-storage
+The Enstore storage probe for the Gratia OSG accounting system.
+
+%files enstore-storage
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-storage/README.html
+%dir %{default_prefix}/gratia/enstore-storage
+%{default_prefix}/gratia/enstore-storage/enstore-storage
+
+%{default_prefix}/gratia/enstore-storage/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
+
+%post enstore-storage
+%customize_probeconfig -d enstore-storage
+
+%package enstore-tapedrive
+Summary: Enstore tapedrive probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: %{python_psycopg2}
+License: See LICENSE.
+
+%description enstore-tapedrive
+The Enstore tape drive probe for the Gratia OSG accounting system.
+
+%files enstore-tapedrive
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/enstore-tapedrive/README.html
+%dir %{default_prefix}/gratia/enstore-tapedrive
+%{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
+
+%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
+
+%post enstore-tapedrive
+%customize_probeconfig -d enstore-tapedrive
+
+# dCache storagegroup
+
+%package dcache-storagegroup
+Summary: dCache storagegroup probe
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-services >= %{version}-%{release}
+Requires: %{python_psycopg2}
+License: See LICENSE.
+
+%description dcache-storagegroup
+The dCache storagegroup probe for the Gratia OSG accounting system.
+
+%files dcache-storagegroup
+%defattr(-,root,root,-)
+%doc %{default_prefix}/gratia/dCache-storagegroup/README.html
+%dir %{default_prefix}/gratia/dCache-storagegroup
+%{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
+
+%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
+
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron
+
+%post dcache-storagegroup
+%customize_probeconfig -d dCache-storagegroup
+
+
+
 %changelog
 * Mon Feb 15 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.0-1
-- Only keep condor & osg-pilot-container probes for OSG 3.6 (SOFTWARE-4467)
+- Drop lots of probes for OSG 3.6 (SOFTWARE-4467)
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
