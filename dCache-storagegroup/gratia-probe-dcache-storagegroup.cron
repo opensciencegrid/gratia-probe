@@ -1,0 +1,1 @@
+0,30 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/dCache-storagegroup/ProbeConfig && /usr/share/gratia/dCache-storagegroup/dcache-storagegroup -s 1800

@@ -1,0 +1,121 @@
+# Copyright 2007 Cornell University, Ithaca, NY. All rights reserved.
+
+This README describes the dCache transfer probe for Gratia.
+
+This probe reports to Gratia the details of each file transfer into or out
+of a dCache file server.  It gets this information from the dCache "billing"
+database.
+
+Unlike most other dCache probes, this one runs continuously in the background.
+
+For performance reasons, sites with large dCache billing databases are advised
+to alter the "billinginfo" table by adding an index on the pair of columns
+    (datestamp, transaction)
+and to alter the "doorinfo" table by adding an index on the (transaction)
+column.  This should speed up the search for newly added records.
+
+Here's the suggested indexes:
+
+create index transaction on doorinfo(transaction);
+create index dates_di on doorinfo(datestamp);
+create index initiator on billinginfo(initiator);
+create index dates on billinginfo(datestamp);
+
+FILES AND DIRECTORIES:
+=====================
+This package is normally installed in
+    $VDT_LOCATION/gratia/probe/dCache-transfer.
+It comprises the following files:
+
+README - this file that you are reading now.
+Alarm.py - records error conditions and sends a warning email if there are
+           too many errors.
+Checkpoint.py - records the last record sent to Gratia.
+CheckpointTest.py - a set of unit tests for Checkpoint.py.
+DCacheAggregator.py - code that reads the billing db, packages it and
+                      sends it to Gratia.
+dCacheBillingAggregator.py - this is the main routine.
+ProbeConfig - this is the Gratia configuration file. It tells the probe
+              where to find the Gratia server, security setup, etc. See
+	      the section "CONFIGURING THE PROBE", below, for more details.
+
+In addition the RPM installs the file
+  /etc/init.d/gratia-dcache-transfer
+which starts the probe at boot time and shuts it down at shutdown time.
+If you want to see if the probe is running, run this command with the
+argument "status".
+
+The probe has a checkpoint file in
+  $VDT_LOCATION/gratia/var/data/chkpt_dcache_xfer_DoNotDelete
+This tells it which record it last send to Gratia.
+
+It logs messages to
+  $VDT_LOCATION/gratia/var/logs/dcacheTransfer.log
+The logs are rotated once they are more than 512KB. The previous 10 logs
+are kept.
+
+Messages from the Gratia transport system are logged to
+  $VDT_LOCATION/gratia/var/logs/yyyy-mm-dd.log
+where yyyy = the current year, mm = the current month and dd = the current day.
+For example, 2008-03-12.log.
+
+CONFIGURING THE PROBE:
+=====================
+Instructions for configuring the dCache Transfer Probe as installed from
+an RPM or VDT package.
+
+Edit the ProbeConfig file in this directory; you need to verify the values of:
+
+CollectorHost              The host running your local gratia repository.
+DBHostName                 The fully qualified SRM DB Host name.
+DBLoginName                The login name for the SRM DB.
+DBPassword                 The password for the SRM DB.
+DBName                     The name of the postgres database.
+DCacheServerHost           The fully qualified hostname of your dCache server.
+EmailServerHost            For problem emails -- SMTP server.
+EmailFromAddress           For problem emails -- from address.
+EmailToList                For problem emails -- recipient list.
+DcacheLogLevel             Probe-specific logging level.
+                           Valid values are debug, info, warn and error.
+OnlySendInterSiteTransfers If true, ignore intra-site transfers.
+                           Defaults to true.
+EnableProbe                Set to 1 to enable the probe.
+
+If no password is needed, use the empty string.
+
+If installed via RPM, activate the probe using:
+
+  chkconfig --add gratia-dcache-transfer
+  service start gratia-dcache-transfer
+
+If installed via VDT, configure-osg.sh should activate the probe;
+otherwise ensure configuration with:
+
+  $VDT_LOCATION/vdt/setup/configure_gratia --probe dcache-transfer \
+    --report-to <reporting-host> --site-name <OSG_SE_NAME> --probe-cron
+
+  vdt-control --on gratia-dcache-transfer
+
+UPGRADING:
+=========
+If you are upgrading, please make sure that the checkpoint file(s) 
+are not lost or damaged. The upgraded installation will
+need those file(s) to know which records have been sent to Gratia already.
+
+TESTING:
+=======
+If you turned on Gratia dCache transfer probe you should be able to see the 
+accounting information by accessing your Gratia collector. Keep in mind that 
+storage probe collection is executed by a cron job, so check the time the cron 
+job will be executed:
+
+# cat /etc/cron.d/gratia-probe-dcache-storage.cron 
+22 * * * * root "/opt/d-cache/gratia/probe/dCache-storage/dCache-storage_meter.cron.sh"
+
+To access the information about Gratia dCache-transfer probe, 
+go to http://<gratia_host>:<gratia_port>/gratia-reporting/, click on "Custom SQL Query" 
+on the left site menu frame, enter the following query into provided text box:
+
+select * from MasterTransferSummary where ProbeName like 'dcache-transfer:<dcache_admin_host_name>';
+
+click on "Execute Query" and you will see the total number of transfer per user. 

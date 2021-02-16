@@ -1,0 +1,15 @@
+
+    Title9="Enstore specific probe parameters"
+
+    EnstoreVersion="Enstore version"
+      Comments91="This can be used if the enstore rpm commands fail to identify the version, leave empty otherwise"
+    DbPort=""
+    DbHost="localhost"
+    DbName=""
+    DbUser=""
+      Comments92="Database connection information. You must enter it"
+    DbPasswordFile=""
+    DbPassword=""
+      Comments93="If there is a password you can enter it here or for added security in the DbPasswordFile that can have more strict permissions"
+    DefaultDomainName="my.domain"
+      Comments94="Used when hostname is not returning the domain"
