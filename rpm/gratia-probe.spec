@@ -173,7 +173,26 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
         $PROBE_DIR/ProbeConfig
 
     # Other Probe-specific customizations
-    if [ $probe == "condor" ]; then
+    if [ $probe == "dCache-transfer" ]; then
+      sed -i -e 's#@PROBE_SPECIFIC_DATA@#Summarize="0" \
+    UpdateFrequency="120" \
+    DBHostName="localhost" \
+    DBLoginName="srmdcache" \
+    DBPassword="srmdcache" \
+    StopFileName="stopGratiaFeed" \
+    DCacheServerHost="BILLING_HOST" \
+    EmailServerHost="localhost" \
+    EmailFromAddress="dCacheProbe@localhost" \
+    EmailToList="" \
+    AggrLogLevel="warn" \
+    OnlySendInterSiteTransfers="true" \
+    MaxBillingHistoryDays="31" \
+    DBName="billing"#' $PROBE_DIR/ProbeConfig
+    elif [ $probe == "dCache-storage" ]; then
+      sed -i -e 's#@PROBE_SPECIFIC_DATA@#TitleDCacheStorage="dCache-storage-specific attributes" \
+    InfoProviderUrl="http://DCACHE_HOST:2288/info" \
+    ReportPoolUsage="0"#' $PROBE_DIR/ProbeConfig
+    elif [ $probe == "condor" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
