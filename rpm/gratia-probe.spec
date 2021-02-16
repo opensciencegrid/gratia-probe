@@ -188,10 +188,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     OnlySendInterSiteTransfers="true" \
     MaxBillingHistoryDays="31" \
     DBName="billing"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "dCache-storage" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#TitleDCacheStorage="dCache-storage-specific attributes" \
-    InfoProviderUrl="http://DCACHE_HOST:2288/info" \
-    ReportPoolUsage="0"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "condor" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
     else
@@ -238,7 +234,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/test
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storage/test.xml
 
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
