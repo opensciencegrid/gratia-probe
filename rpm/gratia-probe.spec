@@ -271,6 +271,9 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
   sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+  sed -i '/WorkingFolder="/s/"[^"]*"/"/var/lib/condor-ce/"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+  sed -i '/LogFolder="/s/"[^"]*"/"/var/log/condor-ce/"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+  sed -i '/LogFolder="/a\    Lockfile="/var/lock/condor-ce/gratia.lock"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
