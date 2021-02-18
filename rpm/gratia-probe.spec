@@ -264,6 +264,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
   install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
+  sed -i '/PER_JOB_HISTORY/s,=.*,= /var/lib/condor-ce/gratia_data,' $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia.conf
   install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
