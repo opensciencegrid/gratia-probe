@@ -105,7 +105,18 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Obtain files
 
-%define noarch_packs common condor dCache-transfer onevm common2 enstore-storage enstore-transfer enstore-tapedrive dCache-storagegroup osg-pilot-container
+  packs=(
+    common
+    condor
+    dCache-transfer
+    onevm
+    common2
+    enstore-storage
+    enstore-transfer
+    enstore-tapedrive
+    dCache-storagegroup
+    osg-pilot-container
+  )
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
@@ -116,7 +127,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   mv common/gratia $RPM_BUILD_ROOT%{python_sitelib}
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/gratia
 
-  for probe in %{noarch_packs}
+  for probe in ${packs[@]}
   do
     # Install the cronjob
     if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storagegroup" ]; then
