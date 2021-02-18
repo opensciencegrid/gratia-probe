@@ -128,15 +128,15 @@ def RemoveOldFiles(nDays=31, globexp=None, req_maxsize=0):
     statfs = os.statvfs(dirname)
     disksize = statfs.f_blocks
     freespace = statfs.f_bfree
-    ourblocks = totalsize / statfs.f_frsize
+    ourblocks = totalsize // statfs.f_frsize
     percent = ourblocks * 100.0 / disksize
 
     if percent < 1:
         DebugPrint(1, dirname + ' uses ' + niceNum(percent, 1e-3) + '% and there is ' + niceNum(freespace * 100
-                   / disksize) + '% free')
+                   // disksize) + '% free')
     else:
         DebugPrint(1, dirname + ' uses ' + niceNum(percent, 0.10000000000000001) + '% and there is '
-                   + niceNum(freespace * 100 / disksize) + '% free')
+                   + niceNum(freespace * 100 // disksize) + '% free')
 
     minfree = 0.10000000000000001 * disksize  # We want the disk to be no fuller than 95%
     # We want the directory to not be artificially reduced below 5% because other things are filling up the disk.
@@ -166,7 +166,7 @@ def RemoveOldFiles(nDays=31, globexp=None, req_maxsize=0):
             else:
                 DebugPrint(4,
                            "DEBUG: The disk is quite full and this directory is 'large' attempting to reduce from "
-                            + niceNum(totalsize / 1000000) + 'Mb to ' + niceNum(calc_maxsize / 1000000) + 'Mb.')
+                            + niceNum(totalsize // 1000000) + 'Mb to ' + niceNum(calc_maxsize // 1000000) + 'Mb.')
                 calc_maxsize = calc_maxsize * statfs.f_frsize
 
     if calc_maxsize > 0 and totalsize > calc_maxsize:
@@ -189,7 +189,7 @@ def RemoveOldFiles(nDays=31, globexp=None, req_maxsize=0):
              # We delete the current log file! Let's record this explicitly!
 
                 DebugPrint(0, 'EMERGENCY DELETION AND TRUNCATION OF LOG FILES.')
-                DebugPrint(0, 'Current log file was too large: ' + niceNum(file_tuple[1] / 1000000) + 'Mb.')
+                DebugPrint(0, 'Current log file was too large: ' + niceNum(file_tuple[1] // 1000000) + 'Mb.')
                 DebugPrint(0, 'All prior information has been lost.')
             if totalsize < calc_maxsize:
                 return
