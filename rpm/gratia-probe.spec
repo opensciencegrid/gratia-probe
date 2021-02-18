@@ -110,6 +110,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     condor
     dCache-transfer
     gridftp-transfer
+    xrootd-transfer
     onevm
     common2
     enstore-storage
@@ -229,6 +230,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -m 755 dCache-transfer/gratia-dcache-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-dcache-transfer
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer.init
 
+  # Xrootd-transfer init script
+  install -m 755 $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-xrootd-transfer
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init
+
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
@@ -256,6 +261,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
@@ -433,6 +439,28 @@ Contributed by Andrei Baranovski of the OSG storage team.
 
 %post gridftp-transfer
 %customize_probeconfig -d gridftp-transfer
+
+%package xrootd-transfer
+Summary: Probe that emits a record for each file transfer in Xrootd.
+Group: Applications/System
+Requires: %{name}-common >= %{version}-%{release}
+License: See LICENSE.
+
+%description xrootd-transfer
+Xrootd Transfer Probe for Gratia OSG accounting system.
+Contributed by University of Nebraska Lincoln.
+
+%files xrootd-transfer
+%defattr(-,root,root,-)
+%{_initrddir}/gratia-xrootd-transfer
+%{default_prefix}/gratia/xrootd-transfer/gratia-xrootd-transfer
+%{default_prefix}/gratia/xrootd-transfer/ProbeConfig
+%dir %{default_prefix}/gratia/xrootd-transfer
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
+
+%post xrootd-transfer
+%customize_probeconfig -d xrootd-transfer
+
 
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
