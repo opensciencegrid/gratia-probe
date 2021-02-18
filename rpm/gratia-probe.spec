@@ -264,7 +264,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
   install -m 644 condor/99_gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
-  install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   # Copy the condor configuration
@@ -829,7 +828,6 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %{default_prefix}/gratia/htcondor-ce/condor_meter
 %config %{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
 
 %post htcondor-ce
 %customize_probeconfig -d htcondor-ce
