@@ -269,6 +269,15 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Copy the condor configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+
+  update_probeconfig () {
+    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"" \
+        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
+  }
+
+  update_probeconfig htcondor-ce WorkingFolder /var/lib/condor-ce
+  update_probeconfig htcondor-ce LogFolder     /var/log/condor-ce
+  update_probeconfig htcondor-ce Lockfile      /var/lock/condor-ce/gratia.lock
   sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
   sed -i '/WorkingFolder="/s|"[^"]*"|"/var/lib/condor-ce|"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
   sed -i '/LogFolder="/s|"[^"]*"|"/var/log/condor-ce|"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
