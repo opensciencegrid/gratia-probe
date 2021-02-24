@@ -271,7 +271,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   update_probeconfig () {
-    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"" \
+    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"|" \
         $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
   }
 
