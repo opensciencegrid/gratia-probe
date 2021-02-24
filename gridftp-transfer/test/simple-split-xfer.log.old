@@ -1,0 +1,7 @@
+[1579284] Tue Jul 19 20:16:06 2016 :: Configuration read from /etc/gridftp.conf.
+[1579284] Tue Jul 19 20:16:06 2016 :: Server started in inetd mode.
+[1579284] Tue Jul 19 20:16:06 2016 :: New connection from: hcc-briantest7.unl.edu:22134
+[1579284] Tue Jul 19 20:16:06 2016 :: DN /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=bbockelm/CN=659869/CN=Brian Paul Bockelman successfully authorized.
+[1579284] Tue Jul 19 20:16:06 2016 :: VO cms /cms/Role=NULL/Capability=NULL,/cms/integration/Role=NULL/Capability=NULL,/cms/uscms/Role=NULL/Capability=NULL
+[1579284] Tue Jul 19 20:16:06 2016 :: User bbockelm successfully authorized.
+[1579284] Tue Jul 19 20:16:06 2016 :: Starting to transfer "/dev/zero".
