@@ -279,7 +279,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # append a new value in ProbeConfig, after $2
   update_probeconfig_append_after () {
-    sed -i '/$2/a\    $3="$4"' \
+    sed -i "/$2/a\\    $3=\"$4\"" \
         $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
   }
 
