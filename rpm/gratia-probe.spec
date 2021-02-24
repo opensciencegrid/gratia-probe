@@ -107,17 +107,17 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   packs=(
     common
-    condor
-    dCache-transfer
-    gridftp-transfer
-    xrootd-transfer
-    onevm
     common2
-    enstore-storage
-    enstore-transfer
-    enstore-tapedrive
+    condor
     dCache-storagegroup
+    dCache-transfer
+    enstore-storage
+    enstore-tapedrive
+    enstore-transfer
+    gridftp-transfer
+    onevm
     osg-pilot-container
+    xrootd-transfer
   )
 
   # PWD is the working directory, used to build
