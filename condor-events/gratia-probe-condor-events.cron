@@ -1,1 +1,0 @@
-0,10,20,30,40,50 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/condor-events/ProbeConfig && perl -e 'sleep rand 600' && /usr/share/gratia/condor-events/watchCondorEvents

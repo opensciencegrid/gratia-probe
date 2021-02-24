@@ -1,2 +1,0 @@
-0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/slurm/ProbeConfig && /usr/share/gratia/slurm/slurm_meter -s 900 -c
-#0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/slurm-running/ProbeConfig && /usr/share/gratia/slurm/slurm_meter_running -s 900 -c

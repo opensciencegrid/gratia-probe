@@ -1,1 +1,0 @@
-0 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/dCache-storage/ProbeConfig &&  perl -e 'sleep rand 3600' && /usr/share/gratia/dCache-storage/dCache-storage_meter.cron.sh

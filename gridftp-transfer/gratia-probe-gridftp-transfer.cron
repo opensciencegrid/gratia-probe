@@ -1,1 +1,0 @@
-0,30 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/gridftp-transfer/ProbeConfig && /usr/share/gratia/gridftp-transfer/gridftp-transfer_meter -s 1800
