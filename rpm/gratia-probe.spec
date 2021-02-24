@@ -201,8 +201,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     OnlySendInterSiteTransfers="true" \
     MaxBillingHistoryDays="31" \
     DBName="billing"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "gridftp-transfer" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#GridftpLogDir="/var/log/"#' $PROBE_DIR/ProbeConfig
     elif [ $probe == "condor" ]; then
       sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
     else
@@ -218,7 +216,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Remove unnecessary links
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/gridftp-transfer/ProbeConfig
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -435,31 +432,6 @@ Contributed by Greg Sharp and the dCache project.
 /sbin/chkconfig --add gratia-dcache-transfer
 %customize_probeconfig -d dCache-transfer
 
-%package gridftp-transfer
-Summary: Gratia OSG accounting system probe for gridftp transfers.
-Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: globus-gridftp-osg-extensions
-Requires: globus-gridftp-server-progs >= 7.20-1.3
-Requires: %{python_tz}
-License: See LICENSE.
-
-%description gridftp-transfer
-Gratia OSG accounting system probe for available space in dCache.
-Contributed by Andrei Baranovski of the OSG storage team.
-
-%files gridftp-transfer
-%defattr(-,root,root,-)
-%dir %{default_prefix}/gratia/gridftp-transfer
-%{default_prefix}/gratia/gridftp-transfer/gridftp-transfer_meter
-%doc %{default_prefix}/gratia/gridftp-transfer/README.md
-%doc %{default_prefix}/gratia/gridftp-transfer/LICENSE
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/gridftp-transfer/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-gridftp-transfer.cron
-
-%post gridftp-transfer
-%customize_probeconfig -d gridftp-transfer
-
 %package xrootd-transfer
 Summary: Probe that emits a record for each file transfer in Xrootd.
 Group: Applications/System
@@ -480,7 +452,6 @@ Contributed by University of Nebraska Lincoln.
 
 %post xrootd-transfer
 %customize_probeconfig -d xrootd-transfer
-
 
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
