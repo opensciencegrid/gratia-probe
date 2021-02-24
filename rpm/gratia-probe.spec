@@ -114,7 +114,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     enstore-storage
     enstore-tapedrive
     enstore-transfer
-    gridftp-transfer
     onevm
     osg-pilot-container
     xrootd-transfer
