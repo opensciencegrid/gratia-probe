@@ -122,7 +122,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
-  cp -pR %{noarch_packs}  $RPM_BUILD_ROOT%{_datadir}/gratia
+  cp -pR ${packs[@]} $RPM_BUILD_ROOT%{_datadir}/gratia
 
   install -d $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
   install -d $RPM_BUILD_ROOT%{python_sitelib}
