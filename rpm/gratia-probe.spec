@@ -258,19 +258,39 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
   install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
   install -m 644 condor/99_gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-gwms.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
-  install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
-  install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
+  install -m 644 condor/99_gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   # Copy the condor configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-ce.conf
+
+  # replace a value in ProbeConfig
+  update_probeconfig () {
+    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"|" \
+        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
+  }
+
+  # append a new value in ProbeConfig, after $2
+  update_probeconfig_append_after () {
+    sed -i "/$2/a\\    $3=\"$4\"" \
+        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
+  }
+
+  update_probeconfig htcondor-ce ProbeName     htcondor-ce:@PROBE_HOST@
+  update_probeconfig htcondor-ce WorkingFolder /var/lib/condor-ce
+  update_probeconfig htcondor-ce LogFolder     /var/log/condor-ce
+  update_probeconfig htcondor-ce DataFolder    /var/lib/condor-ce/gratia/data
+
+  # Lockfile is not specified in the default ProbeConfig, so we have to add it
+  update_probeconfig_append_after htcondor-ce LogFolder Lockfile \
+                                  /var/lock/condor-ce/gratia.lock
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
@@ -824,9 +844,8 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
 %{default_prefix}/gratia/htcondor-ce/condor_meter
-%config(noreplace) %{_sysconfdir}/condor-ce/config.d/99_gratia.conf
+%config %{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
 
 %post htcondor-ce
 %customize_probeconfig -d htcondor-ce
