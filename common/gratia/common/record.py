@@ -75,8 +75,9 @@ class Record(object):
         ''' Helper Function to generate the xml (Do not call directly)'''
 
         # First filter out the previous value
-
-        where = [x for x in where if x.find('<' + what) != 0]
+        # The verbatim append to list above always adds a space, so include that in the search
+        # otherwise setting "Queue" after "QueueTime" would cause "QueueTime" to be removed from the list
+        where = [x for x in where if x.find('<' + what + ' ') != 0]
         return self.VerbatimAppendToList(where, what, comment, value)
 
     def AddToList(
