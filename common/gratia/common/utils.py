@@ -45,7 +45,7 @@ def niceNum(num, precision=1):
                 result = adigit + '.' + result
             else:
                 result = adigit + result
-            digits = digits / 10
+            digits = digits // 10
             curpow = curpow + 1
         for i in range(curpow, 0):
             if i % 3 == 0 and i != 0:
