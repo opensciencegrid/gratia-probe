@@ -277,10 +277,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   update_probeconfig htcondor-ce WorkingFolder /var/lib/condor-ce
   update_probeconfig htcondor-ce LogFolder     /var/log/condor-ce
-  update_probeconfig htcondor-ce Lockfile      /var/lock/condor-ce/gratia.lock
   sed -i 's/ProbeName="condor:/ProbeName="htcondor-ce:/' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  sed -i '/WorkingFolder="/s|"[^"]*"|"/var/lib/condor-ce|"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  sed -i '/LogFolder="/s|"[^"]*"|"/var/log/condor-ce|"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
   sed -i '/LogFolder="/a\    Lockfile="/var/lock/condor-ce/gratia.lock"' $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
   # Remove the test stuff
