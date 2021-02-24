@@ -630,6 +630,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 * Wed Feb 24 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.0-1
 - Drop lots of probes for OSG 3.6 (SOFTWARE-4467)
 - Support running htcondor-ce probe under schedd cron (SOFTWARE-4490)
+- Fix python3 int division in niceNum
+- Fix QueueTime attribute handling
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
