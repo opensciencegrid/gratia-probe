@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            2.0.0
-Release:            1%{?dist}
+Release:            2%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -239,6 +239,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
   install -m 644 condor/99_gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   # Copy the condor configuration
@@ -514,6 +515,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
 %{default_prefix}/gratia/htcondor-ce/condor_meter
+%attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
 %config %{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
@@ -627,6 +629,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Feb 25 2021 Brian Lin <blin@cs.wisc.edu> - 2.0.0-2
+- Ensure that HTCondor-CE DataFolder exists (SOFTWARE-4490)
+
 * Wed Feb 24 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.0-1
 - Drop lots of probes for OSG 3.6 (SOFTWARE-4467)
 - Support running htcondor-ce probe under schedd cron (SOFTWARE-4490)
