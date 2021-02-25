@@ -260,13 +260,13 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   }
 
   update_probeconfig htcondor-ce ProbeName     htcondor-ce:@PROBE_HOST@
-  update_probeconfig htcondor-ce WorkingFolder /var/lib/condor-ce
-  update_probeconfig htcondor-ce LogFolder     /var/log/condor-ce
-  update_probeconfig htcondor-ce DataFolder    /var/lib/condor-ce/gratia/data
+  update_probeconfig htcondor-ce WorkingFolder %{_localstatedir}/lib/condor-ce
+  update_probeconfig htcondor-ce LogFolder     %{_localstatedir}/log/condor-ce
+  update_probeconfig htcondor-ce DataFolder    %{_sharedstatedir}/condor-ce/gratia/data
 
   # Lockfile is not specified in the default ProbeConfig, so we have to add it
   update_probeconfig_append_after htcondor-ce LogFolder Lockfile \
-                                  /var/lock/condor-ce/gratia.lock
+                                  %{_localstatedir}/lock/condor-ce/gratia.lock
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
