@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.23.1
+Version:            1.23.2
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -966,6 +966,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
+- Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
+- Fix python3 int division in niceNum (#92)
+
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
 - Add 'QueueTime' collection (SOFTWARE-4479)
