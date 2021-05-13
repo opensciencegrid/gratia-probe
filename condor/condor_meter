@@ -479,6 +479,8 @@ def setIfExists(func, classad, attr, comment=None, setstr=False):
             func(val)
         else:
             func(val, comment)
+        return True
+    return False
 
 cream_re = re.compile("https://([A-Za-z-.0-9]+):(\d+)/ce-cream/services/CREAM2\s+(\S+)\s+\S+")
 def cream_match(match, desired):
@@ -593,8 +595,10 @@ def classadToJUR(classad):
     setIfExists(r.LocalUserId, classad, "Owner")
     setIfExists(r.GlobalUsername, classad, "User")
     setIfExists(r.DN, classad, 'x509userproxysubject')
-    setIfExists(r.VOName, classad, 'x509UserProxyFirstFQAN')
-    setIfExists(r.ReportableVOName, classad, 'x509UserProxyVOName')
+    setIfExists(r.VOName, classad, 'x509UserProxyFirstFQAN') or \
+    setIfExists(r.VOName, classad, 'AuthTokenSubject')  # VO info for SciToken
+    setIfExists(r.ReportableVOName, classad, 'x509UserProxyVOName') or \
+    setIfExists(r.ReportableVOName, classad, 'AuthTokenSubject')
 
     if 'GlobalJobId' in classad:
         r.JobName(classad["GlobalJobId"])
