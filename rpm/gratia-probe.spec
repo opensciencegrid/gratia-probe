@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            1.23.2
+Version:            1.23.3
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -966,6 +966,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Fri May 14 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.3-1
+- Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
+
 * Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
 - Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
 - Fix python3 int division in niceNum (#92)
