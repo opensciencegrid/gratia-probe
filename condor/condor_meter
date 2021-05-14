@@ -594,11 +594,12 @@ def classadToJUR(classad):
 
     setIfExists(r.LocalUserId, classad, "Owner")
     setIfExists(r.GlobalUsername, classad, "User")
-    setIfExists(r.DN, classad, 'x509userproxysubject')
-    setIfExists(r.VOName, classad, 'x509UserProxyFirstFQAN') or \
-    setIfExists(r.VOName, classad, 'AuthTokenSubject')  # VO info for SciToken
-    setIfExists(r.ReportableVOName, classad, 'x509UserProxyVOName') or \
+    setIfExists(r.DN, classad, 'x509userproxysubject') or \
     setIfExists(r.ReportableVOName, classad, 'AuthTokenSubject')
+    setIfExists(r.VOName, classad, 'x509UserProxyFirstFQAN') or \
+    setIfExists(r.VOName, classad, 'AuthTokenIssuer')  # VO info for SciToken
+    setIfExists(r.ReportableVOName, classad, 'x509UserProxyVOName') or \
+    setIfExists(r.ReportableVOName, classad, 'AuthTokenIssuer')
 
     if 'GlobalJobId' in classad:
         r.JobName(classad["GlobalJobId"])
