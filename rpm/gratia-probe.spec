@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.0.1
-Release:            2%{?dist}
+Version:            2.0.2
+Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -629,6 +629,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Jun 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-1
+- Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
+
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.1-2
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
 
@@ -640,6 +643,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Support running htcondor-ce probe under schedd cron (SOFTWARE-4490)
 - Fix python3 int division in niceNum
 - Fix QueueTime attribute handling
+
+* Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
+- Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
+- Fix python3 int division in niceNum (#92)
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
