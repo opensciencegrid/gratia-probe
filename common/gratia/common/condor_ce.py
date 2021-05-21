@@ -142,19 +142,22 @@ def createCertinfoXML(classad):
     uniqID.appendChild(dom.createTextNode(unique_id))
 
     # Sample: x509UserProxyVOName = "cms"
-    voStr = classad.get("x509UserProxyVOName", "")
+    voStr = classad.get("x509UserProxyVOName", "") or \
+            classad.get("AuthTokenIssuer", "")
     vo = dom.createElement("VO")
     vo.appendChild(dom.createTextNode(voStr))
 
     # Sample: x509UserProxyFirstFQAN = "/cms/Role=NULL/Capability=NULL"
-    fqanStr = classad.get("x509UserProxyFirstFQAN", "")
+    fqanStr = classad.get("x509UserProxyFirstFQAN", "") or \
+              classad.get("AuthTokenIssuer", "")
     fqan = dom.createElement("FQAN")
     fqan.appendChild(dom.createTextNode(fqanStr))
 
     # Sample: x509userproxysubject = "/C=TW/O=AP/OU=GRID/CN=Nitish Dhingra 142746"
-    x509Str = classad.get("x509userproxysubject", "")
-    x509 = dom.createElement("DN")
-    x509.appendChild(dom.createTextNode(x509Str))
+    dnStr = classad.get("x509userproxysubject", "") or \
+            classad.get("AuthTokenSubject", "")
+    dn = dom.createElement("DN")
+    dn.appendChild(dom.createTextNode(dnStr))
 
     info = dom.createElement("GratiaCertInfo")
     info.appendChild(dom.createTextNode("\n  "))
@@ -166,8 +169,8 @@ def createCertinfoXML(classad):
     if jobid:
         info.appendChild(localId)
         info.appendChild(dom.createTextNode("\n  "))
-    if x509Str:
-        info.appendChild(x509)
+    if dnStr:
+        info.appendChild(dn)
         info.appendChild(dom.createTextNode("\n  "))
     if voStr:
         info.appendChild(vo)
