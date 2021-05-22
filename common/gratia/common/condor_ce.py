@@ -297,6 +297,8 @@ condor_ce_q -const 'RoutedJob =?= true && GridJobId =!= UNDEFINED \
     -format 'x509UserProxyVOName=%s\t' x509UserProxyVOName \
     -format 'x509UserProxyFirstFQAN=%s\t' x509UserProxyFirstFQAN \
     -format 'x509userproxysubject=%s\t' x509userproxysubject \
+    -format 'AuthTokenIssuer=%s\t' AuthTokenIssuer \
+    -format 'AuthTokenSubject=%s\t' AuthTokenSubject \
     -format 'GridJobId=%s' GridJobId \
     -format '\n' junk \
 """
@@ -365,9 +367,15 @@ def queryJob(jobid):
     certinfo = {}
     if 'x509UserProxyVOName' in info:
         certinfo["VO"] = info['x509UserProxyVOName']
+    elif 'AuthTokenIssuer' in info:
+        certinfo["VO"] = info['AuthTokenIssuer']
     if 'x509userproxysubject' in info:
         certinfo['DN'] = info['x509userproxysubject']
+    elif 'AuthTokenSubject' in info:
+        certinfo['DN'] = info['AuthTokenSubject']
     if 'x509UserProxyFirstFQAN' in info:
         certinfo['FQAN'] = info['x509UserProxyFirstFQAN']
+    elif 'AuthTokenIssuer' in info:
+        certinfo["FQAN"] = info['AuthTokenIssuer']
     return certinfo
 
