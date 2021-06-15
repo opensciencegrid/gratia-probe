@@ -358,7 +358,7 @@ Probes for the Gratia OSG accounting system
 %package pbs-lsf
 Summary: Gratia OSG accounting system probe for PBS and LSF batch systems.
 Group: Applications/System
-Requires: %{name}-common >= 0.12f
+Requires: %{name}-common = %{version}-%{release}
 License: See LICENSE.
 
 %description pbs-lsf
@@ -464,7 +464,7 @@ fi
 %package condor
 Summary: A Condor probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
 
@@ -486,8 +486,8 @@ The Condor probe for the Gratia OSG accounting system.
 %package glideinwms
 Summary: Configuration for Gratia GlideinWMS integration.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-condor >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-condor = %{version}-%{release}
 
 %description glideinwms
 The Condor probe for the Gratia OSG accounting system.
@@ -503,7 +503,7 @@ Summary: An SGE probe
 Group: Applications/System
 %if %{?python:0}%{!?python:1}
 %endif
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 
 %description sge
 The SGE probe for the Gratia OSG accounting system.
@@ -524,7 +524,7 @@ The SGE probe for the Gratia OSG accounting system.
 %package metric
 Summary: A probe for OSG metrics
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 
 %description metric
 The metric probe for the Gratia OSG accounting system.
@@ -543,7 +543,7 @@ The metric probe for the Gratia OSG accounting system.
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -572,8 +572,8 @@ Contributed by Greg Sharp and the dCache project.
 %package dcache-storage
 Summary: Gratia OSG accounting system probe for dCache storage.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: xalan-j2
 License: See LICENSE.
 
@@ -602,7 +602,7 @@ Contributed by Andrei Baranovksi of the OSG Storage team.
 %package gridftp-transfer
 Summary: Gratia OSG accounting system probe for gridftp transfers.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: globus-gridftp-osg-extensions
 Requires: globus-gridftp-server-progs >= 7.20-1.3
 Requires: %{python_tz}
@@ -627,7 +627,7 @@ Contributed by Andrei Baranovski of the OSG storage team.
 %package services
 Summary: Gratia OSG accounting system probe API for services.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 License: See LICENSE.
 
 %description services
@@ -648,8 +648,8 @@ Contributed by University of Nebraska Lincoln.
 %package hadoop-storage
 Summary: HDFS Storage Probe for Gratia OSG accounting system.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 License: See LICENSE.
 
 %description hadoop-storage
@@ -670,7 +670,7 @@ Contributed by University of Nebraska Lincoln.
 %package condor-events
 Summary: Probe that emits a record for each event in the Condor system.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 License: See LICENSE.
 
 %description condor-events
@@ -690,7 +690,7 @@ Contributed by University of Nebraska Lincoln.
 %package xrootd-transfer
 Summary: Probe that emits a record for each file transfer in Xrootd.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 License: See LICENSE.
 
 %description xrootd-transfer
@@ -711,7 +711,7 @@ Contributed by University of Nebraska Lincoln.
 %package xrootd-storage
 Summary: Gratia probe to monitor Xrootd storage usage.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{name}-services = %{version}-%{release}
 License: See LICENSE.
 
@@ -734,7 +734,7 @@ Contributed as effort from OSG-Storage.
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: ruby
 License: See LICENSE.
 
@@ -759,7 +759,7 @@ Gratia OSG accounting system probe for providing VM accounting.
 %package osg-pilot-container
 Summary: osg pilot container probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 #Requires: python-sqlite
 Requires: %{condor_python}
 License: See LICENSE.
@@ -783,7 +783,7 @@ osg pilot container probe
 %package slurm
 Summary: A SLURM probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: slurm
 Requires: %{python_mysql}
 License: See LICENSE.
@@ -813,7 +813,7 @@ The SLURM probe for the Gratia OSG accounting system.
 %package htcondor-ce
 Summary: A HTCondor-CE probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: htcondor-ce
 License: See LICENSE.
 
@@ -838,7 +838,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %package lsf
 Summary: A LSF probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 # Requires: lsf (can get the version form the configuration)
 License: See LICENSE.
 
@@ -865,7 +865,7 @@ The alternative LSF probe for the Gratia OSG accounting system.
 %package enstore-transfer
 Summary: Enstore transfer probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -889,8 +889,8 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 %package enstore-storage
 Summary: Enstore storage probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -914,8 +914,8 @@ The Enstore storage probe for the Gratia OSG accounting system.
 %package enstore-tapedrive
 Summary: Enstore tapedrive probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -941,8 +941,8 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 %package dcache-storagegroup
 Summary: dCache storagegroup probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -968,6 +968,7 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %changelog
 * Tue Jun 15 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.24.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
+- Lock Version-Release across sub-packages (SOFTWARE-4667)
 
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.3-1
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
