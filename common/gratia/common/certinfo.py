@@ -20,7 +20,7 @@ def FixDN(DN):
 
     # Put DN into a known format: /-separated with USERID= instead of UID=
 
-    fixedDN = '/'.join(DN.split(', ').replace('/UID=', '/USERID='))
+    fixedDN = '/'.join(DN.split(', ')).replace('/UID=', '/USERID=')
     if fixedDN[0] != r'/':
         fixedDN = r'/' + fixedDN
     return fixedDN

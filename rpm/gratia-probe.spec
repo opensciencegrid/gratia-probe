@@ -969,6 +969,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 * Fri May 14 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.3-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 
+* Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.3-1
+- Fix paren syntax in certinfo.py (SOFTWARE-4638)
+
 * Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
 - Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
 - Fix python3 int division in niceNum (#92)
