@@ -142,19 +142,22 @@ def createCertinfoXML(classad):
     uniqID.appendChild(dom.createTextNode(unique_id))
 
     # Sample: x509UserProxyVOName = "cms"
-    voStr = classad.get("x509UserProxyVOName", "")
+    voStr = classad.get("x509UserProxyVOName", "") or \
+            classad.get("AuthTokenIssuer", "")
     vo = dom.createElement("VO")
     vo.appendChild(dom.createTextNode(voStr))
 
     # Sample: x509UserProxyFirstFQAN = "/cms/Role=NULL/Capability=NULL"
-    fqanStr = classad.get("x509UserProxyFirstFQAN", "")
+    fqanStr = classad.get("x509UserProxyFirstFQAN", "") or \
+              classad.get("AuthTokenIssuer", "")
     fqan = dom.createElement("FQAN")
     fqan.appendChild(dom.createTextNode(fqanStr))
 
     # Sample: x509userproxysubject = "/C=TW/O=AP/OU=GRID/CN=Nitish Dhingra 142746"
-    x509Str = classad.get("x509userproxysubject", "")
-    x509 = dom.createElement("DN")
-    x509.appendChild(dom.createTextNode(x509Str))
+    dnStr = classad.get("x509userproxysubject", "") or \
+            classad.get("AuthTokenSubject", "")
+    dn = dom.createElement("DN")
+    dn.appendChild(dom.createTextNode(dnStr))
 
     info = dom.createElement("GratiaCertInfo")
     info.appendChild(dom.createTextNode("\n  "))
@@ -166,8 +169,8 @@ def createCertinfoXML(classad):
     if jobid:
         info.appendChild(localId)
         info.appendChild(dom.createTextNode("\n  "))
-    if x509Str:
-        info.appendChild(x509)
+    if dnStr:
+        info.appendChild(dn)
         info.appendChild(dom.createTextNode("\n  "))
     if voStr:
         info.appendChild(vo)
@@ -294,6 +297,8 @@ condor_ce_q -const 'RoutedJob =?= true && GridJobId =!= UNDEFINED \
     -format 'x509UserProxyVOName=%s\t' x509UserProxyVOName \
     -format 'x509UserProxyFirstFQAN=%s\t' x509UserProxyFirstFQAN \
     -format 'x509userproxysubject=%s\t' x509userproxysubject \
+    -format 'AuthTokenIssuer=%s\t' AuthTokenIssuer \
+    -format 'AuthTokenSubject=%s\t' AuthTokenSubject \
     -format 'GridJobId=%s' GridJobId \
     -format '\n' junk \
 """
@@ -362,9 +367,17 @@ def queryJob(jobid):
     certinfo = {}
     if 'x509UserProxyVOName' in info:
         certinfo["VO"] = info['x509UserProxyVOName']
+    elif 'AuthTokenIssuer' in info:
+        certinfo["VO"] = info['AuthTokenIssuer']
     if 'x509userproxysubject' in info:
         certinfo['DN'] = info['x509userproxysubject']
+    elif 'AuthTokenSubject' in info:
+        certinfo['DN'] = info['AuthTokenSubject']
     if 'x509UserProxyFirstFQAN' in info:
         certinfo['FQAN'] = info['x509UserProxyFirstFQAN']
+    # FQAN is used as a backup for DN/VO in the certinfo to populate
+    # VOName/ReportableVOName in the usage record, respectively.
+    # Since DN/VO are always populated in the AuthToken case, we are
+    # intentionally omitting AuthTokenIssuer equivalent for FQAN.
+    # See https://github.com/opensciencegrid/gratia-probe/pull/96#discussion_r651148685
     return certinfo
-
