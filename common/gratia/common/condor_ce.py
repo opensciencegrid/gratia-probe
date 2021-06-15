@@ -375,6 +375,9 @@ def queryJob(jobid):
         certinfo['DN'] = info['AuthTokenSubject']
     if 'x509UserProxyFirstFQAN' in info:
         certinfo['FQAN'] = info['x509UserProxyFirstFQAN']
-    # intentionally omitting AuthTokenIssuer equivalent for FQAN; see PR #96
+    # FQAN is used as a backup for DN/VO in the certinfo to populate
+    # VOName/ReportableVOName in the usage record, respectively.
+    # Since DN/VO are always populated in the AuthToken case, we are
+    # intentionally omitting AuthTokenIssuer equivalent for FQAN.
+    # See https://github.com/opensciencegrid/gratia-probe/pull/96#discussion_r651148685
     return certinfo
-
