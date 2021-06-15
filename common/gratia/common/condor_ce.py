@@ -375,7 +375,4 @@ def queryJob(jobid):
         certinfo['DN'] = info['AuthTokenSubject']
     if 'x509UserProxyFirstFQAN' in info:
         certinfo['FQAN'] = info['x509UserProxyFirstFQAN']
-    elif 'AuthTokenIssuer' in info:
-        certinfo["FQAN"] = info['AuthTokenIssuer']
     return certinfo
-
