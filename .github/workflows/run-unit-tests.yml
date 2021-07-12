@@ -1,4 +1,4 @@
-name: Manually Run Unit Tests
+name: Run Unit Tests
 
 on:
   push:  # FIXME: temporarily for dev, generally remove when done
