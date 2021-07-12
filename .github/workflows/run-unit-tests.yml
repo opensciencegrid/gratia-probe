@@ -1,7 +1,6 @@
 name: Run Unit Tests
 
 on:
-  push:  # FIXME: temporarily for dev, generally remove when done
   pull_request:
   workflow_dispatch:
     
