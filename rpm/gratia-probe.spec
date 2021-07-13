@@ -384,7 +384,7 @@ fi
 %package condor
 Summary: A Condor probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
 
@@ -406,7 +406,7 @@ The Condor probe for the Gratia OSG accounting system.
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -435,7 +435,7 @@ Contributed by Greg Sharp and the dCache project.
 %package xrootd-transfer
 Summary: Probe that emits a record for each file transfer in Xrootd.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 License: See LICENSE.
 
 %description xrootd-transfer
@@ -456,7 +456,7 @@ Contributed by University of Nebraska Lincoln.
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: ruby
 License: See LICENSE.
 
@@ -481,7 +481,7 @@ Gratia OSG accounting system probe for providing VM accounting.
 %package osg-pilot-container
 Summary: osg pilot container probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 #Requires: python-sqlite
 Requires: %{condor_python}
 License: See LICENSE.
@@ -504,7 +504,7 @@ osg pilot container probe
 %package htcondor-ce
 Summary: A HTCondor-CE probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: htcondor-ce
 License: See LICENSE.
 
@@ -528,7 +528,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %package enstore-transfer
 Summary: Enstore transfer probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -552,8 +552,8 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 %package enstore-storage
 Summary: Enstore storage probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -577,8 +577,8 @@ The Enstore storage probe for the Gratia OSG accounting system.
 %package enstore-tapedrive
 Summary: Enstore tapedrive probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -604,8 +604,8 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 %package dcache-storagegroup
 Summary: dCache storagegroup probe
 Group: Applications/System
-Requires: %{name}-common >= %{version}-%{release}
-Requires: %{name}-services >= %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-services = %{version}-%{release}
 Requires: %{python_psycopg2}
 License: See LICENSE.
 
@@ -629,6 +629,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Tue Jul 13 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-2
+- Lock Version-Release across sub-packages (SOFTWARE-4667)
+
 * Thu Jun 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 
