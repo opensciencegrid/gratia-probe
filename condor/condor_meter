@@ -349,7 +349,7 @@ def process_history_file(logfile):
     except IOError as ie:
         DebugPrint(2, "Cannot process %s: (errno=%d) %s" % (logfile, ie.errno,
             ie.strerror))
-        return 0, 0
+        return 0, 0, 0
     added_transient = False
 
     for classad in fd_to_classad(fd):
