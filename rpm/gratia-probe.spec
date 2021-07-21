@@ -256,14 +256,14 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
-  install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
-  install -m 644 condor/99_gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-gwms.conf
+  install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
+  install -m 644 condor/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia-gwms.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
-  install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
+  install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/50-gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia.conf
   install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
@@ -476,7 +476,7 @@ The Condor probe for the Gratia OSG accounting system.
 %doc %{default_prefix}/gratia/condor/README
 %dir %{default_prefix}/gratia/condor
 %{default_prefix}/gratia/condor/condor_meter
-%config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor.cron
 
@@ -494,7 +494,7 @@ The Condor probe for the Gratia OSG accounting system.
 
 %files glideinwms
 %defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia-gwms.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia-gwms.conf
 
 
 
@@ -824,7 +824,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
 %{default_prefix}/gratia/htcondor-ce/condor_meter
-%config(noreplace) %{_sysconfdir}/condor-ce/config.d/99_gratia.conf
+%config(noreplace) %{_sysconfdir}/condor-ce/config.d/50-gratia.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
 
