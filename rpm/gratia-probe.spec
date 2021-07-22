@@ -261,7 +261,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
-  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
+  install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
   install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia.conf
   install -m 644 condor/gratia-probe-htcondor-ce.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.d/gratia-probe-htcondor-ce.cron
