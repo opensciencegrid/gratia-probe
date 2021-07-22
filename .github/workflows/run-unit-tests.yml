@@ -13,5 +13,8 @@ jobs:
     - name: install htcondor
       run: pip3 install htcondor pyopenssl
       
+    - name: symlink setup
+      run: ln -s condor_meter condor/condor_meter.py
+
     - name: run script
       run: python3 -m unittest discover --verbose --buffer  test
