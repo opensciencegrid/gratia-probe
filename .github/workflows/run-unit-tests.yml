@@ -1,0 +1,20 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+    
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: install htcondor
+      run: pip3 install htcondor pyopenssl
+      
+    - name: symlink setup
+      run: ln -s condor_meter condor/condor_meter.py
+
+    - name: run script
+      run: python3 -m unittest discover --verbose --buffer  test
