@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.0.2
+Version:            2.1.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -238,7 +238,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
-  install -m 644 condor/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/50-gratia-ce.conf
+  install -m 644 condor/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
@@ -515,7 +515,8 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
 %{default_prefix}/gratia/htcondor-ce/condor_meter
-%config %{_datadir}/condor-ce/config.d/50-gratia.conf
+%attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
+%config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
 %post htcondor-ce
@@ -628,14 +629,20 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Thu Jun 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-1
+* Fri Jul 23 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 - Lock Version-Release across sub-packages (SOFTWARE-4667)
 - Move 99_gratia-ce.conf to /usr/share location (SOFTWARE-4611)
 - Fix exception handling in condor_meter (SOFTWARE-4711)
+- Fix missing log level (#107)
+- Add GHA workflow (SOFTWARE-4684)
 
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.1-2
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
+
+* Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
+- Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
+- Fix python3 int division in niceNum (#92)
 
 * Thu Feb 25 2021 Brian Lin <blin@cs.wisc.edu> - 2.0.0-2
 - Ensure that HTCondor-CE DataFolder exists (SOFTWARE-4490)
@@ -645,10 +652,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Support running htcondor-ce probe under schedd cron (SOFTWARE-4490)
 - Fix python3 int division in niceNum
 - Fix QueueTime attribute handling
-
-* Tue Mar 02 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.2-1
-- Fix attribute list handling for QueueTime (#94) (SOFTWARE-4521)
-- Fix python3 int division in niceNum (#92)
 
 * Wed Feb 10 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.1-1
 - Add python2/3 compat for sge probe (SOFTWARE-4286)
