@@ -315,7 +315,8 @@ def process_history_dirs(dirs):
             e = None
             try:
                 cnt_submit, cnt_found, cnt_alternate = process_history_file(log)
-            except ValueError as e:
+            except ValueError as ex:
+                e = ex
                 DebugPrint(1, "Failed to parse log file: %s\nError was: %s" % (log, e))
                 cnt_submit, cnt_found, cnt_alternate = 0, 0, 0
 
@@ -348,7 +349,7 @@ def process_history_file(logfile):
     except IOError as ie:
         DebugPrint(2, "Cannot process %s: (errno=%d) %s" % (logfile, ie.errno,
             ie.strerror))
-        return 0, 0
+        return 0, 0, 0
     added_transient = False
 
     for classad in fd_to_classad(fd):

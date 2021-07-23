@@ -359,7 +359,7 @@ def queryJob(jobid):
         job_info = queryAllJobs()
         for classad in job_info.values():
             # On failure, there is not much to do - ignore
-            DebugPrint("Creating certinfo file for %s." % \
+            DebugPrint(3, "Creating certinfo file for %s." %
                 classad['GlobalJobId'])
             createCertinfoFile(classad, directory)
         _queryCache = job_info

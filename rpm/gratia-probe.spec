@@ -233,19 +233,19 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
-  install -m 644 condor/99_gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/99_gratia.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia.conf
+  install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia.conf
 
   # Install the htcondor-ce configuration
-  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d
-  install -m 644 condor/99_gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
+  install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
+  install -m 644 condor/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor-ce/config.d/50-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
   install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
   # Copy the condor configuration
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/99_gratia-ce.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-ce.conf
 
   # replace a value in ProbeConfig
   update_probeconfig () {
@@ -396,7 +396,7 @@ The Condor probe for the Gratia OSG accounting system.
 %doc %{default_prefix}/gratia/condor/README
 %dir %{default_prefix}/gratia/condor
 %{default_prefix}/gratia/condor/condor_meter
-%config(noreplace) %{_sysconfdir}/condor/config.d/99_gratia.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor.cron
 
@@ -515,8 +515,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
 %{default_prefix}/gratia/htcondor-ce/condor_meter
-%attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
-%config %{_sysconfdir}/condor-ce/config.d/99_gratia-ce.conf
+%config %{_datadir}/condor-ce/config.d/50-gratia.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
 %post htcondor-ce
@@ -632,6 +631,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 * Thu Jun 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 - Lock Version-Release across sub-packages (SOFTWARE-4667)
+- Move 99_gratia-ce.conf to /usr/share location (SOFTWARE-4611)
+- Fix exception handling in condor_meter (SOFTWARE-4711)
 
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.1-2
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
