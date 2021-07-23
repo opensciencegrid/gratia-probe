@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.0.2
+Version:            2.1.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -629,11 +629,13 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Thu Jun 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.2-1
+* Fri Jul 23 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 - Lock Version-Release across sub-packages (SOFTWARE-4667)
 - Move 99_gratia-ce.conf to /usr/share location (SOFTWARE-4611)
 - Fix exception handling in condor_meter (SOFTWARE-4711)
+- Fix missing log level (#107)
+- Add GHA workflow (SOFTWARE-4684)
 
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.0.1-2
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
