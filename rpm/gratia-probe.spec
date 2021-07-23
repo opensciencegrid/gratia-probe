@@ -969,6 +969,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 * Tue Jun 15 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.24.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 - Lock Version-Release across sub-packages (SOFTWARE-4667)
+- Move 99_gratia-ce.conf to /usr/share location (SOFTWARE-4611)
+- Fix exception handling in condor_meter (SOFTWARE-4711)
 
 * Tue May 25 2021 Carl Edquist <edquist@cs.wisc.edu> - 1.23.3-1
 - Fix paren syntax in certinfo.py (SOFTWARE-4638)
