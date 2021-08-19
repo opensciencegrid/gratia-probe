@@ -59,11 +59,10 @@
     UserVOMapFile="/var/lib/osg/user-vo-map"
         Comments51="Location and wildcard pattern of log files that contains certificate information about the jobs in the format followed by the 'blah demons'."
     CertInfoLogPattern="/var/log/accounting/blahp.log-*"
-    CondorCEHistoryFolder="/var/lib/gratia/condorce_data"
 
-    DataFolder="/var/lib/gratia/data/"
-    WorkingFolder="/var/lib/gratia/tmp"
-    LogFolder="/var/log/gratia"
+    DataFolder="/var/lib/condor-ce/gratia/data/"
+    WorkingFolder="/var/lib/condor-ce"
+    LogFolder="/var/log/condor-ce"
 
     @PROBE_SPECIFIC_DATA@
 
