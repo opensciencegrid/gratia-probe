@@ -16,9 +16,6 @@ import string
 import logging
 import traceback
 import xml.dom.minidom
-# Python profiler
-import hotshot
-import hotshot.stats
 
 from logging.handlers import RotatingFileHandler
 
@@ -228,12 +225,6 @@ def main():
         dataDir = myconf.get_DataFolder()
         aggregator = DCacheAggregator(myconf, dataDir)
 
-        # If profiling was requested, turn it on.
-        profiling = sys.argv.count('-profile') > 0
-        if profiling:
-            profiler = hotshot.Profile("profile.dat")
-            logger.info( "Enabling Profiling" )
-
         # Now aggregate new records, then sleep, until somebody creates
         # the stop file...
         while 1:
@@ -241,16 +232,13 @@ def main():
             if ( not TestContainer.isTest() ): # no need in that during self test
                Gratia.Maintenance()
           
-            if profiling:
-                profiler.run("aggregator.sendBillingInfoRecordsToGratia()")
-            else:
-                try:
-                    aggregator.sendBillingInfoRecordsToGratia()
-                except TestContainer.SimInterrupt:
-                    logger.info("BillingRecSimulator.SimInterrupt caught, " \
-                        "restarting")
-                    aggregator = DCacheAggregator(myconf, dataDir)
-                    continue
+            try:
+                aggregator.sendBillingInfoRecordsToGratia()
+            except TestContainer.SimInterrupt:
+                logger.info("BillingRecSimulator.SimInterrupt caught, " \
+                    "restarting")
+                aggregator = DCacheAggregator(myconf, dataDir)
+                continue
             # Are we are shutting down?
             if os.path.exists(stopFileName):
                 break
@@ -260,13 +248,6 @@ def main():
 
             logger.warn("sleeping for = %.2f seconds" % updateFreq)
             sleep_check(updateFreq, stopFileName)
-
-        # If we are profiling, print the results...
-        if profiling:
-            profiler.close()
-            stats = hotshot.stats.load("profile.dat")
-            stats.sort_stats('time', 'calls')
-            stats.print_stats()
 
         logger.warn(ProgramName + " stop file detected.")
     except (KeyboardInterrupt, SystemExit):
