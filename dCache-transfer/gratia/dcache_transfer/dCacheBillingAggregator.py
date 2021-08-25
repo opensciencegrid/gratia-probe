@@ -12,7 +12,6 @@ import os
 import sys
 import time
 import signal
-import string
 import logging
 import traceback
 import xml.dom.minidom
@@ -103,7 +102,7 @@ class dCacheProbeConfig(ProbeConfiguration):
     # if using a local gratia repository.
     def get_OnlySendInterSiteTransfers( self ):
         result = self.getConfigAttribute( 'OnlySendInterSiteTransfers' );
-        return ((result == None) or (string.lower(result) == 'true'))
+        return ((result == None) or (result.lower() == 'true'))
 
     def get_MaxBillingHistoryDays( self ):
         default = 30
