@@ -280,7 +280,7 @@ class DateTransactionCheckpoint(Checkpoint):
 
     def _load(self, target):
         pkl_file = open(target, 'rb')
-        self._dateStamp, self._transaction = pickle.load(pkl_file)
+        self._dateStamp, self._transaction = pickle.load(pkl_file,encoding='latin1')
         pkl_file.close()
 
     def get_val(self):
@@ -363,7 +363,7 @@ class DateTransactionCheckpoint(Checkpoint):
 
         if self._tmp_fp:
             self._tmp_fp.seek(0)
-            pickle.dump([datestamp, txn], self._tmp_fp, -1)
+            pickle.dump([datestamp, txn], self._tmp_fp, protocol=2)
             self._tmp_fp.truncate()
             self._tmp_fp.flush()
             # make sure that the file is on disk
