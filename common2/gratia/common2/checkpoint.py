@@ -104,7 +104,7 @@ class Checkpoint(object):
         try:
             fd, fname = tempfile.mkstemp(suffix, prefix, dirname)
             # returning a file obj open for write instead of a file descriptor
-            return os.fdopen(fd, 'w'), fname
+            return os.fdopen(fd, 'wb'), fname
         except OSError:
             raise IOError("Could not open checkpoint file %sXXXX%s" % (os.path.join(dirname, prefix), suffix))
 
