@@ -476,7 +476,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
         # self._dateStamp, self._transaction, self._aux = cPickle.load(pkl_file)
         # Using a list instead of unpacking allows to upgrade from DateTransactionCheckpoint to
         # DateTransactionAuxCheckpoint
-        vlist = pickle.load(pkl_file)
+        vlist = pickle.load(pkl_file,encoding='latin1')
         self._dateStamp = vlist[0]
         self._transaction = vlist[1]
         if len(vlist) > 2:
@@ -525,7 +525,7 @@ class DateTransactionAuxCheckpoint(DateTransactionCheckpoint):
 
         if self._tmp_fp:
             self._tmp_fp.seek(0)
-            pickle.dump([datestamp, txn, aux], self._tmp_fp, -1)
+            pickle.dump([datestamp, txn, aux], self._tmp_fp, protocol=2)
             self._tmp_fp.truncate()
             self._tmp_fp.flush()
             # make sure that the file is on disk
@@ -626,7 +626,7 @@ def load_checkpoint(target):
     vlist = []
     try:
         pkl_file = open(target, 'rb')
-        vlist = pickle.load(pkl_file)
+        vlist = pickle.load(pkl_file,encoding='latin1')
     except IOError as e:
         (errno, strerror) = e.args
         print("Couldn't read the checkpoint file %s: %s." % (target, strerror))
