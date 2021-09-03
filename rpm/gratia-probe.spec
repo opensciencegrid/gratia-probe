@@ -152,7 +152,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     ## Probe-specific customizations
     # Replace @PROBE_SPECIFIC_DATA@ with ProbeConfig.add (if any)
     if [ -e "$probe/ProbeConfig.add" ]; then
-      sed -i.bck "/@PROBE_SPECIFIC_DATA@/ {
+      sed -i "/@PROBE_SPECIFIC_DATA@/ {
           h
           r $probe/ProbeConfig.add
           g
@@ -161,7 +161,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
       rm "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/ProbeConfig.add"
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
-      rm "$PROBE_DIR/ProbeConfig.bck"
     fi
 
     # Collector strings
