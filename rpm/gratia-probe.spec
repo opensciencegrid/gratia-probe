@@ -144,7 +144,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
-    ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
     ## Probe-specific customizations
     # Replace @PROBE_SPECIFIC_DATA@ with ProbeConfig.add (if any)
@@ -189,9 +188,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Remove test directories
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/test
-
-  # Remove unnecessary links
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -399,7 +395,6 @@ Contributed by Greg Sharp and the dCache project.
 %{_initrddir}/gratia-dcache-transfer
 %doc %{default_prefix}/gratia/dCache-transfer/README-experts-only.txt
 %doc %{default_prefix}/gratia/dCache-transfer/README
-%{default_prefix}/gratia/dCache-transfer/ProbeConfig
 %{default_prefix}/gratia/dCache-transfer/gratia-dcache-transfer
 %{python_sitelib}/gratia/dcache_transfer
 %dir %{default_prefix}/gratia/dCache-transfer
@@ -423,7 +418,6 @@ Contributed by University of Nebraska Lincoln.
 %defattr(-,root,root,-)
 %{_initrddir}/gratia-xrootd-transfer
 %{default_prefix}/gratia/xrootd-transfer/gratia-xrootd-transfer
-%{default_prefix}/gratia/xrootd-transfer/ProbeConfig
 %dir %{default_prefix}/gratia/xrootd-transfer
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
 
@@ -445,7 +439,6 @@ Gratia OSG accounting system probe for providing VM accounting.
 %{python_sitelib}/gratia/onevm
 %{default_prefix}/gratia/onevm/onevm_probe.cron.sh
 %dir %{default_prefix}/gratia/onevm
-%{default_prefix}/gratia/onevm/ProbeConfig
 %{default_prefix}/gratia/onevm/VMGratiaProbe
 %{default_prefix}/gratia/onevm/query_one_lite.rb
 
@@ -473,7 +466,6 @@ osg pilot container probe
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
-%{default_prefix}/gratia/osg-pilot-container/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
@@ -518,7 +510,6 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-transfer
 %{default_prefix}/gratia/enstore-transfer/enstore-transfer
 
-%{default_prefix}/gratia/enstore-transfer/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
@@ -543,7 +534,6 @@ The Enstore storage probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-storage
 %{default_prefix}/gratia/enstore-storage/enstore-storage
 
-%{default_prefix}/gratia/enstore-storage/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
@@ -568,7 +558,6 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-tapedrive
 %{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
 
-%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
@@ -595,7 +584,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/dCache-storagegroup
 %{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
 
-%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron
