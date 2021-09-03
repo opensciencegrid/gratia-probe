@@ -184,12 +184,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
            -e "s#@SSL_REGISTRATION_ENDPOINT@#$endpoint#" \
         $PROBE_DIR/ProbeConfig
 
-    # Remove cruft
-    # dev and test directories
-    [ -d "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/dev" ] && rm -rf "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/dev"
-    [ -d "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/test" ] && rm -rf "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/test"
-
   done
+
+  # Remove test directories
+  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/test
 
   # Remove unnecessary links
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
