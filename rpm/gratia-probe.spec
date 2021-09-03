@@ -155,9 +155,8 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
           g
           N
           }" "$PROBE_DIR/ProbeConfig"
-    else
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
     fi
+    sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
 
     # Collector strings
     case $probe in
