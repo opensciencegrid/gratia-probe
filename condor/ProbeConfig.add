@@ -1,3 +1,4 @@
 
     CondorScheddName=""
       Comments91="Use this to set the name of the scheduler, if there are mutliple."
+    NoCertinfoBatchRecordsAreLocal="0"

@@ -150,7 +150,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
     ## Probe-specific customizations
-    # Probe template addon lines in ProbeConfig.add (in probe directory) added before @PROBE_SPECIFIC_DATA@ tag
+    # Replace @PROBE_SPECIFIC_DATA@ with ProbeConfig.add (if any)
     if [ -e "$probe/ProbeConfig.add" ]; then
       sed -i.bck "/@PROBE_SPECIFIC_DATA@/ {
           h
@@ -159,6 +159,8 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
           N
           }" "$PROBE_DIR/ProbeConfig"
       rm "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/ProbeConfig.add"
+    else
+      sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
       rm "$PROBE_DIR/ProbeConfig.bck"
     fi
 
@@ -183,28 +185,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
            -e "s#@SSL_ENDPOINT@#$ssl_endpoint#" \
            -e "s#@SSL_REGISTRATION_ENDPOINT@#$endpoint#" \
         $PROBE_DIR/ProbeConfig
-
-    # Other Probe-specific customizations
-    if [ $probe == "dCache-transfer" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#Summarize="0" \
-    UpdateFrequency="120" \
-    DBHostName="localhost" \
-    DBLoginName="srmdcache" \
-    DBPassword="srmdcache" \
-    StopFileName="stopGratiaFeed" \
-    DCacheServerHost="BILLING_HOST" \
-    EmailServerHost="localhost" \
-    EmailFromAddress="dCacheProbe@localhost" \
-    EmailToList="" \
-    AggrLogLevel="warn" \
-    OnlySendInterSiteTransfers="true" \
-    MaxBillingHistoryDays="31" \
-    DBName="billing"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "condor" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
-    else
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
-    fi
 
     # Remove cruft
     # dev and test directories
