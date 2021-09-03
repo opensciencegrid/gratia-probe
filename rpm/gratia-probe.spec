@@ -133,13 +133,11 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     # Install the cronjob
     if [[ -e $probe/gratia-probe-${probe,,}.cron ]]; then
       install -m 644 $probe/*.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
-      rm $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/*.cron
     fi
 
     # Install the python modules
     if [ -e $probe/gratia ]; then
       mv $probe/gratia/* $RPM_BUILD_ROOT%{python_sitelib}/gratia
-      rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/gratia
     fi
 
     # Common template customizations (same for all probes)
@@ -157,7 +155,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
           g
           N
           }" "$PROBE_DIR/ProbeConfig"
-      rm "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/ProbeConfig.add"
     else
       sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
     fi
@@ -185,6 +182,11 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
         $PROBE_DIR/ProbeConfig
 
   done
+
+  # Remove probe-specific items after install
+  rm -f $RPM_BUILD_ROOT%{_datadir}/gratia/*/*.cron
+  rm -f $RPM_BUILD_ROOT%{_datadir}/gratia/*/ProbeConfig.add
+  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/gratia
 
   # Remove test directories
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/test
