@@ -212,26 +212,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-ce.conf
 
-  # replace a value in ProbeConfig
-  update_probeconfig () {
-    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"|" \
-        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
-  }
-
-  # append a new value in ProbeConfig, after $2
-  update_probeconfig_append_after () {
-    sed -i "/$2/a\\    $3=\"$4\"" \
-        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
-  }
-
-  update_probeconfig htcondor-ce ProbeName     htcondor-ce:@PROBE_HOST@
-  update_probeconfig htcondor-ce WorkingFolder %{_localstatedir}/lib/condor-ce
-  update_probeconfig htcondor-ce LogFolder     %{_localstatedir}/log/condor-ce
-  update_probeconfig htcondor-ce DataFolder    %{_sharedstatedir}/condor-ce/gratia/data
-
-  # Lockfile is not specified in the default ProbeConfig, so we have to add it
-  update_probeconfig_append_after htcondor-ce LogFolder Lockfile \
-                                  %{_localstatedir}/lock/condor-ce/gratia.lock
+  # Apply ProbeConfig.add for htcondor-ce probe
+  probe=htcondor-ce
+  PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
+  common/update-probeconfig.py $PROBE_DIR/ProbeConfig $probe/ProbeConfig.add
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
