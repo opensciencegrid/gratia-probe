@@ -1,6 +1,4 @@
 
-    ProbeName="htcondor-ce:@PROBE_HOST@"
-
     DataFolder="/var/lib/condor-ce/gratia/data"
     WorkingFolder="/var/lib/condor-ce"
     LogFolder="/var/log/condor-ce/gratia"

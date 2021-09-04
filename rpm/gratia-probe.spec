@@ -109,6 +109,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     common
     common2
     condor
+    htcondor-ce
     dCache-storagegroup
     dCache-transfer
     enstore-storage
@@ -121,7 +122,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
-  cp -pR ${packs[@]} $RPM_BUILD_ROOT%{_datadir}/gratia
+  cp -pRL ${packs[@]} $RPM_BUILD_ROOT%{_datadir}/gratia
 
   install -d $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
   install -d $RPM_BUILD_ROOT%{python_sitelib}
@@ -203,19 +204,9 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
-  install -m 644 condor/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
+  install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
-  install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
-  install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
-  # Copy the condor configuration
-  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
-  install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-ce.conf
-
-  # Apply ProbeConfig.add for htcondor-ce probe
-  probe=htcondor-ce
-  PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
-  common/update-probeconfig.py $PROBE_DIR/ProbeConfig $probe/ProbeConfig.add
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
   # Remove the test stuff
   rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
