@@ -444,6 +444,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %files htcondor-ce
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
+%doc %{default_prefix}/gratia/htcondor-ce/README
 %{default_prefix}/gratia/htcondor-ce/condor_meter
 %attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
 %config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
