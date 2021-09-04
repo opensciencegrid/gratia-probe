@@ -147,15 +147,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
     ## Probe-specific customizations
     # Replace @PROBE_SPECIFIC_DATA@ with ProbeConfig.add (if any)
-    if [ -e "$probe/ProbeConfig.add" ]; then
-      sed -i "/@PROBE_SPECIFIC_DATA@/ {
-          h
-          r $probe/ProbeConfig.add
-          g
-          N
-          }" "$PROBE_DIR/ProbeConfig"
-    fi
-    sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
+    common/update-probeconfig.py $PROBE_DIR/ProbeConfig $probe/ProbeConfig.add
 
     # Collector strings
     case $probe in
@@ -250,6 +242,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/update-probeconfig.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
