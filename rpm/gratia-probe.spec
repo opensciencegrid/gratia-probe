@@ -208,10 +208,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
-  # Remove the test stuff
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/test
-
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
