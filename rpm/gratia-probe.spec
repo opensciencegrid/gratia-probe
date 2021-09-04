@@ -325,7 +325,6 @@ fi
 %{default_prefix}/gratia/common/GratiaPing
 %{default_prefix}/gratia/common/DebugPrint
 %{default_prefix}/gratia/common/GetProbeConfigAttribute
-%{default_prefix}/gratia/common/ProbeConfigTemplate
 %{default_prefix}/gratia/common/cron_check
 #system.d tmp files
 %if 0%{?rhel} >= 7
