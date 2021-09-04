@@ -214,10 +214,8 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/update-probeconfig.py
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/Dockerfile
