@@ -15,16 +15,24 @@ def read_if_exists(path):
         return ''
 
 
+def have_attr(line, haveattrs):
+    m = re.match(r'^ *(\w+)=', line)
+    if m:
+        attr = m.group(1)
+        if attr in haveattrs:
+            return True
+        haveattrs.add(attr)
+
+def not_(f): return lambda *a: not f(*a)
+
+#def bind2nd(op,y):
+#    return lambda x: op(x,y)
+
 def filter_nonlast_lines(lines):
+    #return filter(bind2nd(not_(dup_attr), set()), lines)
+
     haveattrs = set()
-    for line in lines:
-        m = re.match(r'^ *(\w+)=', line)
-        if m:
-            attr = m.group(1)
-            if attr in haveattrs:
-                continue
-            haveattrs.add(attr)
-        yield line
+    return [ line for line in lines if not have_attr(line, haveattrs) ]
 
 
 def main(pc, pc_add, pc_out=None):
