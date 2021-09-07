@@ -6,7 +6,10 @@ FROM opensciencegrid/software-base:fresh as build-container
 
 LABEL name="OSG Pilot Container Probe Container"
 
-RUN yum install -y --enablerepo=devops osg-build
+RUN yum install -y \
+                --disablerepo='osg-upcoming*' \
+                --enablerepo=devops \
+                osg-build
 
 COPY . /root/gratia-probe
 
@@ -35,7 +38,9 @@ FROM opensciencegrid/software-base:fresh
 COPY --from=build-container /root/bld/_build_results /root/RPMS
 
 # install probe rpms
-RUN yum install -y /root/RPMS/gratia-probe-{osg-pilot-container,common}-*-*.rpm
+RUN yum install -y \
+                --disablerepo='osg-upcoming*' \
+                /root/RPMS/gratia-probe-{osg-pilot-container,common}-*-*.rpm
 
 # do minimal probe configuration
 RUN sed -i -e '/SiteName=/s/"Generic site"/"OSG Pilot Container Probe"/' \

@@ -20,10 +20,6 @@ import optparse
 import signal  # is in the system library
 from .alarm import Alarm
 
-# Python profiler
-import hotshot
-import hotshot.stats
-
 # Gratia libraries
 import gratia.common.Gratia as Gratia
 #import gratia.services.ComputeElement as ComputeElement
@@ -467,11 +463,6 @@ class GratiaMeter(GratiaProbe):
             self._opts.test = self._check_test_values(self._opts.test)
         #TODO: check here start and end time?
 
-        # Enable profiling
-        if self._opts.profile:
-            self._main = self.main
-            self.main = self.do_profile
-
     def get_opts_parser(self):
         """Return an options parser. It must invoke the parent option parser.
 
@@ -506,8 +497,6 @@ Command line usage: %prog
         parser.add_option("--test", help="Comma separated list of probe components to test using stubs, "
             "e.g. input, output, all (=input,output).",
             dest="test", default="")
-        parser.add_option("--profile", help="Enable probe profiling ",
-            dest="profile", default=False, action="store_true")
         parser.add_option("-v", "--verbose",
             help="Enable verbose logging to stderr.",
             dest="verbose", default=False, action="store_true")
@@ -595,25 +584,6 @@ Command line usage: %prog
         # by default it is invoked only if --help is the first and only option
         # TODO: Trigger error for unsupported options?
         return parser.parse_args()
-
-    def do_profile(self):
-        """Wrap the main method in profiler execution
-        """
-        # Interesting use: http://code.activestate.com/recipes/576656-quick-python-profiling-with-hotshot/
-        # http://blog.brianbeck.com/post/22199891/the-state-of-python-profilers-in-two-words
-        # http://nose.readthedocs.org/en/latest/plugins/prof.html
-        # pass name, use in profiler file name, return profiling function
-        # TODO: provide a standard probe profiling
-
-        fname = "gratiaprobe_%s.prof" % self.probe_name
-        profiler = hotshot.Profile(fname)
-        DebugPrint(4, "Enabled profiling to %s" % fname)
-        retv = profiler.run("self._main()")
-        profiler.close()
-        stats = hotshot.stats.load(fname)
-        stats.sort_stats('time', 'calls')
-        stats.print_stats()
-        return retv
 
     def main(self):
         # Loop over completed jobs

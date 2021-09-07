@@ -45,7 +45,10 @@ class Checkpoint:
 
         try:
             pklFile = open(tablename, 'rb')
-            self._dateStamp, self._transaction = pickle.load(pklFile)
+            # Using encoding='latin1' is required for unpickling NumPy arrays
+            # and instances of datetime, date and time pickled by Python 2.
+            # https://docs.python.org/3/library/pickle.html?highlight=pickle#pickle.Unpickler
+            self._dateStamp, self._transaction = pickle.load(pklFile,encoding='latin1')
             if self._dateStamp < minDay:
                 self._dateStamp = minDay
             ds = self._dateStamp
@@ -90,7 +93,7 @@ class Checkpoint:
         # Create new pending file.
         try:
             pklFile = open(self._tmpFile, 'wb')
-            pickle.dump([datestamp, txn], pklFile, -1)
+            pickle.dump([datestamp, txn], pklFile, protocol=2)
             pklFile.close()
             self._pending = True
             self._pending_dateStamp = datestamp
