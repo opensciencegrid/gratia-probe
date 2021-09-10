@@ -230,6 +230,7 @@ find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
   sed -i "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
+install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor-ce/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
 
 %clean
@@ -421,6 +422,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %doc %{default_prefix}/gratia/htcondor-ce/README
 %{default_prefix}/gratia/htcondor-ce/condor_meter
 %attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
+%attr(-,condor,condor) %dir %{_localstatedir}/log/condor-ce/gratia
 %config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
