@@ -23,13 +23,9 @@ def have_attr(line, haveattrs):
             return True
         haveattrs.add(attr)
 
-def not_(f): return lambda *a: not f(*a)
 
-#def bind2nd(op,y):
-#    return lambda x: op(x,y)
 
 def filter_nonlast_lines(lines):
-    #return filter(bind2nd(not_(dup_attr), set()), lines)
 
     haveattrs = set()
     return [ line for line in lines if not have_attr(line, haveattrs) ]
