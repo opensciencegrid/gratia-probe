@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.1.0
+Version:            2.1.1
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -117,7 +117,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     enstore-transfer
     onevm
     osg-pilot-container
-    xrootd-transfer
   )
 
   # PWD is the working directory, used to build
@@ -192,10 +191,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -m 755 dCache-transfer/gratia-dcache-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-dcache-transfer
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer.init
 
-  # Xrootd-transfer init script
-  install -m 755 $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-xrootd-transfer
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer.init
-
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
@@ -214,7 +209,6 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/update-probeconfig.py
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/xrootd-transfer/gratia-xrootd-transfer-alt
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
@@ -364,26 +358,6 @@ Contributed by Greg Sharp and the dCache project.
 %post dcache-transfer
 /sbin/chkconfig --add gratia-dcache-transfer
 %customize_probeconfig -d dCache-transfer
-
-%package xrootd-transfer
-Summary: Probe that emits a record for each file transfer in Xrootd.
-Group: Applications/System
-Requires: %{name}-common = %{version}-%{release}
-License: See LICENSE.
-
-%description xrootd-transfer
-Xrootd Transfer Probe for Gratia OSG accounting system.
-Contributed by University of Nebraska Lincoln.
-
-%files xrootd-transfer
-%defattr(-,root,root,-)
-%{_initrddir}/gratia-xrootd-transfer
-%{default_prefix}/gratia/xrootd-transfer/gratia-xrootd-transfer
-%dir %{default_prefix}/gratia/xrootd-transfer
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/xrootd-transfer/ProbeConfig
-
-%post xrootd-transfer
-%customize_probeconfig -d xrootd-transfer
 
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
@@ -556,6 +530,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Tue Aug 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.1-1
+- Drop xrootd-transfer probe (SOFTWARE-4520)
+
 * Fri Jul 23 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
 - Lock Version-Release across sub-packages (SOFTWARE-4667)

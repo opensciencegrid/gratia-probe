@@ -56,7 +56,7 @@ This reduces the load on the Gratia collector.""",
 
 def sendRecords(fn):
 
-    user_space=pickle.load(open(fn,"r"))
+    user_space=pickle.load(open(fn,"rb"),encoding='latin1')
     t = os.stat(fn).st_ctime
 
     storage_groups={}
