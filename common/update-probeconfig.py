@@ -15,6 +15,8 @@ def read_if_exists(path):
         return ''
 
 
+# extract attr key (if any) from line and add it to haveattrs set;
+# return True if already present
 def have_attr(line, haveattrs):
     m = re.match(r'^ *(\w+)=', line)
     if m:
@@ -24,21 +26,23 @@ def have_attr(line, haveattrs):
         haveattrs.add(attr)
 
 
-
-def filter_nonlast_lines(lines):
-
+def filter_out_duplicate_attrs(lines):
     haveattrs = set()
     return [ line for line in lines if not have_attr(line, haveattrs) ]
+
+
+# discard lines with attr keys that appear again in later lines
+def merge_attrs(lines):
+    return reversed(filter_out_duplicate_attrs(reversed(lines)))
 
 
 def main(pc, pc_add, pc_out=None):
     add_txt = read_if_exists(pc_add)
     pc_txt = open(pc).read().replace('@PROBE_SPECIFIC_DATA@', add_txt)
 
-    lines = reversed(pc_txt.splitlines())
-    lines = list(filter_nonlast_lines(lines))
+    lines = merge_attrs(pc_txt.splitlines())
     with open(pc_out or pc, "w") as outf:
-        print('\n'.join(reversed(lines)), file=outf)
+        print('\n'.join(lines), file=outf)
 
 
 def usage():
