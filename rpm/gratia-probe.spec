@@ -109,6 +109,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     common
     common2
     condor
+    htcondor-ce
     dCache-storagegroup
     dCache-transfer
     enstore-storage
@@ -120,7 +121,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # PWD is the working directory, used to build
   # $RPM_BUILD_ROOT%{_datadir} are the files to package
-  cp -pR ${packs[@]} $RPM_BUILD_ROOT%{_datadir}/gratia
+  cp -pRL ${packs[@]} $RPM_BUILD_ROOT%{_datadir}/gratia
 
   install -d $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
   install -d $RPM_BUILD_ROOT%{python_sitelib}
@@ -130,36 +131,23 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   for probe in ${packs[@]}
   do
     # Install the cronjob
-    if [ -e $probe/gratia-probe-$probe.cron -o $probe == "dCache-storagegroup" ]; then
-      # wildcards not working in this test: if [ -e "$probe/gratia-probe-*.cron" ]; then
+    if [[ -e $probe/gratia-probe-${probe,,}.cron ]]; then
       install -m 644 $probe/*.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
-      rm $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/*.cron
     fi
 
     # Install the python modules
     if [ -e $probe/gratia ]; then
       mv $probe/gratia/* $RPM_BUILD_ROOT%{python_sitelib}/gratia
-      rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/$probe/gratia
     fi
 
     # Common template customizations (same for all probes)
     PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
-    ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
     ## Probe-specific customizations
-    # Probe template addon lines in ProbeConfig.add (in probe directory) added before @PROBE_SPECIFIC_DATA@ tag
-    if [ -e "$probe/ProbeConfig.add" ]; then
-      sed -i.bck "/@PROBE_SPECIFIC_DATA@/ {
-          h
-          r $probe/ProbeConfig.add
-          g
-          N
-          }" "$PROBE_DIR/ProbeConfig"
-      rm "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/ProbeConfig.add"
-      rm "$PROBE_DIR/ProbeConfig.bck"
-    fi
+    # Replace @PROBE_SPECIFIC_DATA@ with ProbeConfig.add (if any)
+    common/update-probeconfig.py $PROBE_DIR/ProbeConfig $probe/ProbeConfig.add
 
     # Collector strings
     case $probe in
@@ -183,37 +171,15 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
            -e "s#@SSL_REGISTRATION_ENDPOINT@#$endpoint#" \
         $PROBE_DIR/ProbeConfig
 
-    # Other Probe-specific customizations
-    if [ $probe == "dCache-transfer" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#Summarize="0" \
-    UpdateFrequency="120" \
-    DBHostName="localhost" \
-    DBLoginName="srmdcache" \
-    DBPassword="srmdcache" \
-    StopFileName="stopGratiaFeed" \
-    DCacheServerHost="BILLING_HOST" \
-    EmailServerHost="localhost" \
-    EmailFromAddress="dCacheProbe@localhost" \
-    EmailToList="" \
-    AggrLogLevel="warn" \
-    OnlySendInterSiteTransfers="true" \
-    MaxBillingHistoryDays="31" \
-    DBName="billing"#' $PROBE_DIR/ProbeConfig
-    elif [ $probe == "condor" ]; then
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@#NoCertinfoBatchRecordsAreLocal="0"#' $PROBE_DIR/ProbeConfig
-    else
-      sed -i -e 's#@PROBE_SPECIFIC_DATA@##' $PROBE_DIR/ProbeConfig
-    fi
-
-    # Remove cruft
-    # dev and test directories
-    [ -d "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/dev" ] && rm -rf "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/dev"
-    [ -d "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/test" ] && rm -rf "$RPM_BUILD_ROOT%{_datadir}/gratia/$probe/test"
-
   done
 
-  # Remove unnecessary links
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/ProbeConfig
+  # Remove probe-specific items after install
+  rm -f $RPM_BUILD_ROOT%{_datadir}/gratia/*/*.cron
+  rm -f $RPM_BUILD_ROOT%{_datadir}/gratia/*/ProbeConfig.add
+  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/gratia
+
+  # Remove test directories
+  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/*/test
 
   # common probe init script
   install -d $RPM_BUILD_ROOT/%{_initrddir}
@@ -233,48 +199,17 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
-  install -m 644 condor/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
+  install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
-  install -d $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
-  install -m 755 condor/condor_meter $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/
-  # Copy the condor configuration
-  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce
-  install -m 644 $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/condor/ProbeConfig $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia-ce.conf
-
-  # replace a value in ProbeConfig
-  update_probeconfig () {
-    sed -i "s|$2=\"[^\"]*\"|$2=\"$3\"|" \
-        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
-  }
-
-  # append a new value in ProbeConfig, after $2
-  update_probeconfig_append_after () {
-    sed -i "/$2/a\\    $3=\"$4\"" \
-        $RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$1/ProbeConfig
-  }
-
-  update_probeconfig htcondor-ce ProbeName     htcondor-ce:@PROBE_HOST@
-  update_probeconfig htcondor-ce WorkingFolder %{_localstatedir}/lib/condor-ce
-  update_probeconfig htcondor-ce LogFolder     %{_localstatedir}/log/condor-ce
-  update_probeconfig htcondor-ce DataFolder    %{_sharedstatedir}/condor-ce/gratia/data
-
-  # Lockfile is not specified in the default ProbeConfig, so we have to add it
-  update_probeconfig_append_after htcondor-ce LogFolder Lockfile \
-                                  %{_localstatedir}/lock/condor-ce/gratia.lock
-
-  # Remove the test stuff
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/condor/test
-  rm -rf $RPM_BUILD_ROOT%{_datadir}/gratia/common/test
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/samplemeter_multi.py
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
+  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/update-probeconfig.py
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-storagegroup/ProbeConfig.example
-  rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common2
   rm -f  $RPM_BUILD_ROOT%{_datadir}/gratia/*/README-xml.md
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/Dockerfile
@@ -295,6 +230,7 @@ find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
   sed -i "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
+install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor-ce/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
 
 %clean
@@ -346,7 +282,6 @@ fi
 %{default_prefix}/gratia/common/GratiaPing
 %{default_prefix}/gratia/common/DebugPrint
 %{default_prefix}/gratia/common/GetProbeConfigAttribute
-%{default_prefix}/gratia/common/ProbeConfigTemplate
 %{default_prefix}/gratia/common/cron_check
 #system.d tmp files
 %if 0%{?rhel} >= 7
@@ -416,7 +351,6 @@ Contributed by Greg Sharp and the dCache project.
 %{_initrddir}/gratia-dcache-transfer
 %doc %{default_prefix}/gratia/dCache-transfer/README-experts-only.txt
 %doc %{default_prefix}/gratia/dCache-transfer/README
-%{default_prefix}/gratia/dCache-transfer/ProbeConfig
 %{default_prefix}/gratia/dCache-transfer/gratia-dcache-transfer
 %{python_sitelib}/gratia/dcache_transfer
 %dir %{default_prefix}/gratia/dCache-transfer
@@ -441,7 +375,6 @@ Gratia OSG accounting system probe for providing VM accounting.
 %{python_sitelib}/gratia/onevm
 %{default_prefix}/gratia/onevm/onevm_probe.cron.sh
 %dir %{default_prefix}/gratia/onevm
-%{default_prefix}/gratia/onevm/ProbeConfig
 %{default_prefix}/gratia/onevm/VMGratiaProbe
 %{default_prefix}/gratia/onevm/query_one_lite.rb
 
@@ -469,7 +402,6 @@ osg pilot container probe
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
-%{default_prefix}/gratia/osg-pilot-container/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
@@ -487,8 +419,10 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %files htcondor-ce
 %defattr(-,root,root,-)
 %dir %{default_prefix}/gratia/htcondor-ce
+%doc %{default_prefix}/gratia/htcondor-ce/README
 %{default_prefix}/gratia/htcondor-ce/condor_meter
 %attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
+%attr(-,condor,condor) %dir %{_localstatedir}/log/condor-ce/gratia
 %config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
@@ -514,7 +448,6 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-transfer
 %{default_prefix}/gratia/enstore-transfer/enstore-transfer
 
-%{default_prefix}/gratia/enstore-transfer/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
@@ -539,7 +472,6 @@ The Enstore storage probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-storage
 %{default_prefix}/gratia/enstore-storage/enstore-storage
 
-%{default_prefix}/gratia/enstore-storage/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
@@ -564,7 +496,6 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/enstore-tapedrive
 %{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
 
-%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
@@ -591,7 +522,6 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/dCache-storagegroup
 %{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
 
-%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron

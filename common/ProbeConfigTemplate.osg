@@ -24,10 +24,13 @@
     Title3="Tuning parameter"
 
     BundleSize="100"
+       Comments28="Number of records to be sent per envelope. Consider setting higher (up to 200)."
     MaxPendingFiles="100000"
     MaxStagedArchives="400"
+       Comments30="The maximum of backload files is MaxPendingFiles * MaxStagedArchives per probe"
     UseSyslog="0"
     ConnectionTimeout="900"
+       Comments31="Number of second GratiaCore will wait before timing out an attempt to connect or post to the Collector"
 
     LogLevel="2"
        Comments32="Controls debug messages printed to log file."

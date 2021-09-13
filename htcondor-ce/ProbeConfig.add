@@ -1,0 +1,11 @@
+
+    DataFolder="/var/lib/condor-ce/gratia/data"
+    WorkingFolder="/var/lib/condor-ce"
+    LogFolder="/var/log/condor-ce/gratia"
+
+    LockFile="/var/lock/condor-ce/gratia.lock"
+
+
+    CondorScheddName=""
+      Comments91="Use this to set the name of the scheduler, if there are mutliple."
+    NoCertinfoBatchRecordsAreLocal="0"
