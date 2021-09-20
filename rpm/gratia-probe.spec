@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.1.1
+Version:            2.2.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -532,8 +532,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
-* Tue Aug 17 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.1-1
+* Mon Sep 20 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.0-1
 - Drop xrootd-transfer probe (SOFTWARE-4520)
+- Update directory configuration for htcondor-ce probe (SOFTWARE-4621)
 
 * Fri Jul 23 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.1.0-1
 - Get VO info from AuthToken (SciToken) attrs (SOFTWARE-4615)
