@@ -1,6 +1,6 @@
 
     DataFolder="/var/lib/condor-ce/gratia/data"
-    WorkingFolder="/var/lib/condor-ce"
+    WorkingFolder="/var/lib/condor-ce/gratia/tmp"
     LogFolder="/var/log/condor-ce/gratia"
 
     LockFile="/var/lock/condor-ce/gratia.lock"
