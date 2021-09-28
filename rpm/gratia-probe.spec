@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.2.0
+Version:            2.2.1
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -200,7 +200,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
   install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
-  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/data
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
   # Remove remaining cruft
@@ -421,7 +421,8 @@ The HTCondor-CE probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/htcondor-ce
 %doc %{default_prefix}/gratia/htcondor-ce/README
 %{default_prefix}/gratia/htcondor-ce/condor_meter
-%attr(1777,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/tmp
 %attr(-,condor,condor) %dir %{_localstatedir}/log/condor-ce/gratia
 %config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
@@ -532,6 +533,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Mon Sep 27 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.1-1
+- Update htcondor-ce WorkingFolder to match hosted-ce container (SOFTWARE-4806)
+
 * Mon Sep 20 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.0-1
 - Drop xrootd-transfer probe (SOFTWARE-4520)
 - Update directory configuration for htcondor-ce probe (SOFTWARE-4621)
