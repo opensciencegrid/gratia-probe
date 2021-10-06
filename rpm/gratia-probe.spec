@@ -274,10 +274,6 @@ fi
 %{_initrddir}/gratia-probes-cron
 #%doc common2/README
 %doc %{default_prefix}/gratia/common2/README
-%{_localstatedir}/lib/gratia/
-%attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
-%dir %{_sysconfdir}/gratia
-%{_localstatedir}/lock/gratia/
 # this is in common: %%{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
