@@ -7,9 +7,7 @@ License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
-%if 0%{?rhel} >= 7
 BuildRequires:      python3
-%endif
 
 %if 0%{?rhel} < 8
 BuildRequires:      git
@@ -34,7 +32,6 @@ BuildArch: noarch
 
 %define customize_probeconfig(d:) sed -i "s#@PROBE_HOST@#%{meter_name}#" %{_sysconfdir}/gratia/%{-d*}/ProbeConfig
 
-%if 0%{?rhel} >= 7
 %global __python /usr/bin/python3
 %global condor_python   python3-condor
 %global python_psycopg2 python3-psycopg2
@@ -47,14 +44,6 @@ BuildArch: noarch
 %global python_openssl  python36-pyOpenSSL
 %global python_mysql    python36-mysql
 %global python_tz       python36-pytz
-%endif
-
-%else
-%global condor_python   python2-condor
-%global python_mysql    MySQL-python
-%global python_openssl  pyOpenSSL
-%global python_psycopg2 python-psycopg2
-%global python_tz       pytz
 %endif
 
 %global debug_package %{nil}
@@ -84,20 +73,14 @@ Prefix: /etc
 # Setup
 rm -rf $RPM_BUILD_ROOT
 
-%if 0%{?rhel} >= 7
 find . -type f -exec \
     sed -ri '1s,^#!\s*(/usr)?/bin/(env *)?python.*,#!%{__python},' '{}' +
-%endif
 
 install -d $RPM_BUILD_ROOT/%{_datadir}/gratia
 install -d $RPM_BUILD_ROOT/%{_sysconfdir}/gratia
 
-%if 0%{?rhel} >= 7
-    install -d  $RPM_BUILD_ROOT%{_tmpfilesdir}
-    mv common/tmpfiles.d/gratia.conf $RPM_BUILD_ROOT%{_tmpfilesdir}/gratia.conf
-%else
-    rm common/tmpfiles.d/gratia.conf
-%endif
+install -d  $RPM_BUILD_ROOT%{_tmpfilesdir}
+mv common/tmpfiles.d/gratia.conf $RPM_BUILD_ROOT%{_tmpfilesdir}/gratia.conf
 
 
 git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
@@ -273,9 +256,7 @@ fi
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
-%if 0%{?rhel} >= 7
 %{python_sitelib}/gratia/__pycache__/
-%endif
 %{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common
 %dir %{default_prefix}/gratia/common
@@ -284,9 +265,7 @@ fi
 %{default_prefix}/gratia/common/GetProbeConfigAttribute
 %{default_prefix}/gratia/common/cron_check
 #system.d tmp files
-%if 0%{?rhel} >= 7
 %{_tmpfilesdir}/gratia.conf
-%endif
 # %description common2
 # Common files and examples for Gratia OSG accounting system probes. Version 2.
 
@@ -295,10 +274,6 @@ fi
 %{_initrddir}/gratia-probes-cron
 #%doc common2/README
 %doc %{default_prefix}/gratia/common2/README
-%{_localstatedir}/lib/gratia/
-%attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
-%dir %{_sysconfdir}/gratia
-%{_localstatedir}/lock/gratia/
 # this is in common: %%{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
