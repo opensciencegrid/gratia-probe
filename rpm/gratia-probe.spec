@@ -195,7 +195,9 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
   install -m 644 condor-ap/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
+  install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia-gwms.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
@@ -330,6 +332,7 @@ The Condor probe for the Gratia OSG accounting system.
 %dir %{default_prefix}/gratia/condor-ap
 %{default_prefix}/gratia/condor-ap/condor_meter
 %config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia-gwms.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-ap/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-ap.cron
 
