@@ -108,7 +108,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   packs=(
     common
     common2
-    condor
+    condor-ap
     htcondor-ce
     dCache-storagegroup
     dCache-transfer
@@ -194,8 +194,8 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
-  install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia.conf
+  install -m 644 condor-ap/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
@@ -310,27 +310,27 @@ fi
 # %%{default_prefix}/gratia/common2/pginput.py
 # %%{default_prefix}/gratia/common2/probeinput.py
 
-%package condor
+%package condor-ap
 Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
 
-%description condor
+%description condor-ap
 The Condor probe for the Gratia OSG accounting system.
 
-%files condor
+%files condor-ap
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/condor/README
-%dir %{default_prefix}/gratia/condor
-%{default_prefix}/gratia/condor/condor_meter
+%doc %{default_prefix}/gratia/condor-ap/README
+%dir %{default_prefix}/gratia/condor-ap
+%{default_prefix}/gratia/condor-ap/condor_meter
 %config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia.conf
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor.cron
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-ap/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-ap.cron
 
-%post condor
-%customize_probeconfig -d condor
+%post condor-ap
+%customize_probeconfig -d condor-ap
 
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
