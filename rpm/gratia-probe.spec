@@ -540,6 +540,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Oct 06 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.3.0-1
+- Consolidate condor and old glideinwms probe into condor-ap (SOFTWARE-4846)
+
 * Mon Sep 27 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.1-1
 - Update htcondor-ce WorkingFolder to match hosted-ce container (SOFTWARE-4806)
 
