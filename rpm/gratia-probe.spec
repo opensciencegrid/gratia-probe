@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.2.1
+Version:            2.3.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -316,6 +316,10 @@ Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
+Provides: %{name}-condor = %{version}-%{release}
+Provides: %{name}-glideinwms = %{version}-%{release}
+Obsoletes: %{name}-condor < 2.3.0
+Obsoletes: %{name}-glideinwms < 2.3.0
 
 %description condor-ap
 The Condor probe for the Gratia OSG accounting system.
