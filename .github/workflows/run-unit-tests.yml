@@ -14,8 +14,9 @@ jobs:
       run: pip3 install htcondor pyopenssl
       
     - name: symlink setup
-      run: ln -s condor_meter condor-ap/condor_meter.py
-      run: ln -s condor-ap condor_ap
+      run: |
+        ln -s condor_meter condor-ap/condor_meter.py
+        ln -s condor-ap condor_ap
 
     - name: run script
       run: python3 -m unittest discover --verbose --buffer  test
