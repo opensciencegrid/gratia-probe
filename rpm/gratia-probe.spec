@@ -195,6 +195,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install condor configuration snippet
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor/config.d
   install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-gwms.conf
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor/gratia/{data,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
@@ -230,6 +231,7 @@ find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
   sed -i "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
+install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor-ce/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
 
@@ -329,6 +331,9 @@ The Condor probe for the Gratia OSG accounting system.
 %doc %{default_prefix}/gratia/condor-ap/README
 %dir %{default_prefix}/gratia/condor-ap
 %{default_prefix}/gratia/condor-ap/condor_meter
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/tmp
+%attr(-,condor,condor) %dir %{_localstatedir}/log/condor/gratia
 %config %{_datadir}/condor/config.d/50-gratia-gwms.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-ap/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-ap.cron
@@ -539,6 +544,7 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %changelog
 * Wed Oct 06 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.3.0-1
 - Consolidate condor and old glideinwms probe into condor-ap (SOFTWARE-4846)
+- Add support for running HTCondor access point probe as a SchedD cron (SOFTWARE-4846)
 
 * Mon Sep 27 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.1-1
 - Update htcondor-ce WorkingFolder to match hosted-ce container (SOFTWARE-4806)
