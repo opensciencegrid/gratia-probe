@@ -3,7 +3,7 @@
 import unittest
 import classad
 
-from condor import condor_meter
+from condor_ap import condor_meter
 
 
 class CondorMeterTests(unittest.TestCase):

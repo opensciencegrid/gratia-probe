@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.2.1
+Version:            2.3.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -91,7 +91,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   packs=(
     common
     common2
-    condor
+    condor-ap
     htcondor-ce
     dCache-storagegroup
     dCache-transfer
@@ -176,9 +176,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
 
   # Install condor configuration snippet
-  install -d $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d
-  install -m 644 condor/50-gratia.conf $RPM_BUILD_ROOT/%{_sysconfdir}/condor/config.d/50-gratia.conf
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor/50-gratia.conf
+  install -d $RPM_BUILD_ROOT/%{_datadir}/condor/config.d
+  install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-gwms.conf
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor/gratia/{data,tmp}
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
@@ -213,6 +214,7 @@ find $RPM_BUILD_ROOT%{_datadir}/gratia $RPM_BUILD_ROOT%{python_sitelib} \
   sed -i "s&%%%%%%RPMVERSION%%%%%%&$rpmver&g"
 
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/gratia
+install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/log/condor-ce/gratia
 install -d $RPM_BUILD_ROOT/%{_localstatedir}/lock/gratia
 
@@ -285,27 +287,34 @@ fi
 # %%{default_prefix}/gratia/common2/pginput.py
 # %%{default_prefix}/gratia/common2/probeinput.py
 
-%package condor
+%package condor-ap
 Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
+Provides: %{name}-condor = %{version}-%{release}
+Provides: %{name}-glideinwms = %{version}-%{release}
+Obsoletes: %{name}-condor < 2.3.0
+Obsoletes: %{name}-glideinwms < 2.3.0
 
-%description condor
+%description condor-ap
 The Condor probe for the Gratia OSG accounting system.
 
-%files condor
+%files condor-ap
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/condor/README
-%dir %{default_prefix}/gratia/condor
-%{default_prefix}/gratia/condor/condor_meter
-%config(noreplace) %{_sysconfdir}/condor/config.d/50-gratia.conf
-%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor/ProbeConfig
-%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor.cron
+%doc %{default_prefix}/gratia/condor-ap/README
+%dir %{default_prefix}/gratia/condor-ap
+%{default_prefix}/gratia/condor-ap/condor_meter
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/tmp
+%attr(-,condor,condor) %dir %{_localstatedir}/log/condor/gratia
+%config %{_datadir}/condor/config.d/50-gratia-gwms.conf
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-ap/ProbeConfig
+%config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-ap.cron
 
-%post condor
-%customize_probeconfig -d condor
+%post condor-ap
+%customize_probeconfig -d condor-ap
 
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
@@ -508,6 +517,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Oct 06 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.3.0-1
+- Consolidate condor and old glideinwms probe into condor-ap (SOFTWARE-4846)
+- Add support for running HTCondor access point probe as a SchedD cron (SOFTWARE-4846)
+
 * Mon Sep 27 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.2.1-1
 - Update htcondor-ce WorkingFolder to match hosted-ce container (SOFTWARE-4806)
 
