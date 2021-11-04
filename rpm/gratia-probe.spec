@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.3.0
+Version:            2.3.1
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -518,6 +518,12 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Nov 04 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.1-1
+- Fix SchedD cron path to HTCondor AP probe (SOFTWARE-4846)
+- Fix ownership of HTCondor AP directories (SOFTWARE-4846)
+- Fix case of Lockfile config name for HTCondor-CE and HTCondor AP
+  probes (SOFTWARE-4621, SOFTWARE-4846)
+
 * Wed Oct 06 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.3.0-1
 - Consolidate condor and old glideinwms probe into condor-ap (SOFTWARE-4846)
 - Add support for running HTCondor access point probe as a SchedD cron (SOFTWARE-4846)
