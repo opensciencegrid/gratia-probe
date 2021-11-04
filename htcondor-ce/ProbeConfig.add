@@ -3,7 +3,7 @@
     WorkingFolder="/var/lib/condor-ce/gratia/tmp"
     LogFolder="/var/log/condor-ce/gratia"
 
-    LockFile="/var/lock/condor-ce/gratia.lock"
+    Lockfile="/var/lock/condor-ce/gratia.lock"
 
 
     CondorScheddName=""
