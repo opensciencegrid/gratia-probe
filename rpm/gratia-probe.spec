@@ -523,6 +523,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 - Fix ownership of HTCondor AP directories (SOFTWARE-4846)
 - Fix case of Lockfile config name for HTCondor-CE and HTCondor AP
   probes (SOFTWARE-4621, SOFTWARE-4846)
+- Remove OSPool specific configuration in HTCondor AP ProbeConfig
+  (SOFTWARE-4846)
 
 * Wed Oct 06 2021 Carl Edquist <edquist@cs.wisc.edu> - 2.3.0-1
 - Consolidate condor and old glideinwms probe into condor-ap (SOFTWARE-4846)
