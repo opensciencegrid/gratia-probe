@@ -3,7 +3,7 @@
     WorkingFolder="/var/lib/condor/gratia/tmp"
     LogFolder="/var/log/condor/gratia"
 
-    LockFile="/var/lock/condor/gratia.lock"
+    Lockfile="/var/lock/condor/gratia.lock"
 
     SuppressGridLocalRecords="1"
     MapUnknownToGroup="1"
