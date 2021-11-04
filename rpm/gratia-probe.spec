@@ -520,6 +520,7 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %changelog
 * Thu Nov 04 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.2-1
 - Fix PER_JOB_HISTORY_DIR configuration for HTCondor AP (SOFTWARE-4846)
+- Suppress payload job records by default for HTCondor APs (SOFTWARE-4846)
 
 * Thu Nov 04 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.1-1
 - Fix SchedD cron path to HTCondor AP probe (SOFTWARE-4846)
