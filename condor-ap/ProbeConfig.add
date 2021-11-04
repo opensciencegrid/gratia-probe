@@ -5,11 +5,6 @@
 
     Lockfile="/var/lock/condor/gratia.lock"
 
-    SuppressGridLocalRecords="1"
-    MapUnknownToGroup="1"
-    MapGroupToRole="1"
-    VOOverride="OSG"
-
     CondorScheddName=""
       Comments91="Use this to set the name of the scheduler, if there are mutliple."
     NoCertinfoBatchRecordsAreLocal="0"
