@@ -306,9 +306,10 @@ The Condor probe for the Gratia OSG accounting system.
 %doc %{default_prefix}/gratia/condor-ap/README
 %dir %{default_prefix}/gratia/condor-ap
 %{default_prefix}/gratia/condor-ap/condor_meter
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/tmp
-%attr(-,condor,condor) %dir %{_localstatedir}/log/condor/gratia
+%attr(0755,condor,condor) %dir %{_localstatedir}/log/condor/gratia
 %config %{_datadir}/condor/config.d/50-gratia-gwms.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-ap/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-condor-ap.cron
