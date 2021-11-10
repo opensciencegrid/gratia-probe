@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.3.2
+Version:            2.3.3
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -518,6 +518,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Nov 10 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.3-1
+- Drop unnecessary trailing slash check for ProbeConfig DataFolder
+  paths (SOFTWARE-4892)
+
 * Thu Nov 04 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.2-1
 - Fix PER_JOB_HISTORY_DIR configuration for HTCondor AP (SOFTWARE-4846)
 - Suppress payload job records by default for HTCondor APs (SOFTWARE-4846)
