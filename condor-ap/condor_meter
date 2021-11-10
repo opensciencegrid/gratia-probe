@@ -213,11 +213,6 @@ def main():
     if not htcondor_configured():
         DebugPrint(-1, "WARNING: HTCondor appears to not be configured correctly. Continuing anyway.")
 
-    # Do some sanity checks of gratia configuration before starting    
-    if not check_gratia():
-        DebugPrint(-1, "ERROR: Gratia settings not correct, exiting")
-        sys.exit(1)
-      
     if opts.condor_history is True:
         process_using_condor_history(opts.history_start_time, opts.history_end_time)
     else:
@@ -873,19 +868,6 @@ def htcondor_configured():
         DebugPrint(-1, "WARNING: Can't get information on PER_JOB_HISTORY_DIR, " \
                        "condor_config_val returned non-zero exit code")
     return False
-
-
-def check_gratia():
-    """
-    Make sure gratia configuration is somewhat sane before processing records
-    """
-    valid = True
-    data_folder = GratiaCore.Config.getConfigAttribute('DataFolder')
-    if data_folder[-1] != '/':
-        DebugPrint(-1, "ERROR: DataFolder must have a trailing / otherwise records "
-                       "will not be processed correctly")
-        valid = False
-    return valid
 
 
 def send_alternate_records(gratia_info):
