@@ -3,6 +3,9 @@ name: Build and Push Docker image
 on:
   push:
     branches: [ 2.x ]
+    paths:
+      - 'osg-pilot-container/**'
+      - 'common/**'
   repository_dispatch:
     types:
       - dispatch-build
