@@ -493,7 +493,7 @@ def query_and_update_db(opts):
         """Hash StartD ads the same way the Collector does
         """
         try:
-            if self.get("Name"):
+            if "Name" in self:
                 prefix = str(self["Name"])
             else:
                 prefix = ''.join([str(self["Machine"]),
