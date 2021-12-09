@@ -259,9 +259,8 @@ schema_sql = [
 
 # query collector for machine (startd) ads
 
-def query_current_attrs(opts):
+def query_current_attrs(opts, pool):
     import htcondor
-    pool = 'flock.opensciencegrid.org' #:9618
     coll = htcondor.Collector(pool)
 
     filter_cond = 'SlotType != "Static"'
@@ -489,7 +488,37 @@ def detect_and_update_partial_jobs(sqldb):
 
 def query_and_update_db(opts):
     current_ts = int(time.time())
-    ads = query_current_attrs(opts)
+
+    def _startd_collector_hash(self):
+        """Hash StartD ads the same way the Collector does
+        """
+        try:
+            if "Name" in self:
+                prefix = str(self["Name"])
+            else:
+                prefix = ''.join([str(self["Machine"]),
+                                  str(self["SlotId"])])
+
+            return hash(','.join([prefix,
+                                  str(self['MyAddress'])]))
+        except KeyError:
+            # This could happen if the StartD ad is missing Machine, SlotId, or MyAddress attrs,
+            # which the Collector should not allow to happen
+            return 1
+
+    classad.ClassAd.__hash__ = _startd_collector_hash
+
+    unique_ads = set()
+    for pool in ('cm-1.ospool.osg-htc.org', 'cm-2.ospool.osg-htc.org', 'flock.opensciencegrid.org'):
+        try:
+            unique_ads.union(query_current_attrs(opts, pool))
+        except htcondor.HTCondorIOError:
+            pass  # skip collectors that we can't contact
+
+    ads = list(unique_ads)
+
+    # restore the default hashing behavior
+    classad.ClassAd.__hash__ = _startd_collector_hash
 
     sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)
