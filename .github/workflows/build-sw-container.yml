@@ -49,5 +49,5 @@ jobs:
         context: .
         file: osg-pilot-container/Dockerfile
         push: true
-        tags: "docker.io/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }}
+        tags: "docker.io/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }},\
           hub.opensciencegrid.org/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }}"
