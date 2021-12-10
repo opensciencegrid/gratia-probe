@@ -4,6 +4,7 @@ on:
   push:
     branches: [ 2.x ]
     paths:
+      - '.github/workflows/build-sw-container.yml'
       - 'osg-pilot-container/**'
       - 'common/**'
   repository_dispatch:
@@ -49,5 +50,5 @@ jobs:
         context: .
         file: osg-pilot-container/Dockerfile
         push: true
-        tags: "docker.io/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }}
+        tags: "docker.io/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }},\
           hub.opensciencegrid.org/${{ steps.format-docker-repo.outputs.repo-name }}:${{ steps.mkdatetag.outputs.dtag }}"
