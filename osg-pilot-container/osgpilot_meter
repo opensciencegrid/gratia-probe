@@ -503,6 +503,11 @@ def query_and_update_db(opts):
             # which the Collector should not allow to happen
             return 1
 
+    def _startd_collector_eq(self, other):
+        return self['Name'] == other['Name'] and self['MyAddress'] == other['MyAddress']
+
+    _old_eq = classad.ClassAd.__eq__
+    classad.ClassAd.__eq__ = _startd_collector_eq
     classad.ClassAd.__hash__ = _startd_collector_hash
 
     unique_ads = set()
@@ -515,7 +520,8 @@ def query_and_update_db(opts):
 
     ads = list(unique_ads)
 
-    # restore the default hashing behavior
+    # restore the default hashing and equality behavior
+    classad.ClassAd.__eq__ = _old_eq
     classad.ClassAd.__hash__ = None
 
     sqldb = get_db(opts)
