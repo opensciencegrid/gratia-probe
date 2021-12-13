@@ -519,7 +519,7 @@ def query_and_update_db(opts):
     ads = list(unique_ads)
 
     # restore the default hashing behavior
-    classad.ClassAd.__hash__ = _startd_collector_hash
+    classad.ClassAd.__hash__ = None
 
     sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)
