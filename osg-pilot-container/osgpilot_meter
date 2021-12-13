@@ -513,6 +513,7 @@ def query_and_update_db(opts):
         try:
             unique_ads = unique_ads.union(query_current_attrs(opts, pool))
         except htcondor.HTCondorIOError:
+            DebugPrint(WARNING, f"Could not contact collector to query ads: {pool}")
             pass  # skip collectors that we can't contact
 
     ads = list(unique_ads)
