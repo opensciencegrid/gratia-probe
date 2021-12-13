@@ -511,7 +511,7 @@ def query_and_update_db(opts):
     unique_ads = set()
     for pool in ('cm-1.ospool.osg-htc.org', 'cm-2.ospool.osg-htc.org', 'flock.opensciencegrid.org'):
         try:
-            unique_ads.union(query_current_attrs(opts, pool))
+            unique_ads = unique_ads.union(query_current_attrs(opts, pool))
         except htcondor.HTCondorIOError:
             pass  # skip collectors that we can't contact
 
