@@ -99,7 +99,7 @@ schema_sql = [
     ( last_updated
     , {jobs_cols}
     , total_cpu
-    , unique (Name)
+    , unique (Name, MyAddress)
     );
     """.format(jobs_cols=coljoin(WANT_ATTRS)),
 
@@ -118,7 +118,7 @@ schema_sql = [
     create table inbox
     ( next_updated
     , {inbox_cols}
-    , unique (Name)
+    , unique (Name, MyAddress)
     );
     """.format(inbox_cols=coljoin(WANT_ATTRS)),
 
@@ -126,7 +126,7 @@ schema_sql = [
     create table inbox_archive
     ( next_updated
     , {inbox_cols}
-    , unique (Name, next_updated)
+    , unique (Name, MyAddress, next_updated)
     );
     """.format(inbox_cols=coljoin(WANT_ATTRS)),
 
@@ -493,32 +493,36 @@ def query_and_update_db(opts):
         """Hash StartD ads the same way the Collector does
         """
         try:
-            if "Name" in self:
-                prefix = str(self["Name"])
-            else:
-                prefix = ''.join([str(self["Machine"]),
-                                  str(self["SlotId"])])
-
-            return hash(','.join([prefix,
+            # The Collector will fallback to Machine and SlotID concatenated
+            # together but TJ said we could just get away with Name + MyAddress
+            # as this simplifies the SQL column uniqueness constraints
+            return hash(','.join([str(self['Name']),
                                   str(self['MyAddress'])]))
         except KeyError:
-            # This could happen if the StartD ad is missing Machine, SlotId, or MyAddress attrs,
+            # This could happen if the StartD ad is missing Name or MyAddress attrs,
             # which the Collector should not allow to happen
             return 1
 
+    def _startd_collector_eq(self, other):
+        return self['Name'] == other['Name'] and self['MyAddress'] == other['MyAddress']
+
+    _old_eq = classad.ClassAd.__eq__
+    classad.ClassAd.__eq__ = _startd_collector_eq
     classad.ClassAd.__hash__ = _startd_collector_hash
 
     unique_ads = set()
     for pool in ('cm-1.ospool.osg-htc.org', 'cm-2.ospool.osg-htc.org', 'flock.opensciencegrid.org'):
         try:
-            unique_ads.union(query_current_attrs(opts, pool))
+            unique_ads = unique_ads.union(query_current_attrs(opts, pool))
         except htcondor.HTCondorIOError:
+            DebugPrint(WARNING, f"Could not contact collector to query ads: {pool}")
             pass  # skip collectors that we can't contact
 
     ads = list(unique_ads)
 
-    # restore the default hashing behavior
-    classad.ClassAd.__hash__ = _startd_collector_hash
+    # restore the default hashing and equality behavior
+    classad.ClassAd.__eq__ = _old_eq
+    classad.ClassAd.__hash__ = None
 
     sqldb = get_db(opts)
     write_ads_to_sqlite(sqldb, ads, current_ts)

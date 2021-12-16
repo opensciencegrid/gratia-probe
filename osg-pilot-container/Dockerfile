@@ -40,6 +40,7 @@ COPY --from=build-container /root/bld/_build_results /root/RPMS
 # install probe rpms
 RUN yum install -y \
                 --disablerepo='osg-upcoming*' \
+                --enablerepo=devops \
                 /root/RPMS/gratia-probe-{osg-pilot-container,common}-*-*.rpm
 
 # do minimal probe configuration
