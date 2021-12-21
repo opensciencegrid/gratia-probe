@@ -21,7 +21,7 @@ import gratia.common.Gratia as Gratia
 import gratia.common.config as config
 
 import classad
-
+import htcondor
 
 probe_version = "%%%RPMVERSION%%%"
 
@@ -260,7 +260,6 @@ schema_sql = [
 # query collector for machine (startd) ads
 
 def query_current_attrs(opts, pool):
-    import htcondor
     coll = htcondor.Collector(pool)
 
     filter_cond = 'SlotType != "Static"'
