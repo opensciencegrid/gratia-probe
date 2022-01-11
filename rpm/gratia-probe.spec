@@ -187,6 +187,11 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
+  # Install osg-pilot-container configuration
+  install -d $RPM_BUILD_ROOT/%{_datadir}/condor/config.d
+  install -m 644 osg-pilot-container/10-client-auth.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/10-client-auth.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/osg-pilot-container/50-gratia-ce.conf
+
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
@@ -390,6 +395,7 @@ osg pilot container probe
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_localstatedir}/lib/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
+%config %{_datadir}/condor/config.d/10-client-auth.conf
 
 %package htcondor-ce
 Summary: A HTCondor-CE probe
