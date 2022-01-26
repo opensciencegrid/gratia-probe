@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.3.3
+Version:            2.4.0
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -92,6 +92,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     common
     common2
     condor-ap
+    condor-batch
     htcondor-ce
     dCache-storagegroup
     dCache-transfer
@@ -174,15 +175,22 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   install -m 755 dCache-transfer/gratia-dcache-transfer.init $RPM_BUILD_ROOT%{_initrddir}/gratia-dcache-transfer
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer.init
 
-
-  # Install condor configuration snippet
+  # Install condor-batch configuration snippet
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor/config.d
-  install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-gwms.conf
+  install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
+  # We want the routed job records from the local schedd
+  install -m 644 condor-batch/50-gratia.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia.conf
+  # but run the cron under the CE schedd
+  install -m 644 condor-batch/75-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/75-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor/gratia/{data,tmp}
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-batch/75-gratia-ce.conf \
+     $RPM_BUILD_ROOT%{_datadir}/gratia/condor-batch/50-gratia.conf
+
+  # Install condor-ap configuration snippet
+  install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-gwms.conf
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
-  install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
   install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
@@ -287,15 +295,43 @@ fi
 # %%{default_prefix}/gratia/common2/pginput.py
 # %%{default_prefix}/gratia/common2/probeinput.py
 
+%package condor-batch
+Summary: A probe accounting for pilot jobs in a local HTCondor batch system
+Requires: %{name}-common = %{version}-%{release}
+Requires: condor
+Requires: %{condor_python}
+Requires: htcondor-ce
+Provides: %{name}-condor
+Obsoletes: %{name}-condor
+
+%description condor-batch
+The HTCondor batch system probe for the Gratia OSG accounting system.
+
+%files condor-batch
+%defattr(-,root,root,-)
+%dir %{default_prefix}/gratia/condor-batch
+%{default_prefix}/gratia/condor-batch/condor_meter
+# Local condor contains the data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data/quarantine
+%attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/tmp
+# But the CE runs the probe
+%attr(0755,condor,condor) %dir %{_localstatedir}/log/condor-ce/gratia
+%config %{_datadir}/condor/config.d/50-gratia.conf
+%config %{_datadir}/htcondor-ce/config.d/50-gratia-ce.conf
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/condor-batch/ProbeConfig
+
+%post condor-batch
+%customize_probeconfig -d condor-batch
+
 %package condor-ap
 Summary: A Condor probe
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
-Provides: %{name}-condor = %{version}-%{release}
 Provides: %{name}-glideinwms = %{version}-%{release}
-Obsoletes: %{name}-condor < 2.3.0
 Obsoletes: %{name}-glideinwms < 2.3.0
 
 %description condor-ap
@@ -520,6 +556,10 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Wed Jan 26 2021 Brian Lin <blin@cs.wisc.edu> - 2.4.0-1
+- Add gratia-probe-condor-batch, formerly gratia-probe-condor (SOFTWARE-4978)
+- Fix ownership of quarantine directories (SOFTWARE-4975)
+
 * Wed Nov 10 2021 Brian Lin <blin@cs.wisc.edu> - 2.3.3-1
 - Drop unnecessary trailing slash check for ProbeConfig DataFolder
   paths (SOFTWARE-4892)
