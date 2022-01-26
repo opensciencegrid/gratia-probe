@@ -326,7 +326,7 @@ The HTCondor batch system probe for the Gratia OSG accounting system.
 %customize_probeconfig -d condor-batch
 
 %package condor-ap
-Summary: A Condor probe
+Summary: A probe accounting for payload jobs on an HTCondor Access Point
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
@@ -335,7 +335,7 @@ Provides: %{name}-glideinwms = %{version}-%{release}
 Obsoletes: %{name}-glideinwms < 2.3.0
 
 %description condor-ap
-The Condor probe for the Gratia OSG accounting system.
+The HTCondor access point probe for the Gratia OSG accounting system.
 
 %files condor-ap
 %defattr(-,root,root,-)
@@ -436,7 +436,7 @@ Requires: htcondor-ce
 License: See LICENSE.
 
 %description htcondor-ce
-The HTCondor-CE probe for the Gratia OSG accounting system.
+The HTCondor-CE probe for the Gratia OSG accounting system. Designed for use with non-HTCondor batch systems.
 
 %files htcondor-ce
 %defattr(-,root,root,-)
