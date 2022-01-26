@@ -209,10 +209,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # TODO: allow test directory, remove from RPM
 
   # Set up var area
-  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/
-  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/{tmp,data,data/quarantine,logs}
-  chmod 1777  $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/data
-  install -d $RPM_BUILD_ROOT%{_localstatedir}/lib/gratia/osg-pilot-container
+  install -d $RPM_BUILD_ROOT%{_sharedstatedir}/gratia/
+  install -d $RPM_BUILD_ROOT%{_sharedstatedir}/gratia/{tmp,data,data/quarantine,logs}
+  chmod 1777  $RPM_BUILD_ROOT%{_sharedstatedir}/gratia/data
+  install -d $RPM_BUILD_ROOT%{_sharedstatedir}/gratia/osg-pilot-container
 
 
 # Burn in the RPM version into the python files.
@@ -262,7 +262,7 @@ fi
 %defattr(-,root,root,-)
 %{_initrddir}/gratia-probes-cron
 %doc %{default_prefix}/gratia/common/README
-%{_localstatedir}/lib/gratia/
+%{_sharedstatedir}/gratia/
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
 %{_localstatedir}/lock/gratia/
@@ -425,7 +425,7 @@ osg pilot container probe
 %dir %{default_prefix}/gratia/osg-pilot-container
 %{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
-%dir %{_localstatedir}/lib/gratia/osg-pilot-container
+%dir %{_sharedstatedir}/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
 
 %package htcondor-ce
