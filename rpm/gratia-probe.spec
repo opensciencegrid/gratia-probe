@@ -301,8 +301,8 @@ Requires: %{name}-common = %{version}-%{release}
 Requires: condor
 Requires: %{condor_python}
 Requires: htcondor-ce
-Provides: %{name}-condor
-Obsoletes: %{name}-condor
+Provides: %{name}-condor = %{version}-%{release}
+Obsoletes: %{name}-condor < 2.4.0
 
 %description condor-batch
 The HTCondor batch system probe for the Gratia OSG accounting system.
