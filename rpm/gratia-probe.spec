@@ -303,6 +303,8 @@ Requires: %{condor_python}
 Requires: htcondor-ce
 Provides: %{name}-condor = %{version}-%{release}
 Obsoletes: %{name}-condor < 2.4.0
+Conflicts: %{name}-condor-ap
+Conflicts: %{name}-htcondor-ce
 
 %description condor-batch
 The HTCondor batch system probe for the Gratia OSG accounting system.
@@ -333,6 +335,7 @@ Requires: condor
 Requires: %{condor_python}
 Provides: %{name}-glideinwms = %{version}-%{release}
 Obsoletes: %{name}-glideinwms < 2.3.0
+Conflicts: %{name}-htcondor-ce
 
 %description condor-ap
 The HTCondor access point probe for the Gratia OSG accounting system.
