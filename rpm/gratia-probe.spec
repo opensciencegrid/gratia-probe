@@ -182,8 +182,10 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
   install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
+  install -m 644 htcondor-ce/50-gratia-condor.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-condor.conf
   install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,data/quarantine,tmp}
-  rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf \
+     $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-condor.conf
 
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
@@ -408,6 +410,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data/quarantine
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/tmp
 %attr(-,condor,condor) %dir %{_localstatedir}/log/condor-ce/gratia
+%config %{_datadir}/condor/config.d/50-gratia-condor.conf
 %config %{_datadir}/condor-ce/config.d/50-gratia-ce.conf
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/htcondor-ce/ProbeConfig
 
@@ -518,6 +521,8 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 %changelog
 * Thu Jan 27 2021 Brian Lin <blin@cs.wisc.edu> - 2.5.0-1
+- Fix record generation for HTCondor-CE with HTCondor batch systems
+  (SOFTWARE-4978)
 - Remove condor-batch probe (SOFTWARE-4978)
 
 * Wed Jan 26 2021 Brian Lin <blin@cs.wisc.edu> - 2.4.0-1
