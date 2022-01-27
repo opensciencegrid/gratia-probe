@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.5.0
+Version:            2.5.1
 Release:            1%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
@@ -521,6 +521,9 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 
 %changelog
+* Thu Jan 27 2022 Brian Lin <blin@cs.wisc.edu> - 2.5.1-1
+- Fix HTCondor-CE configuration syntax
+
 * Thu Jan 27 2022 Brian Lin <blin@cs.wisc.edu> - 2.5.0-1
 - Fix record generation for HTCondor-CE with HTCondor batch systems
   (SOFTWARE-4978)
