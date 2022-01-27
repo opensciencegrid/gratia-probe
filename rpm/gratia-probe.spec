@@ -176,13 +176,13 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
 
   # Install condor-ap configuration snippet
   install -m 644 condor-ap/50-gratia-gwms.conf $RPM_BUILD_ROOT/%{_datadir}/condor/config.d/50-gratia-gwms.conf
-  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor/gratia/{data,tmp}
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor/gratia/{data,data/quarantine,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/condor-ap/50-gratia-gwms.conf
 
   # Install the htcondor-ce configuration
   install -d $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d
   install -m 644 htcondor-ce/50-gratia-ce.conf $RPM_BUILD_ROOT/%{_datadir}/condor-ce/config.d/50-gratia-ce.conf
-  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,tmp}
+  install -d $RPM_BUILD_ROOT/%{_sharedstatedir}/condor-ce/gratia/{data,data/quarantine,tmp}
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf
 
   # Remove remaining cruft
