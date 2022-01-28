@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            2.5.1
-Release:            1%{?dist}
+Release:            2%{?dist}
 License:            GPL
 URL:                http://sourceforge.net/projects/gratia/
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -518,9 +518,50 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 %post dcache-storagegroup
 %customize_probeconfig -d dCache-storagegroup
 
+%package condor
+Summary: Transitional dummy package to ease upgrades from OSG 3.5
 
+%description condor
+This is a transitional dummy package for gratia-probe-condor; it may safely be removed.
+
+%files condor
+
+%package lsf
+Summary: Transitional dummy package to ease upgrades from OSG 3.5
+
+%description lsf
+This is a transitional dummy package for gratia-probe-lsf; it may safely be removed.
+
+%files lsf
+
+%package pbs-lsf
+Summary: Transitional dummy package to ease upgrades from OSG 3.5
+
+%description pbs-lsf
+This is a transitional dummy package for gratia-probe-pbs-lsf; it may safely be removed.
+
+%files pbs-lsf
+
+%package sge
+Summary: Transitional dummy package to ease upgrades from OSG 3.5
+
+%description sge
+This is a transitional dummy package for gratia-probe-sge; it may safely be removed.
+
+%files sge
+
+%package slurm
+Summary: Transitional dummy package to ease upgrades from OSG 3.5
+
+%description slurm
+This is a transitional dummy package for gratia-probe-slurm; it may safely be removed.
+
+%files slurm
 
 %changelog
+* Fri Jan 28 2022 Brian Lin <blin@cs.wisc.edu> - 2.5.1-2
+- Add batch system dummy packages to ease upgrades
+
 * Thu Jan 27 2022 Brian Lin <blin@cs.wisc.edu> - 2.5.1-1
 - Fix HTCondor-CE configuration syntax
 
