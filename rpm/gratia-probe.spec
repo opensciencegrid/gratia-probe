@@ -4,7 +4,7 @@ Group:              Applications/System
 Version:            2.5.1
 Release:            2%{?dist}
 License:            GPL
-URL:                http://sourceforge.net/projects/gratia/
+URL:                https://github.com/opensciencegrid/gratia-probe
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
 
 BuildRequires:      python3
