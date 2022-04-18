@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.5.1
-Release:            2%{?dist}
+Version:            2.5.2
+Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -559,6 +559,10 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Mon Apr 18 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.5.2-1
+- Delete Grid=Local jobs for htcondor-ce by default (SOFTWARE-4977)
+- Set MapUnknownToGroup in condor-ap ProbeConfig (SOFTWARE-5041)
+
 * Fri Jan 28 2022 Brian Lin <blin@cs.wisc.edu> - 2.5.1-2
 - Add batch system dummy packages to ease upgrades
 
