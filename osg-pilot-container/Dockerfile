@@ -2,7 +2,7 @@
 #   docker build -f osg-pilot-container/Dockerfile .
 
 # build rpms in a temporary container
-FROM opensciencegrid/software-base:fresh as build-container
+FROM opensciencegrid/software-base:3.6-el8-release as build-container
 
 LABEL name="OSG Pilot Container Probe Container"
 
@@ -33,7 +33,7 @@ RUN osg-build rpmbuild /root/bld
 
 
 # build real container; copying in rpm results
-FROM opensciencegrid/software-base:fresh
+FROM opensciencegrid/software-base:3.6-el8-release
 
 COPY --from=build-container /root/bld/_build_results /root/RPMS
 
