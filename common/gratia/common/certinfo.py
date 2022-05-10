@@ -184,9 +184,9 @@ def readCertInfoLog(localJobId):
                     else:
                         res['FQAN'] = None
                     res['VO'] = None
-                    DebugPrint(0, 'Warning: found valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern + ' with ' + str(res))
+                    # DebugPrint(0, 'Warning: found valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern + ' with ' + str(res))
                     return res
-    DebugPrint(0, 'Warning: unable to find valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern)
+    # DebugPrint(0, 'Warning: unable to find valid certinfo file for '+str(localJobId)+' in the log files: ' + pattern)
     return None
 
 # update this list as new job managers are added
@@ -249,7 +249,7 @@ def _findCertinfoFile(localJobId, probeName):
         except SystemExit:
             raise
         except Exception as e:
-            DebugPrint(0, 'ERROR: Unable to parse XML file ' + certinfo, ': ', e)
+            # DebugPrint(0, 'ERROR: Unable to parse XML file ' + certinfo, ': ', e)
             continue
 
         # Next, find the correct information and send it back.
@@ -277,11 +277,11 @@ def _findCertinfoFile(localJobId, probeName):
                 #file_utils.RemoveFile(certinfo)  # Clean up.
                 #break  # Done -- stop looking
         else:
-            DebugPrint(0, 'ERROR: certinfo file ' + certinfo + ' does not contain one single valid GratiaCertInfo node'
-                       )
+            # DebugPrint(0, 'ERROR: certinfo file ' + certinfo + ' does not contain one single valid GratiaCertInfo node')
+            pass
 
     # if here, no result found
-    DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId)
+    # DebugPrint(0, 'ERROR: unable to find valid certinfo file for job ' + localJobId)
     return None
 
 def readCertInfoFile(localJobId, probeName):
