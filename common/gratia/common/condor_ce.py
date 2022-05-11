@@ -222,9 +222,11 @@ def createCertinfoFile(classad, directory):
             DebugPrint(4, "Unable write out certinfo file %s as it already " \
                 "exists." % full_filename)
             return True
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
         # DebugPrint(1, "Unable to write out certinfo file %s: %s " % \
         #     (full_filename, str(oe)))
         return False
+    # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
     # DebugPrint(3, "Successfully wrote certinfo file %s" % full_filename)
     return True
 
@@ -242,6 +244,7 @@ def classadToCertinfo(filename, output_dir):
     try:
         fd = open(filename)
     except IOError as ie:
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
         # DebugPrint(1, "Unable to open ClassAd %s for certinfo conversion" \
         #     ": %s" % (filename, str(ie)))
         return
@@ -249,6 +252,7 @@ def classadToCertinfo(filename, output_dir):
     for classad in fdToClassad(fd):
 
         if not createCertinfoFile(classad, output_dir):
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
             # DebugPrint(0, "Failed to convert certinfo file %s; sending to " \
             #     "quarantine." % filename)
             sandbox_mgmt.QuarantineFile(filename, False)
@@ -267,6 +271,7 @@ def processHistoryDir():
     history_dir = Config.get_CondorCEHistoryFolder()
     output_dir = Config.get_DataFolder()
     if not history_dir:
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
         # DebugPrint(3, "No Condor-CE history specified; will not process for" \
         #     " certinfo.")
         pass
@@ -286,6 +291,7 @@ def processHistoryDir():
         except SystemExit:
             raise
         except Exception as e:
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
             # DebugPrint(0, "Failure when trying to process Condor-CE history %s" \
             #     " into a certinfo file: %s" % (filename, str(e)))
             DebugPrintTraceback(e)
@@ -359,6 +365,7 @@ def queryJob(jobid):
         directory = Config.get_DataFolder()
         job_info = queryAllJobs()
         for classad in job_info.values():
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
             # On failure, there is not much to do - ignore
             # DebugPrint(3, "Creating certinfo file for %s." %
             #     classad['GlobalJobId'])
