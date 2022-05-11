@@ -222,10 +222,12 @@ def createCertinfoFile(classad, directory):
             DebugPrint(4, "Unable write out certinfo file %s as it already " \
                 "exists." % full_filename)
             return True
-        DebugPrint(1, "Unable to write out certinfo file %s: %s " % \
-            (full_filename, str(oe)))
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+        # DebugPrint(1, "Unable to write out certinfo file %s: %s " % \
+        #     (full_filename, str(oe)))
         return False
-    DebugPrint(3, "Successfully wrote certinfo file %s" % full_filename)
+    # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+    # DebugPrint(3, "Successfully wrote certinfo file %s" % full_filename)
     return True
 
 
@@ -242,15 +244,17 @@ def classadToCertinfo(filename, output_dir):
     try:
         fd = open(filename)
     except IOError as ie:
-        DebugPrint(1, "Unable to open ClassAd %s for certinfo conversion" \
-            ": %s" % (filename, str(ie)))
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+        # DebugPrint(1, "Unable to open ClassAd %s for certinfo conversion" \
+        #     ": %s" % (filename, str(ie)))
         return
 
     for classad in fdToClassad(fd):
 
         if not createCertinfoFile(classad, output_dir):
-            DebugPrint(0, "Failed to convert certinfo file %s; sending to " \
-                "quarantine." % filename)
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+            # DebugPrint(0, "Failed to convert certinfo file %s; sending to " \
+            #     "quarantine." % filename)
             sandbox_mgmt.QuarantineFile(filename, False)
             continue
 
@@ -267,8 +271,10 @@ def processHistoryDir():
     history_dir = Config.get_CondorCEHistoryFolder()
     output_dir = Config.get_DataFolder()
     if not history_dir:
-        DebugPrint(3, "No Condor-CE history specified; will not process for" \
-            " certinfo.")
+        # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+        # DebugPrint(3, "No Condor-CE history specified; will not process for" \
+        #     " certinfo.")
+        pass
     if not os.path.exists(history_dir):
         DebugPrint(3, "Condor-CE history directory %s does not exist." \
             % history_dir)
@@ -285,8 +291,9 @@ def processHistoryDir():
         except SystemExit:
             raise
         except Exception as e:
-            DebugPrint(0, "Failure when trying to process Condor-CE history %s" \
-                " into a certinfo file: %s" % (filename, str(e)))
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
+            # DebugPrint(0, "Failure when trying to process Condor-CE history %s" \
+            #     " into a certinfo file: %s" % (filename, str(e)))
             DebugPrintTraceback(e)
 
 
@@ -358,9 +365,10 @@ def queryJob(jobid):
         directory = Config.get_DataFolder()
         job_info = queryAllJobs()
         for classad in job_info.values():
+            # XXX: certinfo is going away; no more warnings (SOFTWARE-4980)
             # On failure, there is not much to do - ignore
-            DebugPrint(3, "Creating certinfo file for %s." %
-                classad['GlobalJobId'])
+            # DebugPrint(3, "Creating certinfo file for %s." %
+            #     classad['GlobalJobId'])
             createCertinfoFile(classad, directory)
         _queryCache = job_info
     info = _queryCache.get(jobid, {})
