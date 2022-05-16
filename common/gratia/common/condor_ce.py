@@ -304,8 +304,8 @@ condor_ce_q -const 'RoutedJob =?= true && GridJobId =!= UNDEFINED \
     -format 'x509UserProxyVOName=%s\t' x509UserProxyVOName \
     -format 'x509UserProxyFirstFQAN=%s\t' x509UserProxyFirstFQAN \
     -format 'x509userproxysubject=%s\t' x509userproxysubject \
-    -format 'AuthTokenIssuer=%s\t' AuthTokenIssuer \
-    -format 'AuthTokenSubject=%s\t' AuthTokenSubject \
+    -format 'AuthTokenIssuer=%s\t' orig_AuthTokenIssuer \
+    -format 'AuthTokenSubject=%s\t' orig_AuthTokenSubject \
     -format 'GridJobId=%s' GridJobId \
     -format '\n' junk \
 """
