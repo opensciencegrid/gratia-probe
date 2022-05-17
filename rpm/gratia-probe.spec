@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.5.2
+Version:            2.6.0
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -559,6 +559,11 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Tue May 17 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.5.3-1
+- Add SCHEDD_CRON_LOG_NON_ZERO_EXIT to htcondor-ce config (SOFTWARE-5150)
+- Remove certinfo errors/warnings (SOFTWARE-4980)
+- Replace AuthToken with routed job attrs (SOFTWARE-5185)
+
 * Mon Apr 18 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.5.2-1
 - Delete Grid=Local jobs for htcondor-ce by default (SOFTWARE-4977)
 - Set MapUnknownToGroup in condor-ap ProbeConfig (SOFTWARE-5041)
