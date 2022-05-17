@@ -143,19 +143,19 @@ def createCertinfoXML(classad):
 
     # Sample: x509UserProxyVOName = "cms"
     voStr = classad.get("x509UserProxyVOName", "") or \
-            classad.get("AuthTokenIssuer", "")
+            classad.get("orig_AuthTokenIssuer", "")
     vo = dom.createElement("VO")
     vo.appendChild(dom.createTextNode(voStr))
 
     # Sample: x509UserProxyFirstFQAN = "/cms/Role=NULL/Capability=NULL"
     fqanStr = classad.get("x509UserProxyFirstFQAN", "") or \
-              classad.get("AuthTokenIssuer", "")
+              classad.get("orig_AuthTokenIssuer", "")
     fqan = dom.createElement("FQAN")
     fqan.appendChild(dom.createTextNode(fqanStr))
 
     # Sample: x509userproxysubject = "/C=TW/O=AP/OU=GRID/CN=Nitish Dhingra 142746"
     dnStr = classad.get("x509userproxysubject", "") or \
-            classad.get("AuthTokenSubject", "")
+            classad.get("orig_AuthTokenSubject", "")
     dn = dom.createElement("DN")
     dn.appendChild(dom.createTextNode(dnStr))
 
@@ -304,8 +304,8 @@ condor_ce_q -const 'RoutedJob =?= true && GridJobId =!= UNDEFINED \
     -format 'x509UserProxyVOName=%s\t' x509UserProxyVOName \
     -format 'x509UserProxyFirstFQAN=%s\t' x509UserProxyFirstFQAN \
     -format 'x509userproxysubject=%s\t' x509userproxysubject \
-    -format 'AuthTokenIssuer=%s\t' AuthTokenIssuer \
-    -format 'AuthTokenSubject=%s\t' AuthTokenSubject \
+    -format 'orig_AuthTokenIssuer=%s\t' orig_AuthTokenIssuer \
+    -format 'orig_AuthTokenSubject=%s\t' orig_AuthTokenSubject \
     -format 'GridJobId=%s' GridJobId \
     -format '\n' junk \
 """
@@ -375,12 +375,12 @@ def queryJob(jobid):
     certinfo = {}
     if 'x509UserProxyVOName' in info:
         certinfo["VO"] = info['x509UserProxyVOName']
-    elif 'AuthTokenIssuer' in info:
-        certinfo["VO"] = info['AuthTokenIssuer']
+    elif 'orig_AuthTokenIssuer' in info:
+        certinfo["VO"] = info['orig_AuthTokenIssuer']
     if 'x509userproxysubject' in info:
         certinfo['DN'] = info['x509userproxysubject']
-    elif 'AuthTokenSubject' in info:
-        certinfo['DN'] = info['AuthTokenSubject']
+    elif 'orig_AuthTokenSubject' in info:
+        certinfo['DN'] = info['orig_AuthTokenSubject']
     if 'x509UserProxyFirstFQAN' in info:
         certinfo['FQAN'] = info['x509UserProxyFirstFQAN']
     # FQAN is used as a backup for DN/VO in the certinfo to populate
