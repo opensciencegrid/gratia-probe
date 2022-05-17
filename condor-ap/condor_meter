@@ -590,15 +590,14 @@ def classadToJUR(classad):
 
     # a pre-routed job's AuthToken attrs are copied with "orig_" prefix
     # in the routed job (SOFTWARE-5185, HTCONDOR-1071)
-    ATpfx = "orig_" if probe_name == "htcondor-ce" else ""
     setIfExists(r.LocalUserId, classad, "Owner")
     setIfExists(r.GlobalUsername, classad, "User")
     setIfExists(r.DN, classad, 'x509userproxysubject') or \
-    setIfExists(r.DN, classad, ATpfx + 'AuthTokenSubject')
+    setIfExists(r.DN, classad, 'orig_AuthTokenSubject')
     setIfExists(r.VOName, classad, 'x509UserProxyFirstFQAN') or \
-    setIfExists(r.VOName, classad, ATpfx + 'AuthTokenIssuer')  # VO info for SciToken
+    setIfExists(r.VOName, classad, 'orig_AuthTokenIssuer')  # VO info for SciToken
     setIfExists(r.ReportableVOName, classad, 'x509UserProxyVOName') or \
-    setIfExists(r.ReportableVOName, classad, ATpfx + 'AuthTokenIssuer')
+    setIfExists(r.ReportableVOName, classad, 'orig_AuthTokenIssuer')
 
     if 'GlobalJobId' in classad:
         r.JobName(classad["GlobalJobId"])
