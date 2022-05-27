@@ -172,11 +172,11 @@ def Send(record):
                     match = re.search(r'^<(?:[^:]*:)?RecordIdentity.*/>$', usageXmlString, re.MULTILINE)
                     if match:
                         DebugPrint(0, match.group(0))
-                        responseString += ('\n', match.group(0))
+                        responseString += '\n' + match.group(0)
                     match = re.search(r'^<(?:[^:]*:)?GlobalJobId.*/>$', usageXmlString, re.MULTILINE)
                     if match:
                         DebugPrint(0, match.group(0))
-                        responseString += ('\n', match.group(0))
+                        responseString += '\n' + match.group(0)
                     responseString += '\n' + usageXmlString
                 else:
                     DebugPrint(1, 'Response indicates failure, ' + f.name + ' will not be deleted')
