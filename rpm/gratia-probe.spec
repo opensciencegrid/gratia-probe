@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.6.0
+Version:            2.6.1
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -559,7 +559,10 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
-* Tue May 17 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.5.3-1
+* Fri May 27 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.1-1
+- Fix bug in debugging for failed record Send (SOFTWARE-5199)
+
+* Tue May 17 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.0-1
 - Add SCHEDD_CRON_LOG_NON_ZERO_EXIT to htcondor-ce config (SOFTWARE-5150)
 - Remove certinfo errors/warnings (SOFTWARE-4980)
 - Replace AuthToken with routed job attrs (SOFTWARE-5185)
