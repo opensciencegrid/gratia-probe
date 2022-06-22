@@ -275,7 +275,6 @@ fi
 
 # %files common2
 # %defattr(-,root,root,-)
-%{_initrddir}/gratia-probes-cron
 #%doc common2/README
 %doc %{default_prefix}/gratia/common2/README
 # this is in common: %%{python_sitelib}/gratia/__init__.py*
