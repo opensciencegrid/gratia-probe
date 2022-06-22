@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.6.1
+Version:            2.6.2
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -100,6 +100,7 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     enstore-transfer
     onevm
     osg-pilot-container
+    services
   )
 
   # PWD is the working directory, used to build
@@ -346,6 +347,27 @@ Contributed by Greg Sharp and the dCache project.
 /sbin/chkconfig --add gratia-dcache-transfer
 %customize_probeconfig -d dCache-transfer
 
+%package services
+Summary: Gratia OSG accounting system probe API for services.
+Group: Applications/System
+Requires: %{name}-common = %{version}-%{release}
+License: See LICENSE.
+
+%description services
+Gratia OSG accounting system probe API for services.
+Contributed by University of Nebraska Lincoln.
+
+%files services
+%defattr(-,root,root,-)
+%{python_sitelib}/gratia/services
+%{default_prefix}/gratia/services/ProbeConfig
+%{default_prefix}/gratia/services/storageReport
+%dir %{default_prefix}/gratia/services
+%config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
+
+%post services
+%customize_probeconfig -d services
+
 %package onevm
 Summary: Gratia OSG accounting system probe for OpenNebula VM accounting.
 Group: Applications/System
@@ -559,6 +581,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Wed Jun 22 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.2-1
+- Add back missing services sub-package (SOFTWARE-5236)
+
 * Fri May 27 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.1-1
 - Fix bug in debugging for failed record Send (SOFTWARE-5199)
 
