@@ -360,7 +360,6 @@ Contributed by University of Nebraska Lincoln.
 %files services
 %defattr(-,root,root,-)
 %{python_sitelib}/gratia/services
-%{default_prefix}/gratia/services/ProbeConfig
 %{default_prefix}/gratia/services/storageReport
 %dir %{default_prefix}/gratia/services
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
