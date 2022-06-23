@@ -275,7 +275,6 @@ fi
 
 # %files common2
 # %defattr(-,root,root,-)
-%{_initrddir}/gratia-probes-cron
 #%doc common2/README
 %doc %{default_prefix}/gratia/common2/README
 # this is in common: %%{python_sitelib}/gratia/__init__.py*
@@ -360,7 +359,6 @@ Contributed by University of Nebraska Lincoln.
 %files services
 %defattr(-,root,root,-)
 %{python_sitelib}/gratia/services
-%{default_prefix}/gratia/services/ProbeConfig
 %{default_prefix}/gratia/services/storageReport
 %dir %{default_prefix}/gratia/services
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
