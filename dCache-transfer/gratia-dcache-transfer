@@ -2,6 +2,9 @@
 
 import gratia.dcache_transfer.dCacheBillingAggregator
 
+from gratia.common.Gratia import DebugPrint
+from gratia.common.debug  import DebugPrintTraceback
+
 # This code is based on the following recipe:
 # http://code.activestate.com/recipes/278731/ (r6)
 # __author__ = "Chad J. Schroeder"
@@ -89,5 +92,14 @@ def main():
     gratia.dcache_transfer.dCacheBillingAggregator.main()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
+        DebugPrintTraceback()
+        raise
 
