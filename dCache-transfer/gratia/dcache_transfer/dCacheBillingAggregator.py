@@ -147,11 +147,13 @@ def warn_of_signal( signum, frame ):
     logger = logging.getLogger( 'DCacheAggregator' )
     if logger != None:
         logger.critical( "Going down on signal " + str( signum ) );
-    if terminationAlarm != None:
+    if terminationAlarm is not None:
         terminationAlarm.event()
     os._exit( 1 )
 
 def main():
+    global terminationAlarm  # we try to set this global in main
+
     # We need the logger variable in the exception handler.
     # So we create it here.
     logger = logging.getLogger( 'DCacheAggregator' )
@@ -266,7 +268,7 @@ def main():
     logger.critical(ProgramName + " shutting down.")
     logging.shutdown()
     # try to send an email warning of the shutdown.
-    if terminationAlarm != None:
+    if terminationAlarm is not None:
         terminationAlarm.event()
 
     sys.exit(1)
