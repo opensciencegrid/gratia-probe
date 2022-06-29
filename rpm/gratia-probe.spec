@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.6.2
+Version:            2.6.3
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -590,6 +590,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Wed Jun 29 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.3-1
+- Restore ProbeConfig symlinks, and other dcache-transfer fixes (SOFTWARE-5241)
+
 * Wed Jun 22 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.2-1
 - Add back missing services sub-package (SOFTWARE-5236)
 
