@@ -17,8 +17,6 @@ BuildRequires:      git-core
 
 BuildArch: noarch
 
-%define default_prefix /usr/share
-
 # Default probe configuration items for post-install.
 %global default_collector_port 80
 %global ssl_port 443
@@ -56,9 +54,6 @@ Source0: %{name}-%{version}.tar.gz
 
 # Build settings.
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-Prefix: /usr
-Prefix: %{default_prefix}
-Prefix: /etc
 
 # _unitdir,_tmpfilesdir not defined on el6 build hosts
 %{!?_tmpfilesdir: %global _tmpfilesdir %{_prefix}/lib/tmpfiles.d}
@@ -257,7 +252,7 @@ fi
 %files common
 %defattr(-,root,root,-)
 %{_initrddir}/gratia-probes-cron
-%doc %{default_prefix}/gratia/common/README
+%doc %{_datadir}/gratia/common/README
 %{_sharedstatedir}/gratia/
 %attr(-,gratia,gratia) %{_localstatedir}/log/gratia/
 %dir %{_sysconfdir}/gratia
@@ -265,11 +260,11 @@ fi
 %{python_sitelib}/gratia/__pycache__/
 %{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common
-%dir %{default_prefix}/gratia/common
-%{default_prefix}/gratia/common/GratiaPing
-%{default_prefix}/gratia/common/DebugPrint
-%{default_prefix}/gratia/common/GetProbeConfigAttribute
-%{default_prefix}/gratia/common/cron_check
+%dir %{_datadir}/gratia/common
+%{_datadir}/gratia/common/GratiaPing
+%{_datadir}/gratia/common/DebugPrint
+%{_datadir}/gratia/common/GetProbeConfigAttribute
+%{_datadir}/gratia/common/cron_check
 #system.d tmp files
 %{_tmpfilesdir}/gratia.conf
 # %description common2
@@ -278,17 +273,17 @@ fi
 # %files common2
 # %defattr(-,root,root,-)
 #%doc common2/README
-%doc %{default_prefix}/gratia/common2/README
+%doc %{_datadir}/gratia/common2/README
 # this is in common: %%{python_sitelib}/gratia/__init__.py*
 %{python_sitelib}/gratia/common2
 # executables:
-%dir %{default_prefix}/gratia/common2
-# %%{default_prefix}/gratia/common2/alarm.py
-# %%{default_prefix}/gratia/common2/checkpoint.py
-# %%{default_prefix}/gratia/common2/uuid_replacement.py
-# %%{default_prefix}/gratia/common2/meter.py
-# %%{default_prefix}/gratia/common2/pginput.py
-# %%{default_prefix}/gratia/common2/probeinput.py
+%dir %{_datadir}/gratia/common2
+# %%{_datadir}/gratia/common2/alarm.py
+# %%{_datadir}/gratia/common2/checkpoint.py
+# %%{_datadir}/gratia/common2/uuid_replacement.py
+# %%{_datadir}/gratia/common2/meter.py
+# %%{_datadir}/gratia/common2/pginput.py
+# %%{_datadir}/gratia/common2/probeinput.py
 
 %package condor-ap
 Summary: A probe accounting for payload jobs on an HTCondor Access Point
@@ -305,10 +300,10 @@ The HTCondor access point probe for the Gratia OSG accounting system.
 
 %files condor-ap
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/condor-ap/README
-%dir %{default_prefix}/gratia/condor-ap
-%{default_prefix}/gratia/condor-ap/condor_meter
-%{default_prefix}/gratia/condor-ap/ProbeConfig
+%doc %{_datadir}/gratia/condor-ap/README
+%dir %{_datadir}/gratia/condor-ap
+%{_datadir}/gratia/condor-ap/condor_meter
+%{_datadir}/gratia/condor-ap/ProbeConfig
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor/gratia/data/quarantine
@@ -338,12 +333,12 @@ Contributed by Greg Sharp and the dCache project.
 %files dcache-transfer
 %defattr(-,root,root,-)
 %{_initrddir}/gratia-dcache-transfer
-%doc %{default_prefix}/gratia/dCache-transfer/README-experts-only.txt
-%doc %{default_prefix}/gratia/dCache-transfer/README
-%{default_prefix}/gratia/dCache-transfer/ProbeConfig
-%{default_prefix}/gratia/dCache-transfer/gratia-dcache-transfer
+%doc %{_datadir}/gratia/dCache-transfer/README-experts-only.txt
+%doc %{_datadir}/gratia/dCache-transfer/README
+%{_datadir}/gratia/dCache-transfer/ProbeConfig
+%{_datadir}/gratia/dCache-transfer/gratia-dcache-transfer
 %{python_sitelib}/gratia/dcache_transfer
-%dir %{default_prefix}/gratia/dCache-transfer
+%dir %{_datadir}/gratia/dCache-transfer
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-transfer/ProbeConfig
 
 %post dcache-transfer
@@ -363,8 +358,8 @@ Contributed by University of Nebraska Lincoln.
 %files services
 %defattr(-,root,root,-)
 %{python_sitelib}/gratia/services
-%{default_prefix}/gratia/services/storageReport
-%dir %{default_prefix}/gratia/services
+%{_datadir}/gratia/services/storageReport
+%dir %{_datadir}/gratia/services
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/services/ProbeConfig
 
 %post services
@@ -383,11 +378,11 @@ Gratia OSG accounting system probe for providing VM accounting.
 %files onevm
 %defattr(-,root,root,-)
 %{python_sitelib}/gratia/onevm
-%{default_prefix}/gratia/onevm/onevm_probe.cron.sh
-%dir %{default_prefix}/gratia/onevm
-%{default_prefix}/gratia/onevm/ProbeConfig
-%{default_prefix}/gratia/onevm/VMGratiaProbe
-%{default_prefix}/gratia/onevm/query_one_lite.rb
+%{_datadir}/gratia/onevm/onevm_probe.cron.sh
+%dir %{_datadir}/gratia/onevm
+%{_datadir}/gratia/onevm/ProbeConfig
+%{_datadir}/gratia/onevm/VMGratiaProbe
+%{_datadir}/gratia/onevm/query_one_lite.rb
 
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/onevm/ProbeConfig
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-onevm.cron
@@ -411,9 +406,9 @@ osg pilot container probe
 
 %files osg-pilot-container
 %defattr(-,root,root,-)
-%dir %{default_prefix}/gratia/osg-pilot-container
-%{default_prefix}/gratia/osg-pilot-container/osgpilot_meter
-%{default_prefix}/gratia/osg-pilot-container/ProbeConfig
+%dir %{_datadir}/gratia/osg-pilot-container
+%{_datadir}/gratia/osg-pilot-container/osgpilot_meter
+%{_datadir}/gratia/osg-pilot-container/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/osg-pilot-container/ProbeConfig
 %dir %{_sharedstatedir}/gratia/osg-pilot-container
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-osg-pilot-container.cron
@@ -430,10 +425,10 @@ The HTCondor-CE probe for the Gratia OSG accounting system
 
 %files htcondor-ce
 %defattr(-,root,root,-)
-%dir %{default_prefix}/gratia/htcondor-ce
-%doc %{default_prefix}/gratia/htcondor-ce/README
-%{default_prefix}/gratia/htcondor-ce/condor_meter
-%{default_prefix}/gratia/htcondor-ce/ProbeConfig
+%dir %{_datadir}/gratia/htcondor-ce
+%doc %{_datadir}/gratia/htcondor-ce/README
+%{_datadir}/gratia/htcondor-ce/condor_meter
+%{_datadir}/gratia/htcondor-ce/ProbeConfig
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/data/quarantine
 %attr(0755,condor,condor) %dir %{_sharedstatedir}/condor-ce/gratia/tmp
@@ -460,11 +455,11 @@ The Enstore transfer probe for the Gratia OSG accounting system.
 
 %files enstore-transfer
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-transfer/README.html
-%dir %{default_prefix}/gratia/enstore-transfer
-%{default_prefix}/gratia/enstore-transfer/enstore-transfer
+%doc %{_datadir}/gratia/enstore-transfer/README.html
+%dir %{_datadir}/gratia/enstore-transfer
+%{_datadir}/gratia/enstore-transfer/enstore-transfer
 
-%{default_prefix}/gratia/enstore-transfer/ProbeConfig
+%{_datadir}/gratia/enstore-transfer/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-transfer/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-transfer.cron
@@ -485,11 +480,11 @@ The Enstore storage probe for the Gratia OSG accounting system.
 
 %files enstore-storage
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-storage/README.html
-%dir %{default_prefix}/gratia/enstore-storage
-%{default_prefix}/gratia/enstore-storage/enstore-storage
+%doc %{_datadir}/gratia/enstore-storage/README.html
+%dir %{_datadir}/gratia/enstore-storage
+%{_datadir}/gratia/enstore-storage/enstore-storage
 
-%{default_prefix}/gratia/enstore-storage/ProbeConfig
+%{_datadir}/gratia/enstore-storage/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-storage/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-storage.cron
@@ -510,11 +505,11 @@ The Enstore tape drive probe for the Gratia OSG accounting system.
 
 %files enstore-tapedrive
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/enstore-tapedrive/README.html
-%dir %{default_prefix}/gratia/enstore-tapedrive
-%{default_prefix}/gratia/enstore-tapedrive/enstore-tapedrive
+%doc %{_datadir}/gratia/enstore-tapedrive/README.html
+%dir %{_datadir}/gratia/enstore-tapedrive
+%{_datadir}/gratia/enstore-tapedrive/enstore-tapedrive
 
-%{default_prefix}/gratia/enstore-tapedrive/ProbeConfig
+%{_datadir}/gratia/enstore-tapedrive/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/enstore-tapedrive/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-enstore-tapedrive.cron
@@ -537,11 +532,11 @@ The dCache storagegroup probe for the Gratia OSG accounting system.
 
 %files dcache-storagegroup
 %defattr(-,root,root,-)
-%doc %{default_prefix}/gratia/dCache-storagegroup/README.html
-%dir %{default_prefix}/gratia/dCache-storagegroup
-%{default_prefix}/gratia/dCache-storagegroup/dcache-storagegroup
+%doc %{_datadir}/gratia/dCache-storagegroup/README.html
+%dir %{_datadir}/gratia/dCache-storagegroup
+%{_datadir}/gratia/dCache-storagegroup/dcache-storagegroup
 
-%{default_prefix}/gratia/dCache-storagegroup/ProbeConfig
+%{_datadir}/gratia/dCache-storagegroup/ProbeConfig
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/gratia/dCache-storagegroup/ProbeConfig
 
 %config(noreplace) %{_sysconfdir}/cron.d/gratia-probe-dcache-storagegroup.cron
@@ -592,6 +587,7 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %changelog
 * Wed Jun 29 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.3-1
 - Restore ProbeConfig symlinks, and other dcache-transfer fixes (SOFTWARE-5241)
+- Replace default_prefix with _datadir; drop relocatable Prefixes
 
 * Wed Jun 22 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.2-1
 - Add back missing services sub-package (SOFTWARE-5236)
