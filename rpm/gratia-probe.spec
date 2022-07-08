@@ -123,6 +123,9 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
     PROBE_DIR=$RPM_BUILD_ROOT/%{_sysconfdir}/gratia/$probe
     install -d $PROBE_DIR
     install -m 644 common/ProbeConfigTemplate.osg $PROBE_DIR/ProbeConfig
+
+    # the default ProbeConfig is relative to the probe's working dir;
+    # provide a symlink from here to the real one under /etc/gratia/$probe/
     ln -s %{_sysconfdir}/gratia/$probe/ProbeConfig \
           $RPM_BUILD_ROOT/%{_datadir}/gratia/$probe/ProbeConfig
 
