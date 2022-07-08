@@ -47,7 +47,12 @@ min_start_time = time.time() - 120*86400
 
 # The preferred order of JobAd attributes to use for determining the number of
 # processors available to the pilot or payload job
-PROC_ATTRS = ['MachineAttrCpus0', 'MATCH_EXP_JOB_GLIDEIN_Cpus', 'RequestCpus']
+PROC_ATTRS = [
+    'MachineAttrCpus0',
+    'MATCH_EXP_JOB_GLIDEIN_Cpus',
+    'CpusProvisioned',
+    'RequestCpus'
+]
 
 # --- classes -------------------------------------------------------------------------
 
