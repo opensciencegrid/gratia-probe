@@ -590,6 +590,8 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %changelog
 * Fri Jul 08 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.7.0-1
 - Prefer CpusProvisioned over RequestCpus if set (SOFTWARE-5246)
+- Prefer MachineAttrGLIDEIN_ResourceName0 for ResourceName calculation;
+- Include GLIDEIN_ResourceName in SYSTEM_JOB_MACHINE_ATTRS (SOFTWARE-5249)
 
 * Wed Jun 29 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.6.3-1
 - Restore ProbeConfig symlinks, and other dcache-transfer fixes (SOFTWARE-5241)
