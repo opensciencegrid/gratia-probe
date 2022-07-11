@@ -54,6 +54,11 @@ PROC_ATTRS = [
     'RequestCpus'
 ]
 
+RESOURCE_NAME_ATTRS = [
+    'MachineAttrGLIDEIN_ResourceName0',
+    'MATCH_EXP_JOBGLIDEIN_ResourceName'
+]
+
 # --- classes -------------------------------------------------------------------------
 
 class IgnoreClassadException(Exception):
@@ -500,25 +505,34 @@ def cream_match(match, desired):
     match2 = match2.strip()
     return match2 == desired
 
+
+def get_classad_resource_name(classad):
+    for attr in RESOURCE_NAME_ATTRS:
+        if attr in classad:
+            return classad[attr]
+    return None
+
+
 split_re = re.compile(",\s*")
 def determine_host_description(classad):
     """
     Determine the value of the host description field.
     This particular field is abused to report glideinWMS-based jobs by
-    looking for a particular attribute (MATCH_EXP_JOBGLIDEIN_ResourceName)
+    looking for a particular attribute (MachineAttrGLIDEIN_ResourceName0 or
+    MATCH_EXP_JOBGLIDEIN_ResourceName)
 
     Further, there is logic here from the AAA project to determine if the job
     was an overflow job and adds a "-overflow" suffix.
 
     If there's no special host description, this returns None.
     """
-    try:
-        if classad['MATCH_EXP_JOBGLIDEIN_ResourceName'] == 'Local Job':
-            host_descr = GratiaCore.Config.get_SiteName()
-        else:
-            host_descr = classad['MATCH_EXP_JOBGLIDEIN_ResourceName']
-    except KeyError:
+    resource_name = get_classad_resource_name(classad)
+    if resource_name is None:
         return None
+    elif resource_name == 'Local Job':
+        host_descr = GratiaCore.Config.get_SiteName()
+    else:
+        host_descr = classad[attr]
 
     # Check first for SE-based matching.
     if ('DESIRED_SEs' not in classad) or ('MATCH_GLIDEIN_SEs' not in classad):
@@ -576,7 +590,7 @@ def classadToJUR(classad):
     resource_type = "Batch"
     if classad.get("GridMonitorJob", False):
         resource_type = "GridMonitor"
-    elif 'MATCH_EXP_JOBGLIDEIN_ResourceName' in classad:
+    elif get_classad_resource_name(classad) is not None:
         resource_type = 'BatchPilot'
     r = Gratia.UsageRecord(resource_type)
 
@@ -730,12 +744,13 @@ def classadToJUR(classad):
         else:
             r.Grid("Local", "GratiaJobOrigin not GRAM")
 
-    if 'MATCH_EXP_JOBGLIDEIN_ResourceName' in classad:
-        if campus_factory_usage.search(classad['MATCH_EXP_JOBGLIDEIN_ResourceName']):
+    resource_name = get_classad_resource_name(classad)
+    if resource_name is not None:
+        if campus_factory_usage.search(resource_name):
             r.Grid("Campus", "Campus Factory Usage")
-        elif campus_flock_usage.search(classad['MATCH_EXP_JOBGLIDEIN_ResourceName']):
+        elif campus_flock_usage.search(resource_name):
             r.Grid("Campus", "Campus Flocking Usage")
-        elif classad['MATCH_EXP_JOBGLIDEIN_ResourceName'] == "Local Job":
+        elif resource_name == "Local Job":
             r.Grid("Local", "Local execution based on ResourceName")
 
     if 'JobUniverse' in classad:
