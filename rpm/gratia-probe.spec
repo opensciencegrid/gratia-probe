@@ -189,6 +189,11 @@ git_commit_id=$(gzip -d < %{SOURCE0} | git get-tar-commit-id)
   rm $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-ce.conf \
      $RPM_BUILD_ROOT%{_datadir}/gratia/htcondor-ce/50-gratia-condor.conf
 
+  # Remove unused ProbeConfig symlinks for non-probe packs
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfig
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/common2/ProbeConfig
+  rm $RPM_BUILD_ROOT%{_datadir}/gratia/services/ProbeConfig
+
   # Remove remaining cruft
   rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/gratia/common
   rm     $RPM_BUILD_ROOT%{_datadir}/gratia/common/ProbeConfigTemplate.osg
