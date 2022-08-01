@@ -63,11 +63,10 @@ def sendRecords(fn):
     totals_by_sg={}
     for pg,item1 in user_space.items():
         storage_groups[pg] = {}
-        for pool, item2 in item1.items():
-            for sg, value in item2.items():
-                # All probes report bytes. This one should too (value instead of value/1024/1024)
-                storage_groups[pg][sg] = storage_groups[pg].get(sg, 0) + int(value)
-                totals_by_sg[sg] = totals_by_sg.get(sg, 0) + int(value)
+        for sg, value in item1.items():
+            # All probes report bytes. This one should too (value instead of value/1024/1024)
+            storage_groups[pg][sg] = storage_groups[pg].get(sg, 0) + int(value)
+            totals_by_sg[sg] = totals_by_sg.get(sg, 0) + int(value)
 
     site = GratiaCore.Config.getConfigAttribute("SiteName")
     version = "1.2.3"
