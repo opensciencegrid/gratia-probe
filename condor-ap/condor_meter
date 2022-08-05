@@ -508,8 +508,9 @@ def cream_match(match, desired):
 
 def get_classad_resource_name(classad):
     for attr in RESOURCE_NAME_ATTRS:
-        if attr in classad:
-            return classad[attr]
+        resource_name = classad.get(attr)
+        if resource_name:
+            return resource_name
     return None
 
 
