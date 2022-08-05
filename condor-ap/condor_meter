@@ -508,8 +508,9 @@ def cream_match(match, desired):
 
 def get_classad_resource_name(classad):
     for attr in RESOURCE_NAME_ATTRS:
-        if attr in classad:
-            return classad[attr]
+        resource_name = classad.get(attr)
+        if resource_name:
+            return resource_name
     return None
 
 
@@ -532,7 +533,7 @@ def determine_host_description(classad):
     elif resource_name == 'Local Job':
         host_descr = GratiaCore.Config.get_SiteName()
     else:
-        host_descr = classad[attr]
+        host_descr = resource_name
 
     # Check first for SE-based matching.
     if ('DESIRED_SEs' not in classad) or ('MATCH_GLIDEIN_SEs' not in classad):
