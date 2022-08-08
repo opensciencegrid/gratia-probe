@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.7.0
+Version:            2.7.1
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -593,6 +593,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Mon Aug 08 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.7.1-1
+- Fix condor-ap probe bug(s) in resource name detection (SOFTWARE-5285)
+
 * Fri Jul 08 2022 Carl Edquist <edquist@cs.wisc.edu> - 2.7.0-1
 - Prefer CpusProvisioned over RequestCpus if set (SOFTWARE-5246)
 - Prefer MachineAttrGLIDEIN_ResourceName0 for ResourceName calculation;
