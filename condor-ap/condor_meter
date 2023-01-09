@@ -782,6 +782,11 @@ def classadToJUR(classad):
             r.Network(val, storageUnit='b', phaseUnit=networkPhaseUnit, metric=attr, description=attr)
     r.Network(total_network, storageUnit='b', phaseUnit=networkPhaseUnit, metric="total")
 
+    if not setIfExists(r.ExecutePool, classad, 'LastRemotePool', "Pool Host"):
+        collector_host = get_collector_host()
+        if collector_host:
+            r.ExecutePool(collector_host, "Pool Host from COLLECTOR_HOST")
+
     # Additional Pegasus attributes
     if 'pegasus_root_wf_uuid' in classad:
         r.AdditionalInfo("PegasusRootWFUUID", classad['pegasus_root_wf_uuid'])
@@ -889,6 +894,49 @@ def htcondor_configured():
         return True
     except subprocess.CalledProcessError:
         DebugPrint(-1, "WARNING: Can't get information on PER_JOB_HISTORY_DIR, " \
+                       "condor_config_val returned non-zero exit code")
+    return False
+
+
+def get_collector_host():
+    """
+    Query for COLLECTOR_HOST
+    """
+    try:
+        path = GratiaCore.Config.getConfigAttribute("CondorLocation")
+        if g_probe_config is not None and 'htcondor-ce' in g_probe_config:
+          #condor_config_binary = 'condor_ce_config_val'
+          return None
+        else:
+          condor_config_binary = 'condor_config_val'
+        condor_config_path = os.path.join(path, "bin", condor_config_binary)
+        condor_config_val_args = ['COLLECTOR_HOST']
+
+        if (os.path.exists(condor_config_path) and
+            os.path.isfile(condor_config_path)):
+            args = [condor_config_path] + condor_config_val_args
+            cmd = subprocess.Popen(args, stdout=subprocess.PIPE)
+        else:
+            # args needs to be string when shell=True
+            args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
+            cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
+
+        cmd_stdout = cmd_stdout.strip()
+        if cmd.returncode != 0:
+            DebugPrint(-1, "WARNING: condor_config_val COLLECTOR_HOST "
+                           "returned a non-zero return code. Maybe the schedd "
+                           "is overloaded.")
+            return False
+        elif 'Not defined' in cmd_stdout:
+            DebugPrint(-1, "WARNING: COLLECTOR_HOST not set in the default "
+                           "condor schedd config. You may need to change or "
+                           "reload the condor configuration or specify a "
+                           "different CondorScheddName in the Gratia config.")
+            return False
+
+        return cmd_stdout
+    except subprocess.CalledProcessError:
+        DebugPrint(-1, "WARNING: Can't get information on COLLECTOR_HOST, "
                        "condor_config_val returned non-zero exit code")
     return False
 

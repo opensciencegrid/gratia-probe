@@ -303,6 +303,9 @@ class UsageRecord(record.Record):
     def Queue(self, value, description=r''):
         self.RecordData = self.AddToList(self.RecordData, 'Queue', self.Description(description), value)
 
+    def ExecutePool(self, value, description=r''):
+        self.RecordData = self.AddToList(self.RecordData, 'ExecutePool', self.Description(description), value)
+
     def ProjectName(self, value, description=r''):
         self.RecordData = self.AddToList(self.RecordData, 'ProjectName', self.Description(description), value)
 
