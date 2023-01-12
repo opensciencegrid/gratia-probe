@@ -926,18 +926,18 @@ def get_collector_host():
             DebugPrint(-1, "WARNING: condor_config_val COLLECTOR_HOST "
                            "returned a non-zero return code. Maybe the "
                            "condor_master is overloaded.")
-            return False
+            return None
         elif 'Not defined' in cmd_stdout:
             DebugPrint(-1, "WARNING: COLLECTOR_HOST not set in the default "
                            "condor master config. You may need to change or "
                            "reload the condor configuration.")
-            return False
+            return None
 
         return cmd_stdout
     except subprocess.CalledProcessError:
         DebugPrint(-1, "WARNING: Can't get information on COLLECTOR_HOST, "
                        "condor_config_val returned non-zero exit code")
-    return False
+        return None
 
 
 def send_alternate_records(gratia_info):
