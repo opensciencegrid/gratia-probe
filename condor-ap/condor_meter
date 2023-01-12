@@ -924,14 +924,13 @@ def get_collector_host():
         cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
             DebugPrint(-1, "WARNING: condor_config_val COLLECTOR_HOST "
-                           "returned a non-zero return code. Maybe the schedd "
-                           "is overloaded.")
+                           "returned a non-zero return code. Maybe the "
+                           "condor_master is overloaded.")
             return False
         elif 'Not defined' in cmd_stdout:
             DebugPrint(-1, "WARNING: COLLECTOR_HOST not set in the default "
-                           "condor schedd config. You may need to change or "
-                           "reload the condor configuration or specify a "
-                           "different CondorScheddName in the Gratia config.")
+                           "condor master config. You may need to change or "
+                           "reload the condor configuration.")
             return False
 
         return cmd_stdout
