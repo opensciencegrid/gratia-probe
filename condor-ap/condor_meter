@@ -17,6 +17,8 @@ import os.path
 import optparse
 import subprocess
 
+from typing import List
+
 from gratia.common.Gratia import DebugPrint
 from gratia.common.debug import DebugPrintTraceback
 import gratia.common.GratiaCore as GratiaCore
@@ -939,7 +941,7 @@ def get_collector_host():
         return None
 
 
-def get_collector_host_names():
+def get_collector_host_names() -> List[str]:
     """
     Parse one or more host name values from get_collector_host()
     """
