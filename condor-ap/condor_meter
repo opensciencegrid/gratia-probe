@@ -922,6 +922,7 @@ def get_collector_host():
             args = condor_config_binary + ' ' + ' '.join(condor_config_val_args)
             cmd = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
 
+        cmd_stdout = utils.bytes2str(cmd.communicate()[0])
         cmd_stdout = cmd_stdout.strip()
         if cmd.returncode != 0:
             DebugPrint(-1, "WARNING: condor_config_val COLLECTOR_HOST "
