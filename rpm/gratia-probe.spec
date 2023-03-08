@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.8.2
+Version:            2.8.3
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -594,6 +594,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Wed Mar 08 2023 Mátyás Selmeci <matyas@cs.wisc.edu> - 2.8.3-1
+- Fix bugs when getting collector host
+
 * Mon Feb 27 2023 Brian Lin <blin@cs.wisc.edu> - 2.8.2-1
 - Fix bug that prevented CEs from uploading records (SOFTWARE-5504)
 
