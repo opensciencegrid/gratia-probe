@@ -952,13 +952,17 @@ def get_collector_host_names() -> List[str]:
         return hosts
     for host in re.split(r'[ ,]+', collector_host.strip()):
         if host.startswith("<"):
-            # parse alias out of <sinful> string
-            m = re.search(r'&alias=([^&>]+)', ss)
+            # Looks like `host` is not a host, it is a <sinful> string.
+            # Parse alias out of it to get the actual host:port
+            m = re.search(r'&alias=([^&>]+)', host)
             if m:
                 host = m.group(1)
             else:
                 continue
-        hosts.append(host.split(':')[0])
+        if ':' in host:  # `host` is a host:port but we just want the host
+            hosts.append(host.split(':')[0])
+        else:
+            hosts.append(host)
     return hosts
 
 
