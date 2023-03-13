@@ -569,8 +569,8 @@ def OpenNewRecordFile(dirIndex):
             if not os.path.exists(working_dir):
                 try:
                     Mkdir(working_dir)
-                except Exception as e:
-                    DebugPrint(0, 'Warning: Exception caught while creating directory: ' + working_dir + ':' + e)
+                except Exception as exc:
+                    DebugPrint(0, 'Warning: Exception caught while creating directory: ' + working_dir + ':' + exc)
                     continue
             if not os.path.exists(working_dir):
                 DebugPrint(0, 'Warning: Directory does not exist even after attempting a Mkdir: ' + working_dir)
