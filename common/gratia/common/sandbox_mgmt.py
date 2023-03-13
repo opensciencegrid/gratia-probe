@@ -569,11 +569,14 @@ def OpenNewRecordFile(dirIndex):
             if not os.path.exists(working_dir):
                 try:
                     Mkdir(working_dir)
-                except:
+                except Exception as e:
+                    DebugPrint(0, 'Warning: Exception caught while creating directory: ' + working_dir + ':' + e)
                     continue
             if not os.path.exists(working_dir):
+                DebugPrint(0, 'Warning: Directory does not exist even after attempting a Mkdir: ' + working_dir)
                 continue
             if not os.access(working_dir, os.W_OK):
+                DebugPrint(0, 'Warning: Directory is not writable: ' + working_dir)
                 continue
             try:
                 filename = GenerateFilename('r.', working_dir)
@@ -582,7 +585,9 @@ def OpenNewRecordFile(dirIndex):
                 f = open(filename, 'w')
                 dirIndex = index
                 return (f, dirIndex)
-            except:
+            except Exception as e:
+                DebugPrint(0, 'Caught exception while creating file: ', e)
+                DebugPrintTraceback()
                 continue
     else:
         DebugPrint(0, 'DEBUG: Too many pending files, the record has not been backed up')
