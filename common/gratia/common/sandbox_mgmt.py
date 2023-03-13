@@ -585,8 +585,8 @@ def OpenNewRecordFile(dirIndex):
                 f = open(filename, 'w')
                 dirIndex = index
                 return (f, dirIndex)
-            except Exception as e:
-                DebugPrint(0, 'Caught exception while creating file: ', e)
+            except Exception as exc:
+                DebugPrint(0, 'Caught exception while creating file: ', exc)
                 DebugPrintTraceback()
                 continue
     else:
