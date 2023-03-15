@@ -9,7 +9,7 @@ import tarfile
 
 from gratia.common.config import ConfigProxy
 from gratia.common.file_utils import Mkdir, RemoveFile
-from gratia.common.utils import niceNum
+from gratia.common.utils import niceNum, InternalError
 from gratia.common.debug import DebugPrint, DebugPrintTraceback, LogFileName
 import gratia.common.global_state as global_state
 
@@ -570,14 +570,17 @@ def OpenNewRecordFile(dirIndex):
                 try:
                     Mkdir(working_dir)
                 except Exception as exc:
-                    DebugPrint(0, 'Warning: Exception caught while creating directory: ' + working_dir + ':' + exc)
-                    continue
+                    msg = 'Warning: Exception caught while creating directory: ' + working_dir
+                    DebugPrint(0, msg + ':' + exc)
+                    raise InternalError(msg) from exc
             if not os.path.exists(working_dir):
-                DebugPrint(0, 'Warning: Directory does not exist even after attempting a Mkdir: ' + working_dir)
-                continue
+                msg = 'Warning: Directory does not exist even after attempting a Mkdir: ' + working_dir
+                DebugPrint(0, msg)
+                raise InternalError(msg)
             if not os.access(working_dir, os.W_OK):
-                DebugPrint(0, 'Warning: Directory is not writable: ' + working_dir)
-                continue
+                msg = 'Warning: Directory is not writable: ' + working_dir
+                DebugPrint(0, msg)
+                raise InternalError(msg)
             try:
                 filename = GenerateFilename('r.', working_dir)
                 DebugPrint(3, 'Creating file:', filename)
@@ -586,8 +589,9 @@ def OpenNewRecordFile(dirIndex):
                 dirIndex = index
                 return (f, dirIndex)
             except Exception as exc:
-                DebugPrint(0, 'Caught exception while creating file: ', exc)
-                continue
+                msg = 'Caught exception while creating file'
+                DebugPrint(0, msg + ': ', exc)
+                raise InternalError(msg + '. See logs for additional details') from exc
     else:
         DebugPrint(0, 'DEBUG: Too many pending files, the record has not been backed up')
     f = sys.stdout
