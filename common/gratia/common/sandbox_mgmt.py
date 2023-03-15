@@ -587,7 +587,6 @@ def OpenNewRecordFile(dirIndex):
                 return (f, dirIndex)
             except Exception as exc:
                 DebugPrint(0, 'Caught exception while creating file: ', exc)
-                DebugPrintTraceback()
                 continue
     else:
         DebugPrint(0, 'DEBUG: Too many pending files, the record has not been backed up')
