@@ -566,21 +566,13 @@ def OpenNewRecordFile(dirIndex):
 
                     continue
 
-            if not os.path.exists(working_dir):
-                try:
-                    Mkdir(working_dir)
-                except Exception as exc:
-                    msg = 'ERROR: Exception caught while creating directory: ' + working_dir
-                    DebugPrint(0, msg + ':' + exc)
-                    raise InternalError(msg) from exc
-            if not os.path.exists(working_dir):
-                msg = 'ERROR: Directory does not exist even after attempting a Mkdir: ' + working_dir
-                DebugPrint(0, msg)
-                raise InternalError(msg)
-            if not os.access(working_dir, os.W_OK):
-                msg = 'ERROR: Directory is not writable: ' + working_dir
-                DebugPrint(0, msg)
-                raise InternalError(msg)
+            try:
+                Mkdir(working_dir)
+            except Exception as exc:
+                msg = 'ERROR: Exception caught while creating directory: ' + working_dir
+                DebugPrint(0, msg + ':' + exc)
+                raise InternalError(msg) from exc
+
             try:
                 filename = GenerateFilename('r.', working_dir)
                 DebugPrint(3, 'Creating file:', filename)
