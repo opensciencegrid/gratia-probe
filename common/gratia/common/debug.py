@@ -7,7 +7,7 @@ import time
 import syslog
 import traceback
 
-from gratia.common.file_utils import Mkdir
+from gratia.common.utils import InternalError
 
 __logFileIsWriteable__ = True
 __quiet__ = 0
@@ -95,8 +95,11 @@ def LogToFile(message):
 
         # Ensure the 'logs' folder exists
 
-        if os.path.exists(getGratiaConfig().get_LogFolder()) == 0:
-            Mkdir(getGratiaConfig().get_LogFolder())
+        log_dir = getGratiaConfig().get_LogFolder()
+        try:
+            os.makedirs(getGratiaConfig().get_LogFolder(), exist_ok=True)
+        except OSError as exc:
+            raise InternalError(f'ERROR: failed to create log directory: {log_dir}') from exc
 
         filename = LogFileName()
 

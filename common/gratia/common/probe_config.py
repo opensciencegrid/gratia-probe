@@ -16,7 +16,6 @@ import gratia.common.connect_utils as connect_utils
 import gratia.common.utils as utils
 import gratia.common.bundle as bundle
 
-from gratia.common.file_utils import Mkdir
 from gratia.common.debug import DebugPrint, DebugPrintTraceback
 
 __certrequestRejected__ = False
@@ -162,11 +161,22 @@ class ProbeConfiguration:
             # First create any sub-directory if needed.
 
             keydir = os.path.dirname(keyfile)
-            if keydir != r'' and os.path.exists(keydir) == 0:
-                Mkdir(keydir)
+            if keydir:
+                try:
+                    os.makedirs(keydir, exist_ok=True)
+                except OSError as exc:
+                    msg = f'ERROR: failed to create key directory: {keydir}'
+                    DebugPrint(0, msg + ':' + exc)
+                    raise utils.InternalError(msg) from exc
+
             certdir = os.path.dirname(certfile)
-            if certdir != r'' and os.path.exists(certdir) == 0:
-                Mkdir(certdir)
+            if certdir:
+                try:
+                    os.makedirs(certdir, exist_ok=True)
+                except OSError as exc:
+                    msg = f'ERROR: failed to create certificate directory: {certdir}'
+                    DebugPrint(0, msg + ':' + exc)
+                    raise utils.InternalError(msg) from exc
 
             # and then save the pem files
 
