@@ -8,7 +8,7 @@ import shutil
 import tarfile
 
 from gratia.common.config import ConfigProxy
-from gratia.common.file_utils import Mkdir, RemoveFile
+from gratia.common.file_utils import RemoveFile
 from gratia.common.utils import niceNum, InternalError
 from gratia.common.debug import DebugPrint, DebugPrintTraceback, LogFileName
 import gratia.common.global_state as global_state
@@ -39,7 +39,14 @@ def QuarantineFile(filename, isempty):
         else:
             toppath = pardirname
     quarantine = os.path.join(toppath, 'quarantine')
-    Mkdir(quarantine)
+
+    try:
+        os.makedirs(quarantine, exist_ok=True)
+    except OSError as exc:
+        msg = f'ERROR: Failed to create quarantine directory: {quarantine}'
+        DebugPrint(0, msg + ':' + exc)
+        raise InternalError(msg) from exc
+
     DebugPrint(0, 'Putting a quarantine file in: ' + quarantine)
     DebugPrint(3, 'Putting a file in quarantine: ' + os.path.basename(filename))
     if isempty:
@@ -243,7 +250,13 @@ def DirListAdd(value):
 def InitDirList():
     '''Initialize the list of backup directories'''
 
-    Mkdir(Config.get_WorkingFolder())
+    working_dir = Config.get_WorkingFolder()
+    try:
+        os.makedirs(working_dir, exist_ok=True)
+    except OSError as exc:
+        msg = f'ERROR: Failed to create working directory: {working_dir}'
+        DebugPrint(0, msg + ':' + exc)
+        raise InternalError(msg) from exc
 
     DirListAdd(Config.get_WorkingFolder())
     DebugPrint(1, 'List of backup directories: ', backupDirList)
@@ -369,7 +382,14 @@ def SearchOutstandingRecord():
             if UncompressOutbox(stagedfile, stagedoutbox):
                 RemoveFile(stagedfile)
             else:
-                Mkdir(os.path.join(staged, 'quarantine'))
+                quarantine_dir = os.path.join(staged, 'quarantine')
+                try:
+                    os.makedirs(quarantine_dir, exist_ok=True)
+                except OSError as exc:
+                    msg = f'ERROR: Failed to create quarantine directory: {quarantine_dir}'
+                    DebugPrint(0, msg + ':' + exc)
+                    raise InternalError(msg) from exc
+
                 os.rename(stagedfile, os.path.join(staged, 'quarantine', os.path.basename(stagedfile)))
 
             outstandingStagedTarCount += -1
@@ -460,7 +480,12 @@ def CompressOutbox(probe_dir, outbox, outfiles):
     global outstandingStagedTarCount
 
     staged_store = os.path.join(probe_dir, 'staged', 'store')
-    Mkdir(staged_store)
+    try:
+        os.makedirs(staged_store, exist_ok=True)
+    except OSError as exc:
+        msg = f'ERROR: Failed to create staged directory: {staged_store}'
+        DebugPrint(0, msg + ':' + exc)
+        raise InternalError(msg) from exc
 
     staging_name = GenerateFilename('tz.', staged_store)
     DebugPrint(1, 'Compressing outbox in tar.bz2 file: ' + staging_name)
@@ -567,8 +592,8 @@ def OpenNewRecordFile(dirIndex):
                     continue
 
             try:
-                Mkdir(working_dir)
-            except Exception as exc:
+                os.makedirs(working_dir, exist_ok=True)
+            except OSError as exc:
                 msg = 'ERROR: Exception caught while creating directory: ' + working_dir
                 DebugPrint(0, msg + ':' + exc)
                 raise InternalError(msg) from exc

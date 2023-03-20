@@ -6,7 +6,7 @@ import gratia.common.config as config
 import gratia.common.utils as utils
 import gratia.common.xml_utils as xml_utils
 
-from gratia.common.file_utils import Mkdir, RemoveFile
+from gratia.common.file_utils import RemoveFile
 from gratia.common.debug import DebugPrint
 
 Config = config.ConfigProxy()
@@ -184,7 +184,13 @@ class Record(object):
         ''' Copy to a quarantine directories any of the input files '''
         
         quarantinedir = os.path.join(Config.get_DataFolder(),"quarantine")
-        Mkdir(quarantinedir)
+        try:
+            os.makedirs(quarantinedir, exist_ok=True)
+        except OSError as exc:
+            msg = f'ERROR: Failed to create quarantine directory: {quarantinedir}'
+            DebugPrint(0, msg + ':' + exc)
+            raise utils.InternalError(msg) from exc
+
         for filename in self.TransientInputFiles:
             DebugPrint(1, 'Moving transient input file: '+filename+' to quarantine in '+quarantinedir)
             shutil.copy2(filename,quarantinedir)
