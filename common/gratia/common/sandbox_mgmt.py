@@ -5,6 +5,7 @@ import sys
 import glob
 import time
 import shutil
+import tempfile
 import tarfile
 
 from gratia.common.config import ConfigProxy
@@ -409,18 +410,8 @@ def SearchOutstandingRecord():
 
 def GenerateFilename(prefix, current_dir):
     '''Generate a filename of the for current_dir/prefix.$pid.ConfigFragment.gratia.xml__Unique'''
-    filename = prefix + str(global_state.RecordPid) + '.' + Config.get_GratiaExtension() \
-        + '__XXXXXXXXXX'
-    filename = os.path.join(current_dir, filename)
-    mktemp_pipe = os.popen('mktemp -q "' + filename + '"')
-    if mktemp_pipe != None:
-        filename = mktemp_pipe.readline()
-        mktemp_pipe.close()
-        filename = filename.strip()
-        if filename != r'':
-            return filename
-
-    raise IOError
+    fn_prefix = f'{prefix}.{global_state.RecordPid}.{Config.get_GratiaExtension()}__'
+    return tempfile.NamedTemporaryFile(prefix=fn_prefix, dir=current_dir, delete=False, mode='w')
 
 def UncompressOutbox(staging_name, target_dir):
 
@@ -599,12 +590,11 @@ def OpenNewRecordFile(dirIndex):
                 raise InternalError(msg) from exc
 
             try:
-                filename = GenerateFilename('r.', working_dir)
-                DebugPrint(3, 'Creating file:', filename)
-                outstandingRecordCount += 1
-                f = open(filename, 'w')
-                dirIndex = index
-                return (f, dirIndex)
+                with GenerateFilename('r', working_dir) as recordfile:
+                    DebugPrint(3, 'Creating file:', recordfile.name)
+                    outstandingRecordCount += 1
+                    dirIndex = index
+                    return (recordfile, dirIndex)
             except Exception as exc:
                 msg = 'ERROR: Caught exception while creating file'
                 DebugPrint(0, msg + ': ', exc)
