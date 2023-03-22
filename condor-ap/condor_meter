@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import os
+import pwd
 import re
 import sys
 import time
@@ -189,8 +190,31 @@ def get_num_procs(job_ad):
 
     return procs
 
+
+def become_condor():
+    """condor_meter is intended to run as a SchedD cron, i.e. as the 'condor' user.
+    """
+    try:
+        condor_user = pwd.getpwnam('condor')
+    except KeyError as exc:
+        raise utils.InternalError("ERROR: could not find the 'condor' user") from exc
+
+    try:
+        os.setgid(condor_user.pw_gid)
+        os.setuid(condor_user.pw_uid)
+    except PermissionError as exc:
+        raise utils.InternalError("ERROR: failed to drop privileges to the 'condor' user") from exc
+
+
 condor_history_re = re.compile("^history.(\d+)\.(\d+)")
 def main():
+    if os.getuid() == 0:
+        try:
+            become_condor()
+        except (KeyError, PermissionError) as exc:
+            print(exc, file=sys.stderr)
+            sys.exit(1)
+
     try:
         opts, dirs = parse_opts()
     except SystemExit:
