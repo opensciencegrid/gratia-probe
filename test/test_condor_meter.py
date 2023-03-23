@@ -7,8 +7,8 @@ import classad
 from condor_ap import condor_meter
 
 
-class CondorMeterTests(unittest.TestCase):
-    """Unit tests for the HTCondor Gratia probe
+class ProcessorCountTests(unittest.TestCase):
+    """Tests for processor counting logic
     """
 
     def test_proc_attr_order(self):
