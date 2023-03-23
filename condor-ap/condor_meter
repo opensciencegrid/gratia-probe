@@ -29,6 +29,7 @@ from gratia.common import file_utils
 from gratia.common import config
 from gratia.common import utils
 
+import htcondor
 import classad as classadLib
 
 # HACK: allow case-insensitive `attr in ad` checks
@@ -191,17 +192,28 @@ def get_num_procs(job_ad):
     return procs
 
 
-def become_condor():
+def become_condor(condor_service: str = ""):
     """condor_meter is intended to run as a SchedD cron, i.e. as the 'condor' user.
+    condor_service: if 'htcondor-ce' determine the condor user for HTCondor-CE, otherwise use the default condor config
     """
     try:
-        condor_user = pwd.getpwnam('condor')
-    except KeyError as exc:
-        raise utils.InternalError("ERROR: could not find the 'condor' user") from exc
+        if condor_service == 'htcondor-ce':
+            os.environ.setdefault("CONDOR_CONFIG", "/etc/condor-ce/condor_config")
+            htcondor.reload_config()
+
+        condor_uid, condor_gid = htcondor.param['CONDOR_IDS'].split(".")
+    except KeyError:
+        # When custom HTCondor IDs are not specified, they are using the 'condor' user
+        try:
+            condor_user = pwd.getpwnam('condor')
+            condor_gid = condor_user.pw_gid
+            condor_uid = condor_user.pw_uid
+        except KeyError as exc:
+            raise utils.InternalError("ERROR: could not find the 'condor' user") from exc
 
     try:
-        os.setgid(condor_user.pw_gid)
-        os.setuid(condor_user.pw_uid)
+        os.setgid(condor_gid)
+        os.setuid(condor_uid)
     except PermissionError as exc:
         raise utils.InternalError("ERROR: failed to drop privileges to the 'condor' user") from exc
 
@@ -210,7 +222,7 @@ condor_history_re = re.compile("^history.(\d+)\.(\d+)")
 def main():
     if os.getuid() == 0:
         try:
-            become_condor()
+            become_condor(probe_name)  # either 'htcondor-ce' or 'condor-ap'
         except (KeyError, PermissionError) as exc:
             sys.exit(exc)
 
