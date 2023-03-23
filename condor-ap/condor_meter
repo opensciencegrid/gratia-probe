@@ -212,8 +212,7 @@ def main():
         try:
             become_condor()
         except (KeyError, PermissionError) as exc:
-            print(exc, file=sys.stderr)
-            sys.exit(1)
+            sys.exit(exc)
 
     try:
         opts, dirs = parse_opts()
