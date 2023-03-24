@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import os
+import pwd
 import re
 import sys
 import time
@@ -21,13 +22,14 @@ from typing import List
 
 from gratia.common.Gratia import DebugPrint
 from gratia.common.debug import DebugPrintTraceback
-import gratia.common.GratiaCore as GratiaCore
-import gratia.common.GratiaWrapper as GratiaWrapper
-import gratia.common.Gratia as Gratia
-import gratia.common.file_utils as file_utils
-import gratia.common.config as config
-import gratia.common.utils as utils
+from gratia.common import GratiaCore
+from gratia.common import GratiaWrapper
+from gratia.common import Gratia
+from gratia.common import file_utils
+from gratia.common import config
+from gratia.common import utils
 
+import htcondor
 import classad as classadLib
 
 # HACK: allow case-insensitive `attr in ad` checks
@@ -189,8 +191,47 @@ def get_num_procs(job_ad):
 
     return procs
 
+
+def become_condor(condor_service: str = ""):
+    """condor_meter is intended to run as a SchedD cron, i.e. as the 'condor' user.
+    condor_service: if 'htcondor-ce' determine the condor user for HTCondor-CE, otherwise use the default condor config
+    """
+    try:
+        if condor_service == 'htcondor-ce':
+            os.environ.setdefault("CONDOR_CONFIG", "/etc/condor-ce/condor_config")
+            htcondor.reload_config()
+
+        # Admins can specify the UID/GID to run the condor daemons as through the config "CONDOR_IDS = <UID>.<GID>",
+        # e.g. CONDOR_IDS = 1.2
+        condor_ids = htcondor.param['CONDOR_IDS']
+        condor_uid, condor_gid = [int(x) for x in condor_ids.split(".")]
+    except KeyError:
+        # When custom HTCondor IDs are not specified, they are using the 'condor' user
+        try:
+            condor_user = pwd.getpwnam('condor')
+            condor_gid = condor_user.pw_gid
+            condor_uid = condor_user.pw_uid
+        except KeyError as exc:
+            raise utils.InternalError("ERROR: could not find the 'condor' user") from exc
+    except ValueError as exc:
+        raise utils.InternalError(f"ERROR: failed to extract UID/GID for the {condor_service} service "
+                                  f"from CONDOR_IDS configuration (value: {condor_ids})") from exc
+
+    try:
+        os.setgid(condor_gid)
+        os.setuid(condor_uid)
+    except PermissionError as exc:
+        raise utils.InternalError("ERROR: failed to drop privileges to the 'condor' user") from exc
+
+
 condor_history_re = re.compile("^history.(\d+)\.(\d+)")
 def main():
+    if os.getuid() == 0:
+        try:
+            become_condor(probe_name)  # either 'htcondor-ce' or 'condor-ap'
+        except (KeyError, PermissionError) as exc:
+            sys.exit(exc)
+
     try:
         opts, dirs = parse_opts()
     except SystemExit:
