@@ -201,7 +201,10 @@ def become_condor(condor_service: str = ""):
             os.environ.setdefault("CONDOR_CONFIG", "/etc/condor-ce/condor_config")
             htcondor.reload_config()
 
-        condor_uid, condor_gid = htcondor.param['CONDOR_IDS'].split(".")
+        # Admins can specify the UID/GID to run the condor daemons as through the config "CONDOR_IDS = <UID>.<GID>",
+        # e.g. CONDOR_IDS = 1.2
+        condor_ids = htcondor.param['CONDOR_IDS']
+        condor_uid, condor_gid = [int(x) for x in condor_ids.split(".")]
     except KeyError:
         # When custom HTCondor IDs are not specified, they are using the 'condor' user
         try:
@@ -210,6 +213,9 @@ def become_condor(condor_service: str = ""):
             condor_uid = condor_user.pw_uid
         except KeyError as exc:
             raise utils.InternalError("ERROR: could not find the 'condor' user") from exc
+    except ValueError as exc:
+        raise utils.InternalError(f"ERROR: failed to extract UID/GID for the {condor_service} service "
+                                  f"from CONDOR_IDS configuration (value: {condor_ids})") from exc
 
     try:
         os.setgid(condor_gid)
