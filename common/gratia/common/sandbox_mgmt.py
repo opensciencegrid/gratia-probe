@@ -478,20 +478,21 @@ def CompressOutbox(probe_dir, outbox, outfiles):
         DebugPrint(0, msg + ':' + exc)
         raise InternalError(msg) from exc
 
-    staging_name = GenerateFilename('tz.', staged_store)
-    DebugPrint(1, 'Compressing outbox in tar.bz2 file: ' + staging_name)
+    with GenerateFilename('tz', staged_store) as temp_tarfile:
+        staging_name = temp_tarfile.name
+        DebugPrint(1, 'Compressing outbox in tar.bz2 file: ' + staging_name)
 
-    try:
-        tar = tarfile.open(staging_name, 'w:bz2')
-    except KeyboardInterrupt:
-        raise   
-    except SystemExit:
-        raise   
-    except Exception as e:
-        DebugPrint(0, 'Warning: Exception caught while opening tar.bz2 file: ' + staging_name + ':')
-        DebugPrint(0, 'Caught exception: ', e)
-        DebugPrintTraceback()
-        return False
+        try:
+            tar = tarfile.open(staging_name, 'w:bz2')
+        except KeyboardInterrupt:
+            raise
+        except SystemExit:
+            raise
+        except Exception as e:
+            DebugPrint(0, 'Warning: Exception caught while opening tar.bz2 file: ' + staging_name + ':')
+            DebugPrint(0, 'Caught exception: ', e)
+            DebugPrintTraceback()
+            return False
 
     try:
         for f in outfiles:
