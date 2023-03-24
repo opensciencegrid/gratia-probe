@@ -52,6 +52,11 @@ class BecomeCondorTests(unittest.TestCase):
         self.mock_user.pw_gid = 9618
         self.mock_user.pw_uid = 9619
 
+    def tearDown(self):
+        self.mock_getpwnam.stop()
+        self.mock_setgid.stop()
+        self.mock_setuid.stop()
+
     def test_success(self):
         """Everything is as expected
         """
