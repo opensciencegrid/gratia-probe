@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.8.3
+Version:            2.8.4
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -325,6 +325,13 @@ The HTCondor access point probe for the Gratia OSG accounting system.
 %post condor-ap
 %customize_probeconfig -d condor-ap
 
+# Fix directory ownership if users have run condor_meter as root (SOFTWARE-5531)
+condor_ids=$(python3 -c 'import gratia.common.condor as condor; \
+             print(":".join([str(x) for x in condor.get_condor_ids("condor-ap")]))')
+for dirname in $(awk -F '=' '/Folder=/ {print $2}' /etc/gratia/htcondor-ce/ProbeConfig | tr -d \"); do
+    chown -R "$condor_ids" "$dirname"
+done
+
 %package dcache-transfer
 Summary: Gratia OSG accounting system probe for dCache billing.
 Group: Applications/System
@@ -449,6 +456,12 @@ The HTCondor-CE probe for the Gratia OSG accounting system
 %post htcondor-ce
 %customize_probeconfig -d htcondor-ce
 
+# Fix directory ownership if users have run condor_meter as root (SOFTWARE-5531)
+condor_ids=$(python3 -c 'import gratia.common.condor as condor; \
+             print(":".join([str(x) for x in core.get_condor_ids("htcondor-ce")]))')
+for dirname in $(awk -F '=' '/Folder=/ {print $2}' /etc/gratia/htcondor-ce/ProbeConfig | tr -d \"); do
+    chown -R "$condor_ids" "$dirname"
+done
 
 # Enstore probes: enstore-transfer, enstore-storage, enstore-tapedrive
 
@@ -594,6 +607,12 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Mon Mar 27 2023 Brian Lin <blin@cs.wisc.edu.> -  2.8.4-1
+- HTCondor AP and CE probes now drop privileges to the 'condor' user
+  if run as 'root' (SOFTWARE-5531)
+- Improve logging and failure modes when encountering unwriteable
+  directories (SOFTWARE-5531)
+
 * Wed Mar 08 2023 Mátyás Selmeci <matyas@cs.wisc.edu> - 2.8.3-1
 - Fix bugs when getting collector host
 
