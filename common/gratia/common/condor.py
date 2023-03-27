@@ -44,9 +44,6 @@ g_probe_config = None
 prog_version = "%%%RPMVERSION%%%"
 max_batch_size = 500
 
-probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
-probe_config = "/etc/gratia/%s/ProbeConfig" % probe_name
-
 min_start_time = time.time() - 120*86400
 
 # The preferred order of JobAd attributes to use for determining the number of
@@ -72,7 +69,9 @@ class IgnoreClassadException(Exception):
 # --- functions -----------------------------------------------------------------------
 
 
-def parse_opts():
+def parse_opts(probe_name):
+
+    probe_config = f"/etc/gratia/{probe_name}/ProbeConfig"
 
     parser = optparse.OptionParser(usage="""%prog [options] dir1 dir2 
 
@@ -233,7 +232,7 @@ def become_condor(condor_service: str = ""):
 
 
 condor_history_re = re.compile("^history.(\d+)\.(\d+)")
-def main():
+def main(probe_name):
     if os.getuid() == 0:
         try:
             become_condor(probe_name)  # either 'htcondor-ce' or 'condor-ap'
@@ -241,7 +240,7 @@ def main():
             sys.exit(exc)
 
     try:
-        opts, dirs = parse_opts()
+        opts, dirs = parse_opts(probe_name)
     except SystemExit:
         raise
     except KeyboardInterrupt:
