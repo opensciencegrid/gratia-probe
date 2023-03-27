@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 import classad
 
-from condor_ap import condor_meter
+import gratia.common.condor as condor
 
 
 class ProcessorCountTests(unittest.TestCase):
@@ -15,26 +15,26 @@ class ProcessorCountTests(unittest.TestCase):
         """get_num_procs() has an order of preferred attributes
         """
         jobad = classad.ClassAd()
-        for attr, val in [(x, condor_meter.PROC_ATTRS.index(x)) for x in reversed(condor_meter.PROC_ATTRS)]:
+        for attr, val in [(x, condor.PROC_ATTRS.index(x)) for x in reversed(condor.PROC_ATTRS)]:
             jobad[attr] = val
-            self.assertEqual(condor_meter.get_num_procs(jobad), val)
+            self.assertEqual(condor.get_num_procs(jobad), val)
 
     def test_proc_expr(self):
         """get_num_procs() should be able to handle attributes set to ClassAd expressions
         """
-        for attr in condor_meter.PROC_ATTRS:
+        for attr in condor.PROC_ATTRS:
             jobad = classad.ClassAd()
             jobad[attr] = classad.ExprTree('2 + 2')
-            procs = condor_meter.get_num_procs(jobad)
+            procs = condor.get_num_procs(jobad)
             self.assertEqual(procs, 4)
 
     def test_proc_int(self):
         """The Processors field should always return an integer
         """
-        for attr in condor_meter.PROC_ATTRS:
+        for attr in condor.PROC_ATTRS:
             jobad = classad.ClassAd()
             jobad[attr] = 'broken attribute'
-            procs = condor_meter.get_num_procs(jobad)
+            procs = condor.get_num_procs(jobad)
             self.assertIsInstance(procs, int)
 
 
@@ -71,7 +71,7 @@ class CondorIDsTest(unittest.TestCase):
         """
         self.htcondor_config['CONDOR_IDS'] = '1.2'
 
-        uid, gid = condor_meter.get_condor_ids()
+        uid, gid = condor.get_condor_ids()
 
         self.mock_getpwnam.assert_not_called()
         self.assertEqual(uid, 1, "Incorrectly determined UID from CONDOR_IDS")
@@ -82,14 +82,14 @@ class CondorIDsTest(unittest.TestCase):
         """
         for bad_id in ('i love condor', '', '100', '2.gratia', 'garbage.50'):
             self.htcondor_config['CONDOR_IDS'] = bad_id
-            with self.assertRaises(condor_meter.utils.InternalError):
-                condor_meter.get_condor_ids()
+            with self.assertRaises(condor.utils.InternalError):
+                condor.get_condor_ids()
             self.mock_getpwnam.assert_not_called()
 
     def test_condor_user_success(self):
         """Undefined CONDOR_IDS, 'condor' user case
         """
-        uid, gid = condor_meter.get_condor_ids()
+        uid, gid = condor.get_condor_ids()
 
         self.mock_getpwnam.assert_called_once_with('condor')
         self.assertEqual(uid, self.mock_user.pw_uid, "Incorrectly determined UID from 'condor' user")
@@ -100,8 +100,8 @@ class CondorIDsTest(unittest.TestCase):
         """
         self.mock_getpwnam.configure_mock(side_effect=KeyError)
 
-        with self.assertRaises(condor_meter.utils.InternalError):
-            condor_meter.get_condor_ids()
+        with self.assertRaises(condor.utils.InternalError):
+            condor.get_condor_ids()
 
         self.mock_getpwnam.assert_called_once_with('condor')
 
@@ -112,7 +112,7 @@ class CondorIDsTest(unittest.TestCase):
         """
         self.htcondor_config['CONDOR_IDS'] = '1.2'
 
-        uid, gid = condor_meter.get_condor_ids('htcondor-ce')
+        uid, gid = condor.get_condor_ids('htcondor-ce')
 
         mock_environ.assert_called_once_with('CONDOR_CONFIG', '/etc/condor-ce/condor_config')
         mock_reload.assert_called_once()
@@ -124,7 +124,7 @@ class BecomeCondorTests(unittest.TestCase):
     """Unit tests for the become_condor function
     """
     def setUp(self):
-        get_ids = patch('condor_ap.condor_meter.get_condor_ids', return_value=(9619, 9618))
+        get_ids = patch('gratia.common.condor.get_condor_ids', return_value=(9619, 9618))
         setgid = patch('os.setgid')
         setuid = patch('os.setuid')
 
@@ -139,7 +139,7 @@ class BecomeCondorTests(unittest.TestCase):
     def test_success(self):
         """Everything is as expected
         """
-        condor_meter.become_condor()
+        condor.become_condor()
 
         self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
         self.mock_setuid.assert_called_once_with(self.mock_get_ids.return_value[0])
@@ -149,8 +149,8 @@ class BecomeCondorTests(unittest.TestCase):
         """
         self.mock_setgid.configure_mock(side_effect=PermissionError)
 
-        with self.assertRaises(condor_meter.utils.InternalError):
-            condor_meter.become_condor()
+        with self.assertRaises(condor.utils.InternalError):
+            condor.become_condor()
 
         self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
         self.mock_setuid.assert_not_called()
@@ -160,8 +160,8 @@ class BecomeCondorTests(unittest.TestCase):
         """
         self.mock_setuid.configure_mock(side_effect=PermissionError)
 
-        with self.assertRaises(condor_meter.utils.InternalError):
-            condor_meter.become_condor()
+        with self.assertRaises(condor.utils.InternalError):
+            condor.become_condor()
 
         self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
         self.mock_setuid.assert_called_once_with(self.mock_get_ids.return_value[0])
