@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+import os
+
+import gratia.common.condor as condor
+from gratia.common.Gratia import DebugPrint
+from gratia.common.debug import DebugPrintTraceback
+
+# HTCondor-CE probe is a symlink to this so we need to handle both the
+# htcondor-ce and condor-probe cases
+probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
+
+if __name__ == "__main__":
+    try:
+        condor.main(probe_name)
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
+        DebugPrintTraceback()
+        raise
