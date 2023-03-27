@@ -38,39 +38,62 @@ class ProcessorCountTests(unittest.TestCase):
             self.assertIsInstance(procs, int)
 
 
-class BecomeCondorTests(unittest.TestCase):
-    """Unit tests for the become_condor function
+class CondorIDsTest(unittest.TestCase):
+    """Unit tests for detecting condor user UID and GID
     """
-
     def setUp(self):
-        self.mock_getpwnam = patch('pwd.getpwnam').start()
-        self.mock_setgid = patch('os.setgid').start()
-        self.mock_setuid = patch('os.setuid').start()
+        getpwnam = patch('pwd.getpwnam')
+        setgid = patch('os.setgid')
+        setuid = patch('os.setuid')
+
+        self.mock_getpwnam = getpwnam.start()
+        self.mock_setgid = setgid.start()
+        self.mock_setuid = setuid.start()
 
         # ridiculous looking nonsense to be able to mock out htcondor.param['FOO']
         self.htcondor_config = {}
-        self.mock_htcondor_param = patch('htcondor.param',
-                                         **{'__getitem__.side_effect': self.htcondor_config.__getitem__}).start()
+        htcondor_param = patch('htcondor.param',
+                               **{'__getitem__.side_effect': self.htcondor_config.__getitem__})
+        self.mock_htcondor_param = htcondor_param.start()
 
         # specific pwd.struct_passwd instance
         self.mock_user = self.mock_getpwnam.return_value
         self.mock_user.pw_gid = 9618
         self.mock_user.pw_uid = 9619
 
-    def tearDown(self):
-        self.mock_getpwnam.stop()
-        self.mock_setgid.stop()
-        self.mock_setuid.stop()
-        self.mock_htcondor_param.stop()
+        self.addCleanup(getpwnam.stop)
+        self.addCleanup(setgid.stop)
+        self.addCleanup(setuid.stop)
+        self.addCleanup(htcondor_param.stop)
+
+    def test_condor_ids(self):
+        """Test privilege drop when admins specify CONDOR_IDS
+        """
+        self.htcondor_config['CONDOR_IDS'] = '1.2'
+
+        uid, gid = condor_meter.get_condor_ids()
+
+        self.mock_getpwnam.assert_not_called()
+        self.assertEqual(uid, 1, "Incorrectly determined UID from CONDOR_IDS")
+        self.assertEqual(gid, 2, "Incorrectly determined GID from CONDOR_IDS")
+
+    def test_malformed_condor_ids(self):
+        """Test error handling for malformed CONDOR_IDS configuration
+        """
+        for bad_id in ('i love condor', '', '100', '2.gratia', 'garbage.50'):
+            self.htcondor_config['CONDOR_IDS'] = bad_id
+            with self.assertRaises(condor_meter.utils.InternalError):
+                condor_meter.get_condor_ids()
+            self.mock_getpwnam.assert_not_called()
 
     def test_condor_user_success(self):
-        """Everything is as expected
+        """Undefined CONDOR_IDS, 'condor' user case
         """
-        condor_meter.become_condor()
+        uid, gid = condor_meter.get_condor_ids()
 
         self.mock_getpwnam.assert_called_once_with('condor')
-        self.mock_setgid.assert_called_once_with(self.mock_user.pw_gid)
-        self.mock_setuid.assert_called_once_with(self.mock_user.pw_uid)
+        self.assertEqual(uid, self.mock_user.pw_uid, "Incorrectly determined UID from 'condor' user")
+        self.assertEqual(gid, self.mock_user.pw_gid, "Incorrectly determined GID from 'condor' user")
 
     def test_no_condor_user(self):
         """There is no 'condor' user
@@ -78,11 +101,48 @@ class BecomeCondorTests(unittest.TestCase):
         self.mock_getpwnam.configure_mock(side_effect=KeyError)
 
         with self.assertRaises(condor_meter.utils.InternalError):
-            condor_meter.become_condor()
+            condor_meter.get_condor_ids()
 
         self.mock_getpwnam.assert_called_once_with('condor')
-        self.mock_setgid.assert_not_called()
-        self.mock_setuid.assert_not_called()
+
+    @patch('htcondor.reload_config')
+    @patch('os.environ.setdefault')
+    def test_htcondor_ce_ids(self, mock_environ, mock_reload):
+        """Test privilege drop when an HTCondor-CE admin specifies CONDOR_IDS
+        """
+        self.htcondor_config['CONDOR_IDS'] = '1.2'
+
+        uid, gid = condor_meter.get_condor_ids('htcondor-ce')
+
+        mock_environ.assert_called_once_with('CONDOR_CONFIG', '/etc/condor-ce/condor_config')
+        mock_reload.assert_called_once()
+        self.assertEqual(uid, 1, "Incorrectly determined UID from HTCondor-CE CONDOR_IDS")
+        self.assertEqual(gid, 2, "Incorrectly determined GID from HTCondor-CE CONDOR_IDS")
+
+
+class BecomeCondorTests(unittest.TestCase):
+    """Unit tests for the become_condor function
+    """
+    def setUp(self):
+        get_ids = patch('condor_ap.condor_meter.get_condor_ids', return_value=(9619, 9618))
+        setgid = patch('os.setgid')
+        setuid = patch('os.setuid')
+
+        self.mock_get_ids = get_ids.start()
+        self.mock_setgid = setgid.start()
+        self.mock_setuid = setuid.start()
+
+        self.addCleanup(get_ids.stop)
+        self.addCleanup(setuid.stop)
+        self.addCleanup(setgid.stop)
+
+    def test_success(self):
+        """Everything is as expected
+        """
+        condor_meter.become_condor()
+
+        self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
+        self.mock_setuid.assert_called_once_with(self.mock_get_ids.return_value[0])
 
     def test_fail_drop_gid(self):
         """Can't setgid
@@ -92,8 +152,7 @@ class BecomeCondorTests(unittest.TestCase):
         with self.assertRaises(condor_meter.utils.InternalError):
             condor_meter.become_condor()
 
-        self.mock_getpwnam.assert_called_once_with('condor')
-        self.mock_setgid.assert_called_once_with(self.mock_user.pw_gid)
+        self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
         self.mock_setuid.assert_not_called()
 
     def test_fail_drop_uid(self):
@@ -104,38 +163,5 @@ class BecomeCondorTests(unittest.TestCase):
         with self.assertRaises(condor_meter.utils.InternalError):
             condor_meter.become_condor()
 
-        self.mock_getpwnam.assert_called_once_with('condor')
-        self.mock_setgid.assert_called_once_with(self.mock_user.pw_gid)
-        self.mock_setuid.assert_called_once_with(self.mock_user.pw_uid)
-
-    def test_condor_ids(self):
-        """Test privilege drop when admins specify CONDOR_IDS
-        """
-        self.htcondor_config['CONDOR_IDS'] = '1.2'
-
-        condor_meter.become_condor()
-
-        self.mock_setgid.assert_called_once_with(2)
-        self.mock_setuid.assert_called_once_with(1)
-
-    def test_malformed_condor_ids(self):
-        """Test error handling for malformed CONDOR_IDS configuration
-        """
-        for bad_id in ('i love condor', '', '100', '2.gratia', 'garbage.50'):
-            self.htcondor_config['CONDOR_IDS'] = bad_id
-            with self.assertRaises(condor_meter.utils.InternalError):
-                condor_meter.become_condor()
-
-    @patch('htcondor.reload_config')
-    @patch('os.environ.setdefault')
-    def test_htcondor_ce_ids(self, mock_environ, mock_reload):
-        """Test privilege drop when an HTCondor-CE admin specifies CONDOR_IDS
-        """
-        self.htcondor_config['CONDOR_IDS'] = '1.2'
-
-        condor_meter.become_condor('htcondor-ce')
-
-        mock_environ.assert_called_once_with('CONDOR_CONFIG', '/etc/condor-ce/condor_config')
-        mock_reload.assert_called_once()
-        self.mock_setgid.assert_called_once_with(2)
-        self.mock_setuid.assert_called_once_with(1)
+        self.mock_setgid.assert_called_once_with(self.mock_get_ids.return_value[1])
+        self.mock_setuid.assert_called_once_with(self.mock_get_ids.return_value[0])

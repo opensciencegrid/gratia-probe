@@ -18,7 +18,7 @@ import os.path
 import optparse
 import subprocess
 
-from typing import List
+from typing import List, Tuple
 
 from gratia.common.Gratia import DebugPrint
 from gratia.common.debug import DebugPrintTraceback
@@ -191,9 +191,9 @@ def get_num_procs(job_ad):
 
     return procs
 
-
-def become_condor(condor_service: str = ""):
-    """condor_meter is intended to run as a SchedD cron, i.e. as the 'condor' user.
+def get_condor_ids(condor_service: str = "") -> Tuple[int, int]:
+    """Return the UID/GID of the user running the relevant condor daemons (i.e., IDs specified by CONDOR_IDS or the
+    'condor' user).
     condor_service: if 'htcondor-ce' determine the condor user for HTCondor-CE, otherwise use the default condor config
     """
     try:
@@ -216,6 +216,14 @@ def become_condor(condor_service: str = ""):
     except ValueError as exc:
         raise utils.InternalError(f"ERROR: failed to extract UID/GID for the {condor_service} service "
                                   f"from CONDOR_IDS configuration (value: {condor_ids})") from exc
+    return condor_uid, condor_gid
+
+
+def become_condor(condor_service: str = ""):
+    """condor_meter is intended to run as a SchedD cron, i.e. as the 'condor' user.
+    condor_service: if 'htcondor-ce' determine the condor user for HTCondor-CE, otherwise use the default condor config
+    """
+    condor_uid, condor_gid = get_condor_ids(condor_service)
 
     try:
         os.setgid(condor_gid)
