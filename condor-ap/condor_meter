@@ -13,10 +13,6 @@ probe_name = os.path.basename(os.path.dirname(os.path.abspath(__file__)))
 if __name__ == "__main__":
     try:
         condor.main(probe_name)
-    except SystemExit:
-        raise
-    except KeyboardInterrupt:
-        raise
     except Exception as e:
         DebugPrint(-1, "ERROR: Unexpected error encountered: %s" % e)
         DebugPrintTraceback()
