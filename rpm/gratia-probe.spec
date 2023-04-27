@@ -458,7 +458,7 @@ The HTCondor-CE probe for the Gratia OSG accounting system
 
 # Fix directory ownership if users have run condor_meter as root (SOFTWARE-5531)
 condor_ids=$(python3 -c 'import gratia.common.condor as condor; \
-             print(":".join([str(x) for x in core.get_condor_ids("htcondor-ce")]))')
+             print(":".join([str(x) for x in condor.get_condor_ids("htcondor-ce")]))')
 for dirname in %{_sharedstatedir}/condor-ce/gratia %{_localstatedir}/log/condor-ce/gratia; do
     chown -R "$condor_ids" "$dirname"
 done
