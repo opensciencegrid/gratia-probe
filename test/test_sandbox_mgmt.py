@@ -55,7 +55,7 @@ class CompressOutboxTests(unittest.TestCase):
     @patch('gratia.common.config.ConfigProxy.getFilenameFragment', create=True, return_value ='test-filename')
     def test_compress_outbox(self, mock_gratia_ext, mock_file_frag):
         """CompressOutbox compresses the files in the outbox directory
-            and stores the resulting tarball in probe_dir/staged.
+        and stores the resulting tarball in probe_dir/staged.
         """
         #Parameters for function
         probe_dir = self.probe_dir
