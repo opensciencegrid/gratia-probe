@@ -1,7 +1,9 @@
 #!/bin/env python
 
+import glob
 import os
 import shutil
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch, PropertyMock
@@ -51,8 +53,8 @@ class CompressOutboxTests(unittest.TestCase):
         #Remove probe_dir after test
         shutil.rmtree(self.probe_dir)
 
-    @patch('gratia.common.config.ConfigProxy.get_GratiaExtension', create=True, return_value ='test-extension')
     @patch('gratia.common.config.ConfigProxy.getFilenameFragment', create=True, return_value ='test-filename')
+    @patch('gratia.common.config.ConfigProxy.get_GratiaExtension', create=True, return_value ='test-extension')
     def test_compress_outbox(self, mock_gratia_ext, mock_file_frag):
         """CompressOutbox compresses the files in the outbox directory
         and stores the resulting tarball in probe_dir/staged.
@@ -65,3 +67,54 @@ class CompressOutboxTests(unittest.TestCase):
         #Assert that CompressOutbox returns True
         result = sandbox_mgmt.CompressOutbox(probe_dir, outbox, outfiles)
         self.assertTrue(result)
+
+    @patch('gratia.common.config.ConfigProxy.getFilenameFragment', create=True, return_value ='test-filename')
+    @patch('gratia.common.config.ConfigProxy.get_GratiaExtension', create=True, return_value ='test-extension')
+    def test_tarball_creation(self, mock_gratia_ext, mock_filefrag):
+        """
+        Assert that tarball is created in the correct location
+        """
+        #Parameters for function
+        probe_dir = self.probe_dir
+        outbox = self.outbox
+        outfiles = self.outfiles
+
+        sandbox_mgmt.CompressOutbox(probe_dir, outbox, outfiles)
+
+        #Finds tarball that matches GenerateFilename function output
+        os.chdir(f'{probe_dir}/staged/store')
+        for tarball in glob.glob("tz.*.test-extension__*"): 
+            return(tarball)
+        
+        self.assertTrue(os.path.exists(path_to_tarball/{tarball}))
+
+    @patch('gratia.common.config.ConfigProxy.getFilenameFragment', create=True, return_value ='test-filename')
+    @patch('gratia.common.config.ConfigProxy.get_GratiaExtension', create=True, return_value ='test-extension')
+    def test_tarball_contents(self, mock_gratia_ext, mock_filefrag):
+        """
+        Assert that unpacked tarball contains files from outfiles
+        """
+        #Parameters for function
+        probe_dir = self.probe_dir
+        outbox = self.outbox
+        outfiles = self.outfiles
+
+        sandbox_mgmt.CompressOutbox(probe_dir, outbox, outfiles)
+
+        #Finds tarball that matches GenerateFilename() output
+        os.chdir(f'{probe_dir}/staged/store')
+        for tarball in glob.glob("tz.*.test-extension__*"):
+            return(tarball)
+
+        #Gets names of files within tarball
+        file_obj= tarfile.open(tarball,"r")
+        namelist=file_obj.getnames()
+        for names in namelist:
+            return(names)
+        file_obj.close()
+
+        # Sort both lists to ensure order-independent comparison
+        names.sort()
+        outfiles.sort()
+
+        self.assertListEqual(names, outfiles)
