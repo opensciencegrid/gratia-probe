@@ -39,7 +39,7 @@ class SandboxMgmtTests(unittest.TestCase):
 
 class CompressOutboxTests(unittest.TestCase):
     def setUp(self):
-        #provision test environment
+        # provision test environment
         self.probe_dir = tempfile.mkdtemp()
         self.outbox = os.path.join(self.probe_dir, 'outbox')
         os.makedirs(self.outbox, exist_ok=True)
