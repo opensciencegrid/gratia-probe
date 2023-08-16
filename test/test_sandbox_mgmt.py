@@ -91,7 +91,7 @@ class CompressOutboxTests(unittest.TestCase):
         self.assertTrue(os.path.exists(tarball_location),
                         'Tarball not created in correct location')
         self.assertEqual(tarball_count, 1,
-                         'Tarball created in directory != 1')
+                         f'Expected 1 tarball, found {tarball_count}')
 
     def test_tarball_contents(self):
         """
