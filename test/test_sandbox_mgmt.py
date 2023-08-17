@@ -7,6 +7,7 @@ import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch, PropertyMock
+from unittest import TextTestRunner
 
 from common.gratia.common import sandbox_mgmt
 
@@ -66,6 +67,18 @@ class CompressOutboxTests(unittest.TestCase):
         # Remove probe_dir after test
         shutil.rmtree(self.probe_dir)
 
+    def get_tarball_location(self, path_to_tarball, tarball):
+        """
+        Attempts to return exact location of tarball
+        """
+        try:
+            tarball_location = os.path.join(f'{path_to_tarball}', tarball[0])
+        except IndexError as notarball:
+            print("Tarball does not exist!")
+            self.fail(notarball)
+
+        return tarball_location
+
     def test_compress_outbox(self):
         """CompressOutbox compresses the files in the outbox directory
         and stores the resulting tarball in probe_dir/staged.
@@ -81,10 +94,12 @@ class CompressOutboxTests(unittest.TestCase):
         sandbox_mgmt.CompressOutbox(self.probe_dir, self.outbox, self.outfiles)
 
         path_to_tarball = f'{self.probe_dir}/staged/store'
-
         # Finds exactly one tarball that matches GenerateFilename function output
         tarball = glob.glob("tz.*.test-extension__*", root_dir=path_to_tarball)
-        tarball_location = os.path.join(f'{path_to_tarball}', tarball[0])
+
+        # Where tarball exists
+        tarball_location = self.get_tarball_location(path_to_tarball, tarball)
+
         # Counts files in the directory that the tarball should be in
         tarball_count = len((tarball))
 
@@ -102,8 +117,9 @@ class CompressOutboxTests(unittest.TestCase):
 
         # Finds tarball that matches GenerateFilename() output
         tarball = glob.glob("tz.*.test-extension__*", root_dir=path_to_tarball)
+
         # Where tarball exists
-        tarball_location = os.path.join(f'{path_to_tarball}', tarball[0])
+        tarball_location = self.get_tarball_location(path_to_tarball, tarball)
 
         # Gets names of files within tarball
         with tarfile.open(tarball_location, "r") as names:
