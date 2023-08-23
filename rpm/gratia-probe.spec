@@ -2,7 +2,7 @@ Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
 Version:            2.8.4
-Release:            1%{?dist}
+Release:            2%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
