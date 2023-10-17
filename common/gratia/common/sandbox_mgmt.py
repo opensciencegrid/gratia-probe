@@ -5,6 +5,7 @@ import sys
 import glob
 import time
 import shutil
+import tempfile
 import tarfile
 
 from gratia.common.config import ConfigProxy
@@ -409,18 +410,8 @@ def SearchOutstandingRecord():
 
 def GenerateFilename(prefix, current_dir):
     '''Generate a filename of the for current_dir/prefix.$pid.ConfigFragment.gratia.xml__Unique'''
-    filename = prefix + str(global_state.RecordPid) + '.' + Config.get_GratiaExtension() \
-        + '__XXXXXXXXXX'
-    filename = os.path.join(current_dir, filename)
-    mktemp_pipe = os.popen('mktemp -q "' + filename + '"')
-    if mktemp_pipe != None:
-        filename = mktemp_pipe.readline()
-        mktemp_pipe.close()
-        filename = filename.strip()
-        if filename != r'':
-            return filename
-
-    raise IOError
+    fn_prefix = f'{prefix}.{global_state.RecordPid}.{Config.get_GratiaExtension()}__'
+    return tempfile.NamedTemporaryFile(prefix=fn_prefix, dir=current_dir, delete=False, mode='w')
 
 def UncompressOutbox(staging_name, target_dir):
 
@@ -487,20 +478,21 @@ def CompressOutbox(probe_dir, outbox, outfiles):
         DebugPrint(0, msg + ':' + exc)
         raise InternalError(msg) from exc
 
-    staging_name = GenerateFilename('tz.', staged_store)
-    DebugPrint(1, 'Compressing outbox in tar.bz2 file: ' + staging_name)
+    with GenerateFilename('tz', staged_store) as temp_tarfile:
+        staging_name = temp_tarfile.name
+        DebugPrint(1, 'Compressing outbox in tar.bz2 file: ' + staging_name)
 
-    try:
-        tar = tarfile.open(staging_name, 'w:bz2')
-    except KeyboardInterrupt:
-        raise   
-    except SystemExit:
-        raise   
-    except Exception as e:
-        DebugPrint(0, 'Warning: Exception caught while opening tar.bz2 file: ' + staging_name + ':')
-        DebugPrint(0, 'Caught exception: ', e)
-        DebugPrintTraceback()
-        return False
+        try:
+            tar = tarfile.open(staging_name, 'w:bz2')
+        except KeyboardInterrupt:
+            raise
+        except SystemExit:
+            raise
+        except Exception as e:
+            DebugPrint(0, 'Warning: Exception caught while opening tar.bz2 file: ' + staging_name + ':')
+            DebugPrint(0, 'Caught exception: ', e)
+            DebugPrintTraceback()
+            return False
 
     try:
         for f in outfiles:
@@ -599,12 +591,11 @@ def OpenNewRecordFile(dirIndex):
                 raise InternalError(msg) from exc
 
             try:
-                filename = GenerateFilename('r.', working_dir)
-                DebugPrint(3, 'Creating file:', filename)
-                outstandingRecordCount += 1
-                f = open(filename, 'w')
-                dirIndex = index
-                return (f, dirIndex)
+                with GenerateFilename('r', working_dir) as recordfile:
+                    DebugPrint(3, 'Creating file:', recordfile.name)
+                    outstandingRecordCount += 1
+                    dirIndex = index
+                    return (recordfile, dirIndex)
             except Exception as exc:
                 msg = 'ERROR: Caught exception while creating file'
                 DebugPrint(0, msg + ': ', exc)
