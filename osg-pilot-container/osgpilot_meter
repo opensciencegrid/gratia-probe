@@ -37,7 +37,7 @@ LOCAL_USER = "osgvo-container-pilot"
 grid_type = "OSG"
 
 # Limit the number of outbox jobs delivered per run of the cron job
-OUTBOX_MESSAGES_PER_JOB=1000
+OUTBOX_MESSAGES_PER_JOB=10000
 
 # in seconds
 DONE_IF_NOT_SEEN_AFTER =  1 * 60 * 60
