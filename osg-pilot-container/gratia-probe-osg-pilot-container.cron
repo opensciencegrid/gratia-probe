@@ -1,1 +1,1 @@
-0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/osg-pilot-container/ProbeConfig && /usr/share/gratia/osg-pilot-container/osgpilot_meter -s 900
+0,15,30,45 * * * * root /usr/share/gratia/common/cron_check  /etc/gratia/osg-pilot-container/ProbeConfig && /usr/share/gratia/osg-pilot-container/osgpilot_meter
