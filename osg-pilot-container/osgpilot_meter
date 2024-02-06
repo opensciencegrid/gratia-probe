@@ -36,6 +36,9 @@ LOCAL_USER = "osgvo-container-pilot"
 
 grid_type = "OSG"
 
+# Limit the number of outbox jobs delivered per run of the cron job
+OUTBOX_MESSAGES_PER_JOB=1000
+
 # in seconds
 DONE_IF_NOT_SEEN_AFTER =  1 * 60 * 60
 POLL_INTERVAL          = 15 * 60
@@ -572,7 +575,8 @@ def send_updates(opts):
 
     count_submit = 0
     count_delete = 0
-    cur = sqldb.execute("select * from outbox;")
+    # Deliver only the most recent OUTBOX_MESSAGES_PER_JOB to Gratia
+    cur = sqldb.execute(f"select * from outbox order by StartTime limit {OUTBOX_MESSAGES_PER_JOB};")
 
     persite_info = collections.defaultdict(list)
     delete_ids = []
