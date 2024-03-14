@@ -104,14 +104,16 @@ specified.""",
     parser.add_option("--start-time", 
         help="""First time to include when processing records using --history 
 option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
-is assumed to be 00:00:00 if omitted.""", 
+is assumed to be 00:00:00 if omitted. Records with a JobCurrentStartDate on 
+or after the given time in your local time zone will be included.""", 
         dest="history_start_time",
         default=None)
 
     parser.add_option("--end-time", 
         help="""Last time to include when processing records using --history 
 option. Time should be formated as YYYY-MM-DD HH:MM:SS where HH:MM:SS 
-is assumed to be 00:00:00 if omitted""", 
+is assumed to be 00:00:00 if omitted. Records with a JobCurrentStartDate on 
+or before the given time in your local time zone will be included.""", 
         dest="history_end_time", 
         default=None)    
 
