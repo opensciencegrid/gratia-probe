@@ -32,7 +32,7 @@ jobs:
         DTAG: ${{ steps.mkdatetag.outputs.dtag }}
       run: |
         reponame="osg-htc/gratia-probe-k8s"
-        OSGVER=23
+        OSGVER=24
         tags=()
         for registry in hub.opensciencegrid.org; do
             tags+=("$registry/$reponame:$OSGVER-release")

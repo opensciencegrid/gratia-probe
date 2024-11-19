@@ -2,8 +2,8 @@
 #   docker build -f osg-pilot-container/Dockerfile .
 
 # build rpms in a temporary container
-ARG BASE_OS=el8
-ARG BASE_OSG_SERIES=23
+ARG BASE_OS=el9
+ARG BASE_OSG_SERIES=24
 ARG BASE_YUM_REPO=release
 
 FROM opensciencegrid/software-base:$BASE_OSG_SERIES-$BASE_OS-$BASE_YUM_REPO as build-container
@@ -40,8 +40,8 @@ RUN osg-build rpmbuild /root/bld
 # build real container; copying in rpm results
 FROM opensciencegrid/software-base:$BASE_OSG_SERIES-$BASE_OS-$BASE_YUM_REPO
 
-ARG BASE_OS=el8
-ARG BASE_OSG_SERIES=23
+ARG BASE_OS=el9
+ARG BASE_OSG_SERIES=24
 ARG BASE_YUM_REPO=release
 
 
