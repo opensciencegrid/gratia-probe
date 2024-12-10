@@ -609,7 +609,7 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %changelog
 * Tue Dec 10 2024 Matt Westphall <westphall@wisc.edu.> -  2.8.5-1
 - Log gratia probe failures to aid debugging (SOFTWARE-6037)
-  - Fix NameError in post-install script (SOFTWARE-5558)
+- Fix NameError in post-install script (SOFTWARE-5558)
 * Mon Mar 27 2023 Brian Lin <blin@cs.wisc.edu.> -  2.8.4-1
 - HTCondor AP and CE probes now drop privileges to the 'condor' user
   if run as 'root' (SOFTWARE-5531)
