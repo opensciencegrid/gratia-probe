@@ -11,8 +11,10 @@ RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     yum install -y https://repo.osg-htc.org/osg/$OSG_SERIES-main/osg-$OSG_SERIES-main-el9-release-latest.rpm && \
     yum install -y gratia-probe-common python3-pip
 
-# Make probe runnable as non-root
-RUN chown -R $UID:$GID /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia
+# Make probe runnable as any non-root user by setting SGID bit on gratia system directories
+RUN chmod 777 /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia && \
+    chmod g+s /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia
+
 WORKDIR /gratia
 COPY requirements.txt /gratia
 RUN pip install -r requirements.txt
