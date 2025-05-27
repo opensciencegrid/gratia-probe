@@ -12,8 +12,7 @@ RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     yum install -y gratia-probe-common python3-pip
 
 # Make probe runnable as any non-root user by setting SGID bit on gratia system directories
-RUN chmod 777 /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia && \
-    chmod g+s /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia
+RUN chmod 1777 /var/lock/gratia /var/lib/gratia/data /var/lib/gratia/tmp /var/log/gratia
 
 WORKDIR /gratia
 COPY requirements.txt /gratia
