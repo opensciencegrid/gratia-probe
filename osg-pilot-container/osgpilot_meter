@@ -265,7 +265,8 @@ schema_sql = [
 def query_current_attrs(opts, pool):
     coll = htcondor.Collector(pool)
 
-    filter_cond = 'SlotType != "Static"'
+    # Need at least one defined from Site and ResourceName for proper accounting
+    filter_cond = 'SlotType != "Static" && (GLIDEIN_ResourceName =!= UNDEFINED || GLIDEIN_Site =!= UNDEFINED) '
     if not opts.any_records:
         filter_cond += ' && IsOsgVoContainer =?= True'
 
