@@ -20,8 +20,8 @@ import gratia.common.Gratia as Gratia
 #import gratia.common.file_utils as file_utils
 import gratia.common.config as config
 
-import classad
-import htcondor
+import classad2 as classad
+import htcondor2 as htcondor
 
 probe_version = "%%%RPMVERSION%%%"
 
@@ -265,8 +265,7 @@ schema_sql = [
 def query_current_attrs(opts, pool):
     coll = htcondor.Collector(pool)
 
-    # Need at least one defined from Site and ResourceName for proper accounting
-    filter_cond = 'SlotType != "Static" && (GLIDEIN_ResourceName =!= UNDEFINED || GLIDEIN_Site =!= UNDEFINED) '
+    filter_cond = 'SlotType != "Static"'
     if not opts.any_records:
         filter_cond += ' && IsOsgVoContainer =?= True'
 
@@ -296,6 +295,8 @@ def slottype_shortname(s):
 
 def eval_expr(x):
     if isinstance(x, classad.ExprTree):
+        # TODO: Per docs, eval() with no positional arg may yield unexpected results.
+        # We must confirm continued functionality.
         x = x.eval()
     if isinstance(x, list):
         x = "\t".join(x)
