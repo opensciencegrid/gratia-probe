@@ -299,7 +299,7 @@ Summary: A probe accounting for payload jobs on an HTCondor Access Point
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 Requires: condor
-Requires: %{condor_python} >= 24.0
+Requires: %{condor_python} >= 24.0.0
 Provides: %{name}-glideinwms = %{version}-%{release}
 Obsoletes: %{name}-glideinwms < 2.3.0
 Conflicts: %{name}-htcondor-ce
@@ -411,7 +411,7 @@ Summary: osg pilot container probe
 Group: Applications/System
 Requires: %{name}-common = %{version}-%{release}
 #Requires: python-sqlite
-Requires: %{condor_python} >= 24.0
+Requires: %{condor_python} >= 24.0.0
 License: See LICENSE.
 
 %description osg-pilot-container
