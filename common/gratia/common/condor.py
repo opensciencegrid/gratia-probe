@@ -29,8 +29,12 @@ from gratia.common import file_utils
 from gratia.common import config
 from gratia.common import utils
 
-import htcondor
-import classad as classadLib
+try:
+    import htcondor2 as htcondor
+    import classad2 as classadLib
+except ImportError:
+    import htcondor
+    import classad as classadLib
 
 # HACK: allow case-insensitive `attr in ad` checks
 # https://jira.opensciencegrid.org/browse/SOFTWARE-3017
