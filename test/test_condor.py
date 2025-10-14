@@ -2,7 +2,7 @@
 
 import unittest
 from unittest.mock import patch
-import classad
+import classad2 as classad
 
 import gratia.common.condor as condor
 
@@ -52,7 +52,7 @@ class CondorIDsTest(unittest.TestCase):
 
         # ridiculous looking nonsense to be able to mock out htcondor.param['FOO']
         self.htcondor_config = {}
-        htcondor_param = patch('htcondor.param',
+        htcondor_param = patch('htcondor2.param',
                                **{'__getitem__.side_effect': self.htcondor_config.__getitem__})
         self.mock_htcondor_param = htcondor_param.start()
 
@@ -105,7 +105,7 @@ class CondorIDsTest(unittest.TestCase):
 
         self.mock_getpwnam.assert_called_once_with('condor')
 
-    @patch('htcondor.reload_config')
+    @patch('htcondor2.reload_config')
     @patch('os.environ.setdefault')
     def test_htcondor_ce_ids(self, mock_environ, mock_reload):
         """Test privilege drop when an HTCondor-CE admin specifies CONDOR_IDS

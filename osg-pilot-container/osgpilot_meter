@@ -20,8 +20,8 @@ import gratia.common.Gratia as Gratia
 #import gratia.common.file_utils as file_utils
 import gratia.common.config as config
 
-import classad2 as classad
-import htcondor2 as htcondor
+import classad
+import htcondor
 
 probe_version = "%%%RPMVERSION%%%"
 
@@ -295,8 +295,8 @@ def slottype_shortname(s):
 
 def eval_expr(x):
     if isinstance(x, classad.ExprTree):
-        # TODO: Per docs, eval() with no positional arg may yield unexpected results.
-        # We must confirm continued functionality.
+        # TODO: Per htcondor2 docs, eval() with no positional arg may yield unexpected results.
+        # We must confirm continued functionality before updating.
         x = x.eval()
     if isinstance(x, list):
         x = "\t".join(x)
