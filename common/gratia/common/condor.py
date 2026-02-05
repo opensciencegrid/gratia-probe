@@ -564,8 +564,8 @@ def cream_match(match, desired):
 
 def get_classad_resource_name(classad):
     for attr in RESOURCE_NAME_ATTRS:
-        resource_name = classad.get(attr)
-        if resource_name:
+        resource_name = classad.eval(attr)
+        if resource_name and resource_name is not classadLib.Value.Undefined and resource_name is not classadLib.Value.Error:
             return resource_name
     return None
 
