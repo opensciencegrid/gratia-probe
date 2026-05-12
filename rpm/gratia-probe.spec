@@ -1,8 +1,8 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.9.1
-Release:            3%{?dist}
+Version:            2.9.2
+Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
 Vendor:             The Open Science Grid <http://www.opensciencegrid.org/>
@@ -607,6 +607,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Tue May 12 2026 Matt Westphall <westphall@wisc.edu.> -  2.9.2-1
+- Bump version number for code changes made in 2.9.1-3
+
 * Fri May 1 2026 Matt Westphall <westphall@wisc.edu.> -  2.9.1-3
 - Add missing try/catch block (SOFTWARE-6342)
 
