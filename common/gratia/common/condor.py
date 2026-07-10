@@ -21,7 +21,7 @@ import subprocess
 from typing import List, Tuple
 
 from gratia.common.Gratia import DebugPrint
-from gratia.common.debug import DebugPrintTraceback
+from gratia.common.debug import DebugPrintTraceback, CompressOldLogs
 from gratia.common import GratiaCore
 from gratia.common import GratiaWrapper
 from gratia.common import Gratia
@@ -271,6 +271,9 @@ def main(probe_name):
     GratiaCore.Initialize(opts.gratia_config)
     global g_probe_config
     g_probe_config = opts.gratia_config
+
+    # Compress any log files left over from previous days.
+    CompressOldLogs()
 
     # setup htcondor environment 
     setup_environment()

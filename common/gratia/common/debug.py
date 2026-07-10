@@ -4,6 +4,9 @@ from __future__ import print_function
 import os
 import sys
 import time
+import glob
+import gzip
+import shutil
 import syslog
 import traceback
 
@@ -82,6 +85,30 @@ def LogFileName():
     if not filename:
         filename = time.strftime('%Y-%m-%d') + '.log'
     return os.path.join(getGratiaConfig().get_LogFolder(), filename)
+
+
+def CompressOldLogs():
+    '''Gzip-compress every log file in the log folder except the one currently in use for today's logging.'''
+
+    try:
+        log_dir = getGratiaConfig().get_LogFolder()
+        if not log_dir or not os.path.isdir(log_dir):
+            return
+
+        current_file = os.path.abspath(LogFileName())
+
+        for filepath in glob.glob(os.path.join(log_dir, '*.log')):
+            filepath = os.path.abspath(filepath)
+            if filepath == current_file:
+                continue
+            try:
+                with open(filepath, 'rb') as f_in, gzip.open(filepath + '.gz', 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                os.remove(filepath)
+            except OSError as exc:
+                print('Gratia: Unable to compress old log file: ', filepath, ' ', exc, file=sys.stderr)
+    except Exception:
+        print('Gratia: Unable to compress old log files: ', sys.exc_info(), file=sys.stderr)
 
 
 def LogToFile(message):

@@ -1,7 +1,7 @@
 Name:               gratia-probe
 Summary:            Gratia OSG accounting system probes
 Group:              Applications/System
-Version:            2.9.2
+Version:            2.9.3
 Release:            1%{?dist}
 License:            GPL
 URL:                https://github.com/opensciencegrid/gratia-probe
@@ -607,6 +607,9 @@ This is a transitional dummy package for gratia-probe-slurm; it may safely be re
 %files slurm
 
 %changelog
+* Wed Jul 08 2026 Matt Westphall <westphall@wisc.edu> -  2.9.3-1
+- Compress back-dated log files on probe startup (SOFTWARE-6351)
+
 * Tue May 12 2026 Matt Westphall <westphall@wisc.edu> -  2.9.2-1
 - Fix issue in 2.9.1-2 that prevented delivery of records (SOFTWARE-6342)
 
