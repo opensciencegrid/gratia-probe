@@ -280,10 +280,8 @@ def UsageCheckXmldoc(xmlDoc, external, resourceType=None):
                 subdir = os.path.join(Config.get_DataFolder(), "quarantine", 'subdir.' + Config.getFilenameFragment())
                 if not os.path.exists(subdir):
                     os.mkdir(subdir)
-                fn = sandbox_mgmt.GenerateFilename("r.", subdir)
-                writer = open(fn, 'w')
-                usageRecord.writexml(writer)
-                writer.close()
+                with sandbox_mgmt.GenerateFilename("r", subdir) as writer:
+                    usageRecord.writexml(writer)
             usageRecord.unlink()
             continue
 
